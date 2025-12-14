@@ -24,7 +24,7 @@ def main(page: ft.Page):
         page.update()
 
     page.on_route_change = route_change
-    page.go("/cadastro_aluno")
+    page.go("/dashboard")
 
 
 if __name__ == "__main__":
