@@ -18,6 +18,8 @@ def main(page: ft.Page):
             page.views.append(LoginView(page))
         elif page.route == "/cadastro_aluno":
             page.views.append(CadastrarAlunoView(page))
+        elif page.route == "/dashboard":
+            page.views.append(DashboardView(page))
 
         page.update()
 
