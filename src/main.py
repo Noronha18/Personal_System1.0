@@ -2,6 +2,7 @@
 import flet as ft
 from src.views.login_view import LoginView
 from src.views.cadastrar_aluno_view import CadastrarAlunoView
+from src.views.dashboard_view import DashboardView
 
 
 def main(page: ft.Page):
