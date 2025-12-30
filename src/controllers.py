@@ -132,8 +132,9 @@ def registrar_pagamento(aluno_id: int):
     db = next(get_db())
     alunos = []  # <--- AQUI ESTÁ A CORREÇÃO (Inicia vazia)
     try:
-        # Busca no banco
-        alunos = db.query(Aluno).filter(Aluno.ativo == True).order_by(Aluno.nome).all()
+        aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+        if not aluno:
+            return False, "Aluno não encontrado!"
 
         # Enriquece os objetos com dados calculados
         for aluno in alunos:
