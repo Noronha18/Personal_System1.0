@@ -76,6 +76,24 @@ def contar_aulas_mes(aluno_id: int) -> int:
         db.close()
 
 
+def listar_historico_aluno(aluno_id: int):
+    db = next(get_db())
+    try:
+        historico = db.query(Aula).filter(
+            Aula.aluno_id == aluno_id).order_by(desc(Aula.data_hora)).all()
+        return historico
+    except Exception as e:
+        print(e)
+        return []
+    finally:
+        db.close()
+
+
+def registrar_aula_v2(aluno_id: int, observacao: str = ""):
+    """Função legada para registro simples (Mantida apenas por compatibilidade se necessário)"""
+    return registrar_detalhado(aluno_id, observacao, True, False)[1]
+
+
 def registrar_detalhado(aluno_id: int, obs: str, realizada: bool, reposicao: bool):
     db = next(get_db())
     try:
