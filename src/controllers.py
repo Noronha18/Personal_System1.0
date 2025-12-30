@@ -53,9 +53,27 @@ def contar_aulas_mes(aluno_id: int) -> int:
     """Conta quantas aulas REALIZADAS o aluno teve no mês atual"""
     db = next(get_db())
     try:
-        agora = datetime.now()
-        # 1. Cria a data do dia 1º
-        inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # 1. Busca o aluno
+        aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+
+        if not aluno:
+            return 0
+
+        # Define a data de corte (Data Zero)
+        if aluno.data_ultimo_pagamento:
+            data_inicio = aluno.data_ultimo_pagamento
+
+            # --- CORREÇÃO DE TIPO (Date vs Datetime) ---
+            # Se for apenas 'date' (sem hora), transformamos em datetime no começo do dia
+            if isinstance(data_inicio, datetime):
+                pass  # Já é datetime, ok
+            else:
+                # É apenas date, converte para datetime à meia-noite
+                data_inicio = datetime.combine(data_inicio, datetime.min.time())
+        else:
+            # Se nunca pagou, usa dia 1º do mês atual
+            agora = datetime.now()
+            data_inicio = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # --- CORREÇÃO DE FUSO (Naive vs Aware) ---
         # Adiciona fuso local se a data não tiver
