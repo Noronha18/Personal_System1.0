@@ -65,7 +65,7 @@ def contar_aulas_mes(aluno_id: int) -> int:
         qtd = db.query(Aula).filter(
             Aula.aluno_id == aluno_id,
             Aula.realizada == True,
-            Aula.data_hora >= inicio_mes
+            Aula.data_hora > data_inicio
         ).count()
 
         return qtd
