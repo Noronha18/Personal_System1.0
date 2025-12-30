@@ -118,7 +118,11 @@ def verificar_status_financeiro(aluno) -> str:
     if hoje.day > aluno.dia_pagamento:
         return "atrasado"
     else:
-        return "pendente"
+        # Fallback se a propriedade não tiver sido injetada ainda
+        aulas_feitas = contar_aulas_mes(aluno.id)
+
+    frequencia = aluno.frequencia_semanal_plano or 0
+    meta_ciclo = frequencia * 4
 
 
 def listar_alunos_ativos():
