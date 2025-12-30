@@ -62,6 +62,7 @@ def contar_aulas_mes(aluno_id: int) -> int:
         # Agora ela fica compatível com o banco de dados.
         inicio_mes = inicio_mes.astimezone()
 
+        # 2. Conta tudo que foi feito DEPOIS do último pagamento
         qtd = db.query(Aula).filter(
             Aula.aluno_id == aluno_id,
             Aula.realizada == True,
