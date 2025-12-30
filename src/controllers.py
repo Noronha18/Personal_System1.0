@@ -136,10 +136,14 @@ def registrar_pagamento(aluno_id: int):
         if not aluno:
             return False, "Aluno não encontrado!"
 
-        # Enriquece os objetos com dados calculados
-        for aluno in alunos:
-            aluno.aulas_feitas_mes = contar_aulas_mes(aluno.id)
-            aluno.status_financeiro = verificar_status_financeiro(aluno)
+        # 1. Registrar na tabela de histórico de pagamentos
+        novo_pagamento = Pagamento(
+            aluno_id=aluno_id,
+            valor=aluno.valor_mensalidade,
+            data_pagamento=datetime.now(),
+            referencia_mes=datetime.now().month
+        )
+        db.add(novo_pagamento)
 
         # 2. Atualizar a data no cadastro do aluno
         aluno.data_ultimo_pagamento = datetime.now()
