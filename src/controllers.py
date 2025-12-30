@@ -70,7 +70,7 @@ def contar_aulas_mes(aluno_id: int) -> int:
 
         return qtd
     except Exception as e:
-        print(f"Erro ao contar aulas: {e}")
+        print(f"Erro ao contar aulas do aluno {aluno_id}: {e}")
         return 0
     finally:
         db.close()
