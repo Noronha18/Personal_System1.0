@@ -57,10 +57,10 @@ def contar_aulas_mes(aluno_id: int) -> int:
         # 1. Cria a data do dia 1º
         inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # 2. A CORREÇÃO MÁGICA ✨
-        # .astimezone() adiciona o fuso horário do seu computador na data.
-        # Agora ela fica compatível com o banco de dados.
-        inicio_mes = inicio_mes.astimezone()
+        # --- CORREÇÃO DE FUSO (Naive vs Aware) ---
+        # Adiciona fuso local se a data não tiver
+        if data_inicio.tzinfo is None:
+            data_inicio = data_inicio.astimezone()
 
         # 2. Conta tudo que foi feito DEPOIS do último pagamento
         qtd = db.query(Aula).filter(
