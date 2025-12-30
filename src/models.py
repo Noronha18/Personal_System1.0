@@ -60,3 +60,18 @@ class Pagamento(Base):
     referencia_mes: Mapped[str] = mapped_column(String(20))
 
     aluno = relationship("Aluno", back_populates="pagamentos")
+
+
+class AvaliacaoFisica(Base):
+    __tablename__ = "avaliacoes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    aluno_id: Mapped[int] = mapped_column(ForeignKey("alunos.id"), nullable=False)
+    data_avaliacao: Mapped[date] = mapped_column(nullable=False, default=date.today)
+
+    peso: Mapped[float] = mapped_column(Float, nullable=True)
+    gordura: Mapped[float] = mapped_column(Float, nullable=True)  # Percentual
+    musculo: Mapped[float] = mapped_column(Float, nullable=True)  # Percentual ou KG
+    obs: Mapped[str] = mapped_column(String(200), nullable=True)
+
+    aluno = relationship("Aluno", back_populates="avaliacoes")
