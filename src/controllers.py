@@ -1,25 +1,27 @@
-# src/controllers.py
+from datetime import datetime
+from sqlalchemy import desc
 from src.database import get_db
-from src.models import Aluno
-from sqlalchemy.exc import SQLAlchemyError
+from src.models import Aluno, Aula, Pagamento  # Certifique-se de ter Pagamento importado
 
-def criar_aluno(nome: str, freq: int, valor: float, dia_pag: int):
-    """
-    Tenta salvar um novo aluno no banco.
-    Retorna (True, "Mensagem Sucesso") ou (False, "Erro")
-    """
+
+# --- FUNÇÕES DE ALUNO ---
+
+def criar_aluno(nome: str, frequencia: int, valor: float, dia_pag: int, idade: int, objetivo: str, restricoes: str):
     db = next(get_db())
     try:
-        novo = Aluno(
+        novo_aluno = Aluno(
             nome=nome,
-            frequencia_semanal_plano=freq,
+            frequencia_semanal_plano=frequencia,
             valor_mensalidade=valor,
-            dia_pagamento=dia_pag
+            dia_pagamento=dia_pag,
+            idade=idade,
+            objetivo=objetivo,
+            restricoes=restricoes
         )
-        db.add(novo)
+        db.add(novo_aluno)
         db.commit()
-        return True, f"Aluno {nome} cadastrado com sucesso!"
-    except SQLAlchemyError as e:
+        return True, "Aluno cadastrado com sucesso!"
+    except Exception as e:
         db.rollback()
         return False, str(e)
     finally:
@@ -34,11 +36,9 @@ def editar_aluno(aluno_id: int, nome: str, frequencia: int, valor: float, idade:
             aluno.nome = nome
             aluno.frequencia_semanal_plano = frequencia
             aluno.valor_mensalidade = valor
-            # NOVOS CAMPOS
             aluno.idade = idade
             aluno.objetivo = objetivo
             aluno.restricoes = restricoes
-
             db.commit()
             return True, "Dados atualizados com sucesso!"
         return False, "Aluno não encontrado."
@@ -49,8 +49,46 @@ def editar_aluno(aluno_id: int, nome: str, frequencia: int, valor: float, idade:
         db.close()
 
 
+def excluir_aluno(aluno_id: int):
+    db = next(get_db())
+    try:
+        aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+        if aluno:
+            db.delete(aluno)
+            db.commit()
+            return True, "Aluno excluído com sucesso!"
+        return False, "Aluno não encontrado."
+    except Exception as e:
+        db.rollback()
+        return False, f"Erro ao excluir: {e}"
+    finally:
+        db.close()
+
+
+def listar_alunos_ativos():
+    db = next(get_db())
+    alunos = []
+    try:
+        alunos = db.query(Aluno).filter(Aluno.ativo == True).order_by(Aluno.nome).all()
+        # Enriquece os objetos com dados calculados
+        for aluno in alunos:
+            aluno.aulas_feitas_mes = contar_aulas_mes(aluno.id)
+            aluno.status_financeiro = verificar_status_financeiro(aluno)
+        return alunos
+    except Exception as e:
+        print(f"Erro ao listar alunos: {e}")
+        return []
+    finally:
+        db.close()
+
+
+# --- FUNÇÕES DE AULA E FREQUÊNCIA ---
+
 def contar_aulas_mes(aluno_id: int) -> int:
-    """Conta quantas aulas REALIZADAS o aluno teve no mês atual"""
+    """
+    Conta aulas REALIZADAS desde o último pagamento.
+    Se nunca pagou, conta do início do mês atual.
+    """
     db = next(get_db())
     try:
         # 1. Busca o aluno
@@ -116,6 +154,24 @@ def registrar_aula_v2(aluno_id: int, observacao: str = ""):
 def registrar_detalhado(aluno_id: int, obs: str, realizada: bool, reposicao: bool):
     db = next(get_db())
     try:
+        # 1. Buscar Aluno
+        aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+        if not aluno:
+            return False, "Aluno não encontrado!"
+
+        # 2. A TRAVA
+        if realizada:
+            aulas_feitas = contar_aulas_mes(aluno.id)
+            frequencia = aluno.frequencia_semanal_plano or 0
+            meta_mensal = frequencia * 4
+
+            # Debug no terminal
+            print(f"DEBUG MODAL: {aluno.nome} | Feitas={aulas_feitas} | Meta={meta_mensal}")
+
+            if meta_mensal > 0 and aulas_feitas >= meta_mensal:
+                return False, f"⚠️ LIMITE ATINGIDO! ({aulas_feitas}/{meta_mensal}). Renove o plano!"
+
+        # 3. Registrar
         nova_aula = Aula(
             aluno_id=aluno_id,
             observacao=obs,
@@ -127,33 +183,47 @@ def registrar_detalhado(aluno_id: int, obs: str, realizada: bool, reposicao: boo
 
         status = "Treino registrado" if realizada else "Falta registrada"
         return True, f"{status} com sucesso!"
+
     except Exception as e:
         db.rollback()
-        return False, str(e)
+        return False, f"Erro no banco: {str(e)}"
     finally:
         db.close()
 
 
-# --- Adicione isto no src/controllers.py ---
+# --- FUNÇÕES FINANCEIRAS ---
 
 def verificar_status_financeiro(aluno) -> str:
     """
     Retorna 'atrasado', 'em_dia' ou 'pendente'.
+    Critério: Data vencida OU Limite de aulas atingido.
     """
-    # Se nunca pagou, está atrasado
+    # 1. Se nunca pagou
     if not aluno.data_ultimo_pagamento:
         return "atrasado"
 
-    ultimo = aluno.data_ultimo_pagamento
     hoje = datetime.now()
+    ultimo_pag = aluno.data_ultimo_pagamento
 
-    # Se o último pagamento foi neste mês e neste ano, está PAGO.
-    if ultimo.month == hoje.month and ultimo.year == hoje.year:
-        return "em_dia"
+    # --- CORREÇÃO DE TIPO ---
+    if not isinstance(ultimo_pag, datetime):
+        ultimo_pag = datetime.combine(ultimo_pag, datetime.min.time())
 
-    # Se não pagou este mês, verificamos o dia de vencimento
-    if hoje.day > aluno.dia_pagamento:
+    # 2. Verificação de Data (30 dias)
+    # Removemos o timezone para comparar datas puras e evitar confusão
+    dias_passados = (hoje.replace(tzinfo=None) - ultimo_pag.replace(tzinfo=None)).days
+
+    if dias_passados > 30:
         return "atrasado"
+
+    # 3. Verificação de Cota de Aulas
+    # Nota: contar_aulas_mes já cuida de fechar e abrir conexão,
+    # mas chamar ela de dentro do loop pode ser pesado.
+    # Como já chamamos ela antes no 'listar_alunos_ativos',
+    # podemos usar o valor que JÁ ESTÁ no objeto se ele existir.
+
+    if hasattr(aluno, 'aulas_feitas_mes'):
+        aulas_feitas = aluno.aulas_feitas_mes
     else:
         # Fallback se a propriedade não tiver sido injetada ainda
         aulas_feitas = contar_aulas_mes(aluno.id)
@@ -161,13 +231,14 @@ def verificar_status_financeiro(aluno) -> str:
     frequencia = aluno.frequencia_semanal_plano or 0
     meta_ciclo = frequencia * 4
 
+    if meta_ciclo > 0 and aulas_feitas >= meta_ciclo:
+        return "esgotado"
 
     return "em_dia"
 
 
 def registrar_pagamento(aluno_id: int):
     db = next(get_db())
-    alunos = []  # <--- AQUI ESTÁ A CORREÇÃO (Inicia vazia)
     try:
         aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
         if not aluno:

@@ -21,6 +21,9 @@ class Aluno(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
 
+    idade: Mapped[int] = mapped_column(Integer, nullable=True)
+    objetivo: Mapped[str] = mapped_column(String, nullable=True)
+    restricoes: Mapped[str] = mapped_column(Text, nullable=True)
     # Plano Semanal (quantas vezes por semana)
     frequencia_semanal_plano: Mapped[int] = mapped_column(Integer, default=3)
 
@@ -34,6 +37,7 @@ class Aluno(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relacionamentos
+    avaliacoes = relationship("AvaliacaoFisica", back_populates="aluno", cascade="all, delete-orphan")
     aulas = relationship("Aula", back_populates="aluno", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="aluno", cascade="all, delete-orphan")
 
@@ -45,7 +49,8 @@ class Aula(Base):
     aluno_id: Mapped[int] = mapped_column(ForeignKey("alunos.id"), nullable=False)
     data_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     observacao: Mapped[str] = mapped_column(Text, nullable=True)
-
+    realizada: Mapped[bool] = mapped_column(Boolean, default=False)
+    tem_reposicao: Mapped[bool] = mapped_column(Boolean, default=False)
     aluno = relationship("Aluno", back_populates="aulas")
 
 
