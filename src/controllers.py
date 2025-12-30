@@ -125,7 +125,10 @@ def verificar_status_financeiro(aluno) -> str:
     meta_ciclo = frequencia * 4
 
 
-def listar_alunos_ativos():
+    return "em_dia"
+
+
+def registrar_pagamento(aluno_id: int):
     db = next(get_db())
     alunos = []  # <--- AQUI ESTÁ A CORREÇÃO (Inicia vazia)
     try:
