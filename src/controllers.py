@@ -147,7 +147,7 @@ def registrar_pagamento(aluno_id: int):
         db.commit()
         return True, "Pagamento registrado e plano renovado!"
     except Exception as e:
-        print(f"Erro ao listar alunos: {e}")
-        return []  # Se der erro, retorna lista vazia
+        db.rollback()
+        return False, f"Erro ao registrar: {e}"
     finally:
         db.close()
