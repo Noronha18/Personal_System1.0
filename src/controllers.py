@@ -141,7 +141,11 @@ def registrar_pagamento(aluno_id: int):
             aluno.aulas_feitas_mes = contar_aulas_mes(aluno.id)
             aluno.status_financeiro = verificar_status_financeiro(aluno)
 
-        return alunos
+        # 2. Atualizar a data no cadastro do aluno
+        aluno.data_ultimo_pagamento = datetime.now()
+
+        db.commit()
+        return True, "Pagamento registrado e plano renovado!"
     except Exception as e:
         print(f"Erro ao listar alunos: {e}")
         return []  # Se der erro, retorna lista vazia
