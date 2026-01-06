@@ -8,6 +8,7 @@ def init_db():
 
     # Limpeza
     cursor.execute("DROP TABLE IF EXISTS aulas CASCADE;")
+    cursor.execute("DROP TABLE IF EXISTS pagamentos CASCADE;")
     cursor.execute("DROP TABLE IF EXISTS alunos CASCADE;")
 
     # Tabela Alunos (COMPLETA AGORA)
@@ -41,6 +42,18 @@ def init_db():
                        realizada          BOOLEAN DEFAULT TRUE,
                        motivo_falta       TEXT,
                        reposicao_prevista BOOLEAN DEFAULT FALSE
+                   );
+                   """)
+    cursor.execute("""
+                   CREATE TABLE pagamentos
+                   (
+                       id              SERIAL PRIMARY KEY,
+                       aluno_id        INTEGER REFERENCES alunos (id),
+                       data_pagamento  DATE DEFAULT CURRENT_DATE,
+                       valor           REAL,
+                       referencia_mes  VARCHAR(7),
+                       forma_pagamento VARCHAR(50),
+                       observacao      TEXT
                    );
                    """)
 

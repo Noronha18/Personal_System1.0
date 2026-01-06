@@ -1,23 +1,33 @@
 from datetime import datetime, date
 from sqlalchemy.orm import Session
 from src.database import get_db
-from src.models import Aluno, Aula
+from src.models import Aluno, Aula, Pagamento
 
 
 def listar_alunos_ativos():
-    """Retorna lista de alunos com status financeiro calculado"""
+    """Retorna lista de alunos e VERIFICA se pagaram"""
     session: Session = next(get_db())
     try:
         alunos = session.query(Aluno).order_by(Aluno.nome).all()
 
-        # Lógica simples de status financeiro (Pode evoluir depois)
-        # Hoje vamos considerar 'em_dia' se tiver data de pagamento recente (simplificado)
-        for aluno in alunos:
-            # Mock de status para a UI funcionar
-            aluno.status_financeiro = "em_dia"
+        # Define o mês atual (Ex: "01/2026")
+        hoje = date.today()
+        ref_mes = f"{hoje.month:02d}/{hoje.year}"
 
-            # Conta aulas feitas no mês atual
-            hoje = date.today()
+        for aluno in alunos:
+            # 1. Busca se existe pagamento para este mês
+            pagamento = session.query(Pagamento).filter(
+                Pagamento.aluno_id == aluno.id,
+                Pagamento.referencia_mes == ref_mes
+            ).first()
+
+            # 2. Define o status (AQUI É A MÁGICA)
+            if pagamento:
+                aluno.status_financeiro = "em_dia"
+            else:
+                aluno.status_financeiro = "atrasado"  # Vai ficar vermelho
+
+            # 3. Conta aulas (Mantém sua lógica de progresso)
             total_aulas = session.query(Aula).filter(
                 Aula.aluno_id == aluno.id,
                 Aula.data_aula >= date(hoje.year, hoje.month, 1)
@@ -117,10 +127,47 @@ def excluir_aluno(id):
         session.close()
 
 
-def registrar_pagamento(id):
-    # Mock por enquanto
-    return True, "Pagamento registrado (Simulação)"
+def registrar_pagamento_real(aluno_id, valor, forma="PIX", obs=""):
+    """Registra um pagamento financeiro real no banco"""
+    session: Session = next(get_db())
+    try:
+        # Define o mês atual como referência (Ex: "01/2026")
+        hoje = date.today()
+        ref = f"{hoje.month:02d}/{hoje.year}"
 
+        novo_pag = Pagamento(
+            aluno_id=aluno_id,
+            valor=valor,
+            referencia_mes=ref,
+            forma_pagamento=forma,
+            observacao=obs,
+            data_pagamento=hoje
+        )
+        session.add(novo_pag)
+        session.commit()
+        return True, f"Pagamento de R$ {valor:.2f} registrado!"
+    except Exception as e:
+        session.rollback()
+        return False, f"Erro financeiro: {e}"
+    finally:
+        session.close()
+
+
+def verificar_status_financeiro(aluno_id):
+    """Verifica se o aluno pagou o mês atual"""
+    session: Session = next(get_db())
+    try:
+        hoje = date.today()
+        ref = f"{hoje.month:02d}/{hoje.year}"
+
+        pagamento = session.query(Pagamento).filter(
+            Pagamento.aluno_id == aluno_id,
+            Pagamento.referencia_mes == ref
+        ).first()
+
+        return "em_dia" if pagamento else "atrasado"
+    finally:
+        session.close()
 
 # Funções legadas para compatibilidade (se ainda usadas)
 def registrar_aula_v2(id):
@@ -129,28 +176,32 @@ def registrar_aula_v2(id):
 
 # ... (outros imports e funções existentes)
 
-def criar_aluno(nome, email, faixa, frequencia, valor):
-    """Cria um novo aluno no banco de dados"""
+def criar_aluno(nome, frequencia, valor, dia_pag=None, idade=None, objetivo=None, restricoes=None):
+    """Cria um novo aluno no banco de dados com TODOS os campos"""
     session: Session = next(get_db())
     try:
-        # Tratamento básico de tipos para evitar erro de conversão
+        # Tratamento de tipos (segurança contra strings vazias)
         freq_int = int(frequencia) if frequencia else 3
         valor_float = float(str(valor).replace(",", ".")) if valor else 0.0
+        dia_venc_int = int(dia_pag) if dia_pag else 5
+        idade_int = int(idade) if idade else 0
 
         novo_aluno = Aluno(
             nome=nome,
-            email=email,
-            faixa=faixa,  # Usando 'faixa' como objetivo/categoria temporariamente
             frequencia_semanal_plano=freq_int,
             valor_mensalidade=valor_float,
-            data_inicio=date.today()
+            dia_vencimento=dia_venc_int,
+            idade=idade_int,
+            objetivo=objetivo,
+            restricoes=restricoes,
         )
         session.add(novo_aluno)
         session.commit()
         return True, "Aluno cadastrado com sucesso!"
     except Exception as e:
         session.rollback()
+        # Log do erro no console para ajudar no debug
+        print(f"Erro detalhado ao cadastrar: {e}")
         return False, f"Erro ao cadastrar: {e}"
     finally:
         session.close()
-

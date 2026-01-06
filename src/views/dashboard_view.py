@@ -1,6 +1,10 @@
 import flet as ft
-from src.controllers import listar_alunos_ativos, registrar_detalhado, listar_historico_aluno, editar_aluno, \
-    excluir_aluno, registrar_aula_v2, registrar_pagamento
+from src.controllers import (
+    listar_alunos_ativos, registrar_detalhado, listar_historico_aluno,
+    editar_aluno, excluir_aluno, registrar_pagamento_real  # <--- Nova função
+)
+import datetime
+
 
 
 def DashboardView(page: ft.Page):
@@ -15,16 +19,17 @@ def DashboardView(page: ft.Page):
     switch_falta = ft.Switch(label="Aluno Faltou?", value=False)
     check_reposicao = ft.Checkbox(label="Haverá Reposição?", value=False, visible=False)
 
-    def acao_pagar(e):
+    def abrir_modal_pagamento(e):
         aluno = e.control.data
-        sucesso, msg = registrar_pagamento(aluno.id)
+        pagamento_aluno_id.current = aluno.id
 
-        cor = ft.Colors.GREEN if sucesso else ft.Colors.RED
-        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=cor)
-        page.snack_bar.open = True
+        # Preenche o valor automaticamente com a mensalidade do aluno (UX Sênior)
+        # Se o aluno tiver valor_mensalidade zerado, deixa vazio
+        valor_sugerido = getattr(aluno, 'valor_mensalidade', 0.0)
+        pagamento_valor.value = f"{valor_sugerido:.2f}"
 
-        carregar_dados()
-        page.update()
+        pagamento_obs.value = ""  # Limpa obs anterior
+        page.open(dialogo_pagamento)
 
     def mudar_tipo_registro(e):
         if switch_falta.value:
@@ -190,6 +195,60 @@ def DashboardView(page: ft.Page):
 
         page.open(dialogo_edicao)
 
+    # --- VARIÁVEIS E MODAL FINANCEIRO ---
+    pagamento_aluno_id = ft.Ref[int]()
+    pagamento_valor = ft.TextField(label="Valor (R$)", keyboard_type=ft.KeyboardType.NUMBER, prefix_text="R$ ")
+    pagamento_forma = ft.Dropdown(
+        label="Forma de Pagamento",
+        options=[
+            ft.dropdown.Option("PIX"),
+            ft.dropdown.Option("Dinheiro"),
+            ft.dropdown.Option("Cartão Crédito"),
+            ft.dropdown.Option("Cartão Débito"),
+        ],
+        value="PIX"
+    )
+    pagamento_obs = ft.TextField(label="Observação (Ex: Adiantamento)", multiline=True)
+
+    def confirmar_pagamento(e):
+        try:
+            # Converte valor (troca vírgula por ponto)
+            val_str = pagamento_valor.value.replace(",", ".")
+            val_float = float(val_str) if val_str else 0.0
+
+            sucesso, msg = registrar_pagamento_real(
+                aluno_id=pagamento_aluno_id.current,
+                valor=val_float,
+                forma=pagamento_forma.value,
+                obs=pagamento_obs.value
+            )
+
+            # Fecha e notifica
+            dialogo_pagamento.open = False
+            cor = ft.Colors.GREEN if sucesso else ft.Colors.RED
+            page.open(ft.SnackBar(ft.Text(msg), bgcolor=cor))
+
+            carregar_dados()  # Atualiza para mudar a cor do ícone
+            page.update()
+
+        except ValueError:
+            page.open(ft.SnackBar(ft.Text("Valor inválido!"), bgcolor=ft.Colors.RED))
+
+    dialogo_pagamento = ft.AlertDialog(
+        title=ft.Text("Registrar Pagamento"),
+        content=ft.Column([
+            ft.Text("Referência: Mês Atual"),
+            pagamento_valor,
+            pagamento_forma,
+            pagamento_obs
+        ], tight=True, width=350),
+        actions=[
+            ft.TextButton("Cancelar", on_click=lambda e: page.close(dialogo_pagamento)),
+            ft.ElevatedButton("Confirmar Recebimento", on_click=confirmar_pagamento, bgcolor=ft.Colors.GREEN,
+                              color=ft.Colors.WHITE),
+        ],
+    )
+
     # --- CARREGAMENTO PRINCIPAL ---
     def carregar_dados():
         lista_cards.controls.clear()
@@ -240,13 +299,13 @@ def DashboardView(page: ft.Page):
                         icon=icone_financeiro,
                         icon_color=cor_financeiro,
                         tooltip=tooltip_fin,
-                        on_click=acao_pagar,
+                        on_click=abrir_modal_pagamento,
                         data=aluno
                     ),
 
                     # 2. Histórico
                     ft.IconButton(icon=ft.Icons.HISTORY, icon_color="blue", tooltip="Histórico",
-                                  on_click=lambda e, a=aluno: abrir_historico(a), data=aluno.id),
+                                  on_click=abrir_historico, data=aluno.id),
 
                     # 3. Registrar Aula (Modal Azul)
                     ft.IconButton(icon=ft.Icons.EDIT_DOCUMENT, tooltip="Registrar Aula", icon_color=ft.Colors.BLUE_700,

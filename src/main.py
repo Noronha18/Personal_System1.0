@@ -36,9 +36,6 @@ def main(page: ft.Page):
     page.on_route_change = route_change
     page.on_view_pop = view_pop
 
-    # Inicializa o banco de dados (garantia)
-    init_db()
-
     # Força a ir para a rota inicial agora
     page.go(page.route)
 
