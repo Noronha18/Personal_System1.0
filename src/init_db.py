@@ -1,34 +1,59 @@
-# init_db.py
-# -*- coding: utf-8 -*-
-from src.database import engine, SessionLocal, Base
-from src.models import Usuario
+import psycopg2
+from src.database import DB_CONFIG
 
-
-def criar_banco():
-    print("Criando tabelas no banco de dados...")
-    Base.metadata.create_all(bind=engine)
-
-    db = SessionLocal()
-
-    # Verifica se o Admin já existe
-    admin = db.query(Usuario).filter(Usuario.username == "admin").first()
-
-    if not admin:
-        print("Criando usuário admin...")
-        # Crie com uma senha simples para testar o login visual
-        novo_usuario = Usuario(username="admin", senha="123")
-        db.add(novo_usuario)
-        db.commit()
-        print("✅ Usuário 'admin' (senha: 123) criado com sucesso!")
-    else:
-        print("ℹ️ Usuário admin já existe.")
-
-    db.close()
 
 def init_db():
-    print("Criando tabelas no banco de dados...")
-    Base.metadata.create_all(bind=engine)
-    print("Tabelas verificadas/criadas com sucesso!")
+    conn = psycopg2.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+
+    # Limpeza
+    cursor.execute("DROP TABLE IF EXISTS aulas CASCADE;")
+    cursor.execute("DROP TABLE IF EXISTS alunos CASCADE;")
+
+    # Tabela Alunos (COMPLETA AGORA)
+    cursor.execute("""
+                   CREATE TABLE alunos
+                   (
+                       id                 SERIAL PRIMARY KEY,
+                       nome               VARCHAR(100) NOT NULL,
+                       email              VARCHAR(100),
+                       faixa              VARCHAR(50), -- Pode ser usado como 'Objetivo'
+                       data_inicio        DATE    DEFAULT CURRENT_DATE,
+
+                       -- Novos Campos Obrigatórios para a View
+                       frequencia_semanal INTEGER DEFAULT 3,
+                       valor_mensalidade  REAL    DEFAULT 0.0,
+                       idade              INTEGER DEFAULT 0,
+                       objetivo           TEXT,
+                       restricoes         TEXT,
+                       dia_vencimento     INTEGER DEFAULT 5
+                   );
+                   """)
+
+    # Tabela Aulas
+    cursor.execute("""
+                   CREATE TABLE aulas
+                   (
+                       id                 SERIAL PRIMARY KEY,
+                       aluno_id           INTEGER REFERENCES alunos (id) ON DELETE CASCADE,
+                       data_aula          DATE    DEFAULT CURRENT_DATE,
+                       conteudo_treino    TEXT,
+                       realizada          BOOLEAN DEFAULT TRUE,
+                       motivo_falta       TEXT,
+                       reposicao_prevista BOOLEAN DEFAULT FALSE
+                   );
+                   """)
+
+    # Seed (Aluno Teste)
+    cursor.execute("""
+                   INSERT INTO alunos (nome, email, faixa, frequencia_semanal, valor_mensalidade)
+                   VALUES ('Noronha Teste', 'teste@email.com', 'Hipertrofia', 3, 250.00)
+                   """)
+
+    print("✅ Banco recriado com colunas financeiras!")
+    conn.commit()
+    conn.close()
+
 
 if __name__ == "__main__":
-    criar_banco()
+    init_db()
