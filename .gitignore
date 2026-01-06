@@ -1,0 +1,20 @@
+# Ambiente Virtual
+.venv/
+venv/
+
+# Python Cache (LIXO)
+__pycache__/
+*.pyc
+
+# IDEs (Configurações pessoais que não devem subir)
+.idea/
+.vscode/
+
+# Build e Executáveis (LIXO)
+build/
+dist/
+*.exe
+*.spec
+*.toc
+*.pkg
+*.pyz
