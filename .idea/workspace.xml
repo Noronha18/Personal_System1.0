@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="335a19ac-12d3-4553-a659-adf4ee7a5583" name="Changes" comment="App funcionando">
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/views/montar_treino_view.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/init_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/init_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/views/cadastrar_aluno_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/views/cadastrar_aluno_view.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/views/dashboard_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/views/dashboard_view.py" afterDir="false" />
-    </list>
+    <list default="true" id="335a19ac-12d3-4553-a659-adf4ee7a5583" name="Changes" comment="App funcionando" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -257,7 +244,7 @@
       <workItem from="1768144589888" duration="13000" />
       <workItem from="1768489057033" duration="641000" />
       <workItem from="1768596196372" duration="6672000" />
-      <workItem from="1768779897445" duration="3854000" />
+      <workItem from="1768779897445" duration="4452000" />
     </task>
     <task id="LOCAL-00001" summary="App funcionando">
       <option name="closed" value="true" />
