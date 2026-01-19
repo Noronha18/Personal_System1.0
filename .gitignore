@@ -1,6 +1,7 @@
 # Ambiente Virtual
 .venv/
 venv/
+env/
 
 # Python Cache (LIXO)
 __pycache__/
@@ -18,3 +19,16 @@ dist/
 *.toc
 *.pkg
 *.pyz
+
+# Variáveis de Ambiente e Segredos
+.env
+.env.local
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+
+# Prompt do Mentor (Opcional, se quiser manter privado)
+MENTOR_PROMPT.md

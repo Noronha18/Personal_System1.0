@@ -23,15 +23,17 @@ def CadastroView(page: ft.Page):
         width=150
     )
 
-    # Estes campos estavam faltando no seu código original:
-    valor = ft.TextField(label="Valor Mensal", prefix_text="R$ ", keyboard_type=ft.KeyboardType.NUMBER, width=150)
+    # CORREÇÃO: prefix_text removido, usando prefix=ft.Text("R$ ")
+    valor = ft.TextField(label="Valor Mensal", prefix=ft.Text("R$ "), keyboard_type=ft.KeyboardType.NUMBER, width=150)
     dia_pagamento = ft.TextField(label="Dia Pagamento", keyboard_type=ft.KeyboardType.NUMBER, width=150)
 
     # --- 2. Função de Salvar ---
     def salvar(e):
         # Validação Básica
         if not nome.value or not frequencia.value or not valor.value or not dia_pagamento.value:
-            page.open(ft.SnackBar(ft.Text("Preencha os campos obrigatórios!"), bgcolor=ft.Colors.RED))
+            page.snack_bar = ft.SnackBar(ft.Text("Preencha os campos obrigatórios!"), bgcolor=ft.Colors.RED)
+            page.snack_bar.open = True
+            page.update()
             return
 
         try:
@@ -51,18 +53,24 @@ def CadastroView(page: ft.Page):
             )
 
             if sucesso:
-                page.open(ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.GREEN))
+                page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.GREEN)
+                page.snack_bar.open = True
+                page.update()
                 page.go("/")  # Volta para o Dashboard
             else:
-                page.open(ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.RED))
+                page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.RED)
+                page.snack_bar.open = True
+                page.update()
 
         except ValueError:
-            page.open(
-                ft.SnackBar(ft.Text("Verifique se digitou números em Valor, Dia e Idade!"), bgcolor=ft.Colors.RED))
+            page.snack_bar = ft.SnackBar(ft.Text("Verifique se digitou números em Valor, Dia e Idade!"), bgcolor=ft.Colors.RED)
+            page.snack_bar.open = True
+            page.update()
 
     # --- 3. Retorno da Tela (View) ---
+    # CORREÇÃO: Usando route=... explicitamente para evitar erro de múltiplos valores
     return ft.View(
-        "/cadastro_aluno",
+        route="/cadastro_aluno",
         controls=[
             ft.AppBar(
                 title=ft.Text("Novo Aluno"),

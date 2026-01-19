@@ -1,18 +1,22 @@
 from datetime import datetime, date
 from sqlalchemy.orm import Session
 from src.database import get_db
-from src.models import Aluno, Aula, Pagamento
+# Adicionando Treino e Exercicio aos imports
+from src.models import Aluno, Aula, Pagamento, Treino, Exercicio
 
 
 def listar_alunos_ativos():
     """Retorna lista de alunos e VERIFICA se pagaram"""
+    print("--- CONTROLLER: Listando Alunos ---")
     session: Session = next(get_db())
     try:
         alunos = session.query(Aluno).order_by(Aluno.nome).all()
+        print(f"Alunos encontrados no banco: {len(alunos)}")
 
         # Define o mês atual (Ex: "01/2026")
         hoje = date.today()
         ref_mes = f"{hoje.month:02d}/{hoje.year}"
+        inicio_mes = datetime(hoje.year, hoje.month, 1) # DateTime para comparar com DateTime
 
         for aluno in alunos:
             # 1. Busca se existe pagamento para este mês
@@ -30,9 +34,11 @@ def listar_alunos_ativos():
             # 3. Conta aulas (Mantém sua lógica de progresso)
             total_aulas = session.query(Aula).filter(
                 Aula.aluno_id == aluno.id,
-                Aula.data_aula >= date(hoje.year, hoje.month, 1)
+                Aula.data_aula >= inicio_mes,
+                Aula.realizada == True # Só conta se foi realizada
             ).count()
             aluno.aulas_feitas_mes = total_aulas
+            print(f"Aluno {aluno.nome}: {total_aulas} aulas este mês ({ref_mes})")
 
         return alunos
     except Exception as e:
@@ -42,25 +48,31 @@ def listar_alunos_ativos():
         session.close()
 
 
-def registrar_detalhado(aluno_id, obs, realizada=True, reposicao=False):
+def registrar_detalhado(aluno_id, obs, realizada=True, reposicao=False, data_hora=None):
     """Registra uma aula ou falta no banco"""
+    print(f"--- CONTROLLER: Registrando Aula para ID {aluno_id} ---")
     session: Session = next(get_db())
     try:
+        # Se não passar data, usa agora
+        data_final = data_hora if data_hora else datetime.now()
+
         nova_aula = Aula(
             aluno_id=aluno_id,
-            conteudo_treino=obs if realizada else None,
+            observacoes_do_dia=obs if realizada else None, 
             realizada=realizada,
             motivo_falta=obs if not realizada else None,
             reposicao_prevista=reposicao,
-            data_aula=date.today()
+            data_aula=data_final
         )
         session.add(nova_aula)
         session.commit()
+        print(f"Aula salva com ID: {nova_aula.id} | Data: {nova_aula.data_aula}")
 
         tipo = "Aula" if realizada else "Falta"
         return True, f"{tipo} registrada com sucesso!"
     except Exception as e:
         session.rollback()
+        print(f"ERRO AO SALVAR AULA: {e}")
         return False, f"Erro ao registrar: {e}"
     finally:
         session.close()
@@ -68,15 +80,23 @@ def registrar_detalhado(aluno_id, obs, realizada=True, reposicao=False):
 
 def listar_historico_aluno(aluno_id):
     """Pega as últimas 10 aulas do aluno"""
+    print(f"--- CONTROLLER: Buscando Histórico ID {aluno_id} ---")
     session: Session = next(get_db())
     try:
         aulas = session.query(Aula).filter(Aula.aluno_id == aluno_id) \
             .order_by(Aula.data_aula.desc(), Aula.id.desc()).limit(10).all()
+        
+        print(f"Aulas encontradas: {len(aulas)}")
 
         # Adaptador simples para a View ler
         for aula in aulas:
-            aula.data_hora = datetime.combine(aula.data_aula, datetime.min.time())
-            aula.observacao = aula.conteudo_treino if aula.realizada else aula.motivo_falta
+            # Se data_aula já for datetime, usa direto. Se for date, converte.
+            if isinstance(aula.data_aula, datetime):
+                aula.data_hora = aula.data_aula
+            else:
+                aula.data_hora = datetime.combine(aula.data_aula, datetime.min.time())
+
+            aula.observacao = aula.observacoes_do_dia if aula.realizada else aula.motivo_falta
             aula.tem_reposicao = aula.reposicao_prevista
 
         return aulas
@@ -87,30 +107,32 @@ def listar_historico_aluno(aluno_id):
         session.close()
 
 
-def editar_aluno(id, nome, freq, valor, idade, objetivo, restricoes):
-    """Atualiza dados do aluno"""
-    session: Session = next(get_db())
-    try:
-        aluno = session.query(Aluno).get(id)
-        if not aluno:
-            return False, "Aluno não encontrado"
 
-        aluno.nome = nome
-        aluno.faixa = objetivo  # Usando campo 'faixa' como 'objetivo' temporariamente ou ajuste no model
-        # Nota: Se o model não tiver 'idade', 'valor_mensalidade', precisaremos ajustar o models.py
-        # Por enquanto vou assumir que você tem esses campos ou vou ignorar para não quebrar
+def editar_aluno(aluno_id: int, dados_atualizados: dict):
+    """
+    Atualiza dados do aluno de forma segura.
+    Passamos um dict para facilitar: se amanhã mudar um campo,
+    não precisamos mudar a assinatura da função.
+    """
+    # O 'with' garante que a sessão feche mesmo se o PC explodir
+    with next(get_db()) as session:
+        try:
+            aluno = session.get(Aluno, aluno_id)
+            if not aluno:
+                return False, "Aluno não encontrado"
 
-        # aluno.frequencia_semanal_plano = freq  <-- Verifique se existe no Model
-        # aluno.valor_mensalidade = valor        <-- Verifique se existe no Model
+            # Técnica Sênior: Atualização Dinâmica
+            # Em vez de aluno.nome = nome, aluno.idade = idade...
+            for chave, valor in dados_atualizados.items():
+                if hasattr(aluno, chave):
+                    setattr(aluno, chave, valor)
 
-        session.commit()
-        return True, "Aluno atualizado!"
-    except Exception as e:
-        session.rollback()
-        return False, f"Erro: {e}"
-    finally:
-        session.close()
+            session.commit()
+            return True, "Cadastro do aluno atualizado com sucesso!"
 
+        except Exception as e:
+            session.rollback()
+            return False, f"Erro ao salvar no banco: {str(e)}"
 
 def excluir_aluno(id):
     session: Session = next(get_db())
@@ -205,3 +227,35 @@ def criar_aluno(nome, frequencia, valor, dia_pag=None, idade=None, objetivo=None
         return False, f"Erro ao cadastrar: {e}"
     finally:
         session.close()
+
+
+def cadastrar_treino_completo(aluno_id: int, nome_treino: str, lista_exercicios:list[dict]):
+    # Usando context manager para garantir fechamento da sessão
+    with next(get_db()) as session:
+        try:
+            # 1. Cria o Treino (Cabeçalho)
+            novo_treino = Treino(aluno_id=aluno_id, nome=nome_treino)
+            session.add(novo_treino)
+            
+            # Flush envia para o banco e gera o ID do treino, mas ainda não commita
+            session.flush() 
+
+            # 2. Cria os Exercícios vinculados a esse treino
+            for ex_data in lista_exercicios:
+                novo_exercicio = Exercicio(
+                    treino_id=novo_treino.id, # Agora temos o ID graças ao flush()
+                    nome=ex_data.get('nome'),
+                    series=ex_data.get('series'),
+                    repeticoes=ex_data.get('repeticoes'),
+                    carga=ex_data.get('carga', 0),
+                    descanso=ex_data.get('descanso', 60)
+                )
+                session.add(novo_exercicio)
+            
+            # 3. Commit ÚNICO no final (Atomicidade)
+            session.commit()
+            return True, "Treino e exercicios salvos!"
+            
+        except Exception as e:
+            session.rollback()
+            return False, str(e)

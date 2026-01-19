@@ -3,12 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# --- NOVAS CREDENCIAIS ---
+# --- CREDENCIAIS ---
 DB_USER = "noronha_dev"
-DB_PASS = "123456"       # Senha que acabamos de definir
+DB_PASS = "123456"
 DB_HOST = "localhost"
-DB_NAME = "personal_db_v2" # Banco novo
-DB_PORT = "5432"
+DB_NAME = "personal_db_v2"
+# Alterado para 5434 para evitar conflito com o outro projeto na 5433
+DB_PORT = "5434"
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 

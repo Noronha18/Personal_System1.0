@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15
+    container_name: personal_system_db
+    environment:
+      POSTGRES_USER: noronha_dev
+      POSTGRES_PASSWORD: "123456"
+      POSTGRES_DB: personal_db_v2
+    ports:
+      - "5434:5432"  # Mapeando para a porta 5434 (Host) -> 5432 (Container)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

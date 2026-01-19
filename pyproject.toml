@@ -1,0 +1,12 @@
+[project]
+name = "personal-system1-0"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.1",
+    "flet>=0.80.2",
+    "psycopg2-binary>=2.9.11",
+    "sqlalchemy>=2.0.45",
+]
