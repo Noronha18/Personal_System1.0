@@ -68,7 +68,7 @@ class Aula(Base):
 
     # Relacionamentos (Para você acessar aula.aluno.nome ou aula.treino.nome)
     aluno = relationship("Aluno", back_populates="aulas")
-    treino = relationship("Treino")  # Adicionando essa ponte
+    treino = relationship("Treino", back_populates="aulas")  # Adicionando essa ponte
 
 class Treino(Base):
 
@@ -82,6 +82,7 @@ class Treino(Base):
 
     aluno = relationship("Aluno", back_populates="treinos")
     exercicios = relationship("Exercicio", back_populates="treino", cascade="all, delete-orphan")
+    aulas = relationship("Aula", back_populates="treino")
 
 class Exercicio(Base):
 

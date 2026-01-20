@@ -5,47 +5,50 @@ from src.database import get_db
 from src.models import Aluno, Aula, Pagamento, Treino, Exercicio
 
 
-def listar_alunos_ativos():
-    """Retorna lista de alunos e VERIFICA se pagaram"""
+def _preencher_status_aluno(aluno: Aluno, db: Session):
+    """Função interna para calcular e adicionar status financeiro e de aulas."""
+    hoje = date.today()
+    ref_mes = f"{hoje.month:02d}/{hoje.year}"
+    inicio_mes = datetime(hoje.year, hoje.month, 1)
+
+    # 1. Status Financeiro
+    pagamento = db.query(Pagamento).filter(
+        Pagamento.aluno_id == aluno.id,
+        Pagamento.referencia_mes == ref_mes
+    ).first()
+    aluno.status_financeiro = "em_dia" if pagamento else "atrasado"
+
+    # 2. Aulas no Mês
+    total_aulas = db.query(Aula).filter(
+        Aula.aluno_id == aluno.id,
+        Aula.data_aula >= inicio_mes,
+        Aula.realizada == True
+    ).count()
+    aluno.aulas_feitas_mes = total_aulas
+    
+    return aluno
+
+
+def listar_alunos_ativos(db: Session):
+    """Retorna lista de alunos com status financeiro e de aulas."""
     print("--- CONTROLLER: Listando Alunos ---")
-    session: Session = next(get_db())
-    try:
-        alunos = session.query(Aluno).order_by(Aluno.nome).all()
-        print(f"Alunos encontrados no banco: {len(alunos)}")
+    
+    alunos = db.query(Aluno).order_by(Aluno.nome).all()
+    print(f"Alunos encontrados no banco: {len(alunos)}")
 
-        # Define o mês atual (Ex: "01/2026")
-        hoje = date.today()
-        ref_mes = f"{hoje.month:02d}/{hoje.year}"
-        inicio_mes = datetime(hoje.year, hoje.month, 1) # DateTime para comparar com DateTime
+    for aluno in alunos:
+        _preencher_status_aluno(aluno, db)
+        print(f"Aluno {aluno.nome}: {aluno.aulas_feitas_mes} aulas este mês")
 
-        for aluno in alunos:
-            # 1. Busca se existe pagamento para este mês
-            pagamento = session.query(Pagamento).filter(
-                Pagamento.aluno_id == aluno.id,
-                Pagamento.referencia_mes == ref_mes
-            ).first()
+    return alunos
 
-            # 2. Define o status (AQUI É A MÁGICA)
-            if pagamento:
-                aluno.status_financeiro = "em_dia"
-            else:
-                aluno.status_financeiro = "atrasado"  # Vai ficar vermelho
 
-            # 3. Conta aulas (Mantém sua lógica de progresso)
-            total_aulas = session.query(Aula).filter(
-                Aula.aluno_id == aluno.id,
-                Aula.data_aula >= inicio_mes,
-                Aula.realizada == True # Só conta se foi realizada
-            ).count()
-            aluno.aulas_feitas_mes = total_aulas
-            print(f"Aluno {aluno.nome}: {total_aulas} aulas este mês ({ref_mes})")
-
-        return alunos
-    except Exception as e:
-        print(f"Erro ao listar: {e}")
-        return []
-    finally:
-        session.close()
+def get_aluno(db: Session, aluno_id: int):
+    """Retorna um único aluno pelo seu ID, com status financeiro e de aulas."""
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+    if aluno:
+        _preencher_status_aluno(aluno, db)
+    return aluno
 
 
 def registrar_detalhado(aluno_id, obs, realizada=True, reposicao=False, data_hora=None):
@@ -108,45 +111,40 @@ def listar_historico_aluno(aluno_id):
 
 
 
-def editar_aluno(aluno_id: int, dados_atualizados: dict):
+def editar_aluno(db: Session, aluno_id: int, dados_atualizados: dict):
     """
-    Atualiza dados do aluno de forma segura.
-    Passamos um dict para facilitar: se amanhã mudar um campo,
-    não precisamos mudar a assinatura da função.
+    Atualiza os dados de um aluno existente no banco de dados.
     """
-    # O 'with' garante que a sessão feche mesmo se o PC explodir
-    with next(get_db()) as session:
-        try:
-            aluno = session.get(Aluno, aluno_id)
-            if not aluno:
-                return False, "Aluno não encontrado"
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+    if not aluno:
+        return None
 
-            # Técnica Sênior: Atualização Dinâmica
-            # Em vez de aluno.nome = nome, aluno.idade = idade...
-            for chave, valor in dados_atualizados.items():
-                if hasattr(aluno, chave):
-                    setattr(aluno, chave, valor)
+    # Atualização dinâmica dos campos
+    for chave, valor in dados_atualizados.items():
+        if hasattr(aluno, chave):
+            setattr(aluno, chave, valor)
 
-            session.commit()
-            return True, "Cadastro do aluno atualizado com sucesso!"
-
-        except Exception as e:
-            session.rollback()
-            return False, f"Erro ao salvar no banco: {str(e)}"
-
-def excluir_aluno(id):
-    session: Session = next(get_db())
     try:
-        aluno = session.query(Aluno).get(id)
-        if aluno:
-            session.delete(aluno)
-            session.commit()
-            return True, "Aluno excluído."
-        return False, "Não encontrado."
+        db.commit()
+        db.refresh(aluno)
+        return aluno
     except Exception as e:
-        return False, f"Erro: {e}"
-    finally:
-        session.close()
+        db.rollback()
+        raise e
+
+def excluir_aluno(db: Session, aluno_id: int):
+    """Exclui um aluno do banco de dados."""
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+    if not aluno:
+        return None
+    
+    try:
+        db.delete(aluno)
+        db.commit()
+        return aluno
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 def registrar_pagamento_real(aluno_id, valor, forma="PIX", obs=""):
@@ -198,64 +196,89 @@ def registrar_aula_v2(id):
 
 # ... (outros imports e funções existentes)
 
-def criar_aluno(nome, frequencia, valor, dia_pag=None, idade=None, objetivo=None, restricoes=None):
-    """Cria um novo aluno no banco de dados com TODOS os campos"""
-    session: Session = next(get_db())
+def criar_aluno(db: Session, nome: str, frequencia: int, valor: float, dia_pag: int, idade: int, objetivo: str, restricoes: str):
+    """Cria um novo aluno no banco de dados a partir dos dados validados pela API."""
     try:
-        # Tratamento de tipos (segurança contra strings vazias)
-        freq_int = int(frequencia) if frequencia else 3
-        valor_float = float(str(valor).replace(",", ".")) if valor else 0.0
-        dia_venc_int = int(dia_pag) if dia_pag else 5
-        idade_int = int(idade) if idade else 0
-
         novo_aluno = Aluno(
             nome=nome,
-            frequencia_semanal_plano=freq_int,
-            valor_mensalidade=valor_float,
-            dia_vencimento=dia_venc_int,
-            idade=idade_int,
+            frequencia_semanal_plano=frequencia,
+            valor_mensalidade=valor,
+            dia_vencimento=dia_pag,
+            idade=idade,
             objetivo=objetivo,
             restricoes=restricoes,
         )
-        session.add(novo_aluno)
-        session.commit()
-        return True, "Aluno cadastrado com sucesso!"
+        db.add(novo_aluno)
+        db.commit()
+        db.refresh(novo_aluno)  # Atualiza o objeto com os dados do banco (ex: ID)
+        return novo_aluno
     except Exception as e:
-        session.rollback()
+        db.rollback()
         # Log do erro no console para ajudar no debug
         print(f"Erro detalhado ao cadastrar: {e}")
-        return False, f"Erro ao cadastrar: {e}"
-    finally:
-        session.close()
+        # Lançamos a exceção para que a camada da API possa tratá-la
+        raise e
 
 
-def cadastrar_treino_completo(aluno_id: int, nome_treino: str, lista_exercicios:list[dict]):
-    # Usando context manager para garantir fechamento da sessão
-    with next(get_db()) as session:
-        try:
-            # 1. Cria o Treino (Cabeçalho)
-            novo_treino = Treino(aluno_id=aluno_id, nome=nome_treino)
-            session.add(novo_treino)
-            
-            # Flush envia para o banco e gera o ID do treino, mas ainda não commita
-            session.flush() 
+def cadastrar_treino_completo(db: Session, aluno_id: int, treino_data):
+    """
+    Cria um novo treino completo (com exercícios) para um aluno.
+    A função espera que 'treino_data' seja um schema Pydantic com 'nome' e uma lista de 'exercicios'.
+    """
+    try:
+        # 1. Cria o Treino (Cabeçalho)
+        novo_treino = Treino(
+            aluno_id=aluno_id, 
+            nome=treino_data.nome,
+            descricao=treino_data.descricao
+        )
+        db.add(novo_treino)
+        
+        # Flush envia para o banco e gera o ID do treino, mas ainda não commita
+        db.flush() 
 
-            # 2. Cria os Exercícios vinculados a esse treino
-            for ex_data in lista_exercicios:
-                novo_exercicio = Exercicio(
-                    treino_id=novo_treino.id, # Agora temos o ID graças ao flush()
-                    nome=ex_data.get('nome'),
-                    series=ex_data.get('series'),
-                    repeticoes=ex_data.get('repeticoes'),
-                    carga=ex_data.get('carga', 0),
-                    descanso=ex_data.get('descanso', 60)
-                )
-                session.add(novo_exercicio)
-            
-            # 3. Commit ÚNICO no final (Atomicidade)
-            session.commit()
-            return True, "Treino e exercicios salvos!"
-            
-        except Exception as e:
-            session.rollback()
-            return False, str(e)
+        # 2. Cria os Exercícios vinculados a esse treino
+        for ex_data in treino_data.exercicios:
+            novo_exercicio = Exercicio(
+                treino_id=novo_treino.id, # Agora temos o ID graças ao flush()
+                nome=ex_data.nome,
+                series=ex_data.series,
+                repeticoes=ex_data.repeticoes,
+                carga=ex_data.carga,
+                descanso=ex_data.descanso
+            )
+            db.add(novo_exercicio)
+        
+        # 3. Commit ÚNICO no final (Atomicidade)
+        db.commit()
+        db.refresh(novo_treino) # Para carregar os exercícios recém-criados na relação
+        return novo_treino
+        
+    except Exception as e:
+        db.rollback()
+        raise e
+
+
+def listar_treinos_aluno(db: Session, aluno_id: int):
+    """Retorna todos os treinos de um aluno específico."""
+    return db.query(Treino).filter(Treino.aluno_id == aluno_id).order_by(Treino.id).all()
+
+
+def get_treino_by_id(db: Session, treino_id: int):
+    """Retorna um treino específico pelo seu ID."""
+    return db.query(Treino).filter(Treino.id == treino_id).first()
+
+
+def excluir_treino(db: Session, treino_id: int):
+    """Exclui um treino do banco de dados (e seus exercícios em cascata)."""
+    treino = db.query(Treino).filter(Treino.id == treino_id).first()
+    if not treino:
+        return None
+    
+    try:
+        db.delete(treino)
+        db.commit()
+        return treino
+    except Exception as e:
+        db.rollback()
+        raise e
