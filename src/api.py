@@ -7,13 +7,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from datetime import date, datetime
-
-# Importando seus modelos e o novo padrão de controller
-from src.database import get_db
-from src.models import Aluno, Treino, Exercicio
+from src.database import get_db, engine, Base
+from src.models import Aluno, Treino, Exercicio, Pagamento, Aula
 from src import controllers
 from src.routes import alunos # Importando o novo roteador de alunos
 from src.exceptions import ResourceNotFoundError, BusinessRuleError
+
+Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(

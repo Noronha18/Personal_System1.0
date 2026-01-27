@@ -4,7 +4,8 @@ from src.database import get_db
 from src import schemas
 from src.models import Aluno, Aula, Pagamento, Treino, Exercicio
 import logging
-from src.exceptions import AlunoNotFoundError
+from src.exceptions import AlunoNotFoundError, BusinessRuleError
+
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,11 @@ def verificar_status_financeiro(aluno_id):
 
 def criar_aluno(db: Session, aluno: schemas.AlunoCreate):
     """Cria um novo aluno no banco de dados a partir de um schema Pydantic."""
+    
+    aluno_existente = db.query(Aluno).filter(Aluno.cpf == aluno.cpf).first()
+    if aluno_existente:
+        raise BusinessRuleError(f"O CPF {aluno.cpf} já está cadastrado para o aluno {aluno_existente.nome}.")
+    
     try:
         # Usando **aluno.model_dump() para desempacotar o schema nos campos do modelo
         novo_aluno = Aluno(**aluno.model_dump())

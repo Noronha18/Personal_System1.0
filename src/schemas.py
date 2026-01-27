@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import date
+from validate_docbr import CPF
+
 
 # ===================================================================
 # Schemas de Exercício
@@ -61,12 +63,24 @@ class PagamentoPublic(PagamentoBase):
 
 class AlunoBase(BaseModel):
     nome: str
+    cpf: str
     idade: Optional[int] = None
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
     valor_mensalidade: float
     frequencia_semanal_plano: int
     dia_vencimento: int
+
+    @field_validator('cpf')
+    def validar_cpf(cls, v:str) -> str:
+        cpf_limpo = "".join([d for d in v if d.isdigit()])
+
+        cpf_validador = CPF()
+        if not cpf_validador.validate(cpf_limpo):
+            raise ValueError("CPF inválido! Verifique os digitos.")
+        
+        return cpf_limpo
+
 
 class AlunoCreate(AlunoBase):
     valor_mensalidade: float = Field(..., gt=0)
@@ -86,6 +100,7 @@ class AlunoUpdate(BaseModel):
 
 class AlunoPublic(AlunoBase):
     id: int
+    cpf: str
     data_inicio: date
     treinos: List[TreinoPublic] = []
     pagamentos: List[PagamentoPublic] = []
