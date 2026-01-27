@@ -1,9 +1,12 @@
 from datetime import datetime, date
 from sqlalchemy.orm import Session
 from src.database import get_db
-# Adicionando Treino e Exercicio aos imports
+from src import schemas
 from src.models import Aluno, Aula, Pagamento, Treino, Exercicio
+import logging
+from src.exceptions import AlunoNotFoundError
 
+logger = logging.getLogger(__name__)
 
 def _preencher_status_aluno(aluno: Aluno, db: Session):
     """Função interna para calcular e adicionar status financeiro e de aulas."""
@@ -46,7 +49,9 @@ def listar_alunos_ativos(db: Session):
 def get_aluno(db: Session, aluno_id: int):
     """Retorna um único aluno pelo seu ID, com status financeiro e de aulas."""
     aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
-    if aluno:
+    if not aluno:
+        raise AlunoNotFoundError(aluno_id)
+    
         _preencher_status_aluno(aluno, db)
     return aluno
 
@@ -134,16 +139,16 @@ def editar_aluno(db: Session, aluno_id: int, dados_atualizados: dict):
 
 def excluir_aluno(db: Session, aluno_id: int):
     """Exclui um aluno do banco de dados."""
-    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
-    if not aluno:
-        return None
+    aluno = get_aluno
     
     try:
         db.delete(aluno)
         db.commit()
+        logger.info(f"Aluno '{aluno_id}' excluído com sucesso.")
         return aluno
     except Exception as e:
         db.rollback()
+        logger.error(f"Erro ao excluir aluno '{aluno_id}': {e}")
         raise e
 
 
@@ -189,34 +194,23 @@ def verificar_status_financeiro(aluno_id):
     finally:
         session.close()
 
-# Funções legadas para compatibilidade (se ainda usadas)
-def registrar_aula_v2(id):
-    return registrar_detalhado(id, "Treino Rápido")
 
 
 # ... (outros imports e funções existentes)
 
-def criar_aluno(db: Session, nome: str, frequencia: int, valor: float, dia_pag: int, idade: int, objetivo: str, restricoes: str):
-    """Cria um novo aluno no banco de dados a partir dos dados validados pela API."""
+def criar_aluno(db: Session, aluno: schemas.AlunoCreate):
+    """Cria um novo aluno no banco de dados a partir de um schema Pydantic."""
     try:
-        novo_aluno = Aluno(
-            nome=nome,
-            frequencia_semanal_plano=frequencia,
-            valor_mensalidade=valor,
-            dia_vencimento=dia_pag,
-            idade=idade,
-            objetivo=objetivo,
-            restricoes=restricoes,
-        )
+        # Usando **aluno.model_dump() para desempacotar o schema nos campos do modelo
+        novo_aluno = Aluno(**aluno.model_dump())
+        
         db.add(novo_aluno)
         db.commit()
-        db.refresh(novo_aluno)  # Atualiza o objeto com os dados do banco (ex: ID)
+        db.refresh(novo_aluno)
         return novo_aluno
     except Exception as e:
         db.rollback()
-        # Log do erro no console para ajudar no debug
         print(f"Erro detalhado ao cadastrar: {e}")
-        # Lançamos a exceção para que a camada da API possa tratá-la
         raise e
 
 
