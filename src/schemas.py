@@ -1,40 +1,50 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 from validate_docbr import CPF
 
 
 # ===================================================================
-# Schemas de Exercício
+# Schemas de Precricao
 # ===================================================================
 
-class ExercicioBase(BaseModel):
-    nome: str
+class PrescricaoExercicioBase(BaseModel):
+    nome_exercicio: str
     series: int
     repeticoes: str
-    carga: Optional[float] = None
-    descanso: int = Field(60, description="Descanso em segundos")
+    carga_kg: Optional[float] = None
+    tempo_descanso_segundos: int = Field(60, description="Descanso em segundos")
+    notas_tecnicas: Optional[str] = None
 
-class ExercicioPublic(ExercicioBase):
+class PrescricaoExercicioCreate(PrescricaoExercicioBase):
+    pass
+
+
+class PrescricaoExercicioPublic(PrescricaoExercicioBase):
     id: int
-    treino_id: int
+    plano_treino_id: int
 
     class Config:
         from_attributes = True
 
 # ===================================================================
-# Schemas de Treino
+# Schemas de Plano de Treino
 # ===================================================================
 
-class TreinoBase(BaseModel):
-    nome: str
-    descricao: Optional[str] = None
+class PlanoTreinoBase(BaseModel):
+    titulo: str
+    objetivo_estrategico: Optional[str] = None
+    esta_ativo: bool = True
 
-class TreinoPublic(TreinoBase):
+class PlanoTreinoCreate(PlanoTreinoBase):
+    prescricoes: List[PrescricaoExercicioCreate]
+
+
+class PlanoTreinoPublic(PlanoTreinoBase):
     id: int
     aluno_id: int
-    ativo: bool
-    exercicios: List[ExercicioPublic] = []
+    data_criacao: datetime
+    prescricoes: List[PrescricaoExercicioPublic] = []
 
     class Config:
         from_attributes = True
@@ -102,7 +112,7 @@ class AlunoPublic(AlunoBase):
     id: int
     cpf: str
     data_inicio: date
-    treinos: List[TreinoPublic] = []
+    treinos: List[PlanoTreinoPublic] = []
     pagamentos: List[PagamentoPublic] = []
     status_financeiro: str
     aulas_feitas_mes: int
