@@ -112,7 +112,7 @@ class AlunoPublic(AlunoBase):
     id: int
     cpf: str
     data_inicio: date
-    treinos: List[PlanoTreinoPublic] = []
+    planos_treino: List[PlanoTreinoPublic] = []
     pagamentos: List[PagamentoPublic] = []
     status_financeiro: str
     aulas_feitas_mes: int
