@@ -13,4 +13,5 @@ dependencies = [
     "pytest>=9.0.2",
     "sqlalchemy>=2.0.45",
     "uvicorn>=0.40.0",
+    "validate-docbr>=1.11.1",
 ]

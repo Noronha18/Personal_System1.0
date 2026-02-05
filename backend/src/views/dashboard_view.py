@@ -1,6 +1,6 @@
 import flet as ft
 from src.controllers import (
-    listar_alunos_ativos, registrar_detalhado, listar_historico_aluno,
+    listar_alunos_ativos, registrar_sessao, listar_historico_aluno,
     editar_aluno, excluir_aluno, registrar_pagamento_real
 )
 import datetime
@@ -84,7 +84,7 @@ def DashboardView(page: ft.Page):
             page.update()
             return
 
-        sucesso, msg = registrar_detalhado(
+        sucesso, msg = registrar_sessao(
             aluno_id=estado.aluno_id_selecionado,
             obs=campo_treino.value,
             realizada=not switch_falta.value,

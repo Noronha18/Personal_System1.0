@@ -82,11 +82,12 @@ class AlunoBase(BaseModel):
     dia_vencimento: int
 
     @field_validator('cpf')
+    @classmethod
     def validar_cpf(cls, v:str) -> str:
         cpf_limpo = "".join([d for d in v if d.isdigit()])
 
         cpf_validador = CPF()
-        if not cpf_validador.validate(cpf_limpo):
+        if not CPF().validate(cpf_limpo):
             raise ValueError("CPF inválido! Verifique os digitos.")
         
         return cpf_limpo

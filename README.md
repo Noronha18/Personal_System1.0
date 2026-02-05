@@ -1,94 +1,25 @@
-🏋️ Personal System 1.0
-Sistema de Gestão Profissional para Personal Trainers
-Desenvolvido com Python, Flet e PostgreSQL.
+# Personal_System 1.0 🚀
+> Sistema inteligente de gestão de treinos e performance para Personal Trainers.
 
-O Personal System é uma solução Desktop multiplataforma (focada em Linux/Windows) criada para substituir planilhas e anotações manuais na gestão de alunos de consultoria esportiva e personal training.
+O **Personal_System 1.0** é uma plataforma full-stack desenvolvida para modernizar a prescrição de treinos. Utilizando uma arquitetura orientada ao domínio, o sistema separa a prescrição técnica da execução real, permitindo uma análise precisa da evolução de carga e performance do atleta.
 
-O sistema oferece um CRM completo que gerencia desde o cadastro do aluno até o controle financeiro de mensalidades, com feedback visual de status (Adimplente/Inadimplente) e histórico detalhado de treinos.
+## 🛠️ Stack Tecnológica (Edição 2026)
+- **Backend**: FastAPI (Python 3.12+) + SQLAlchemy 2.1 + Pydantic V2 [web:115][web:127].
+- **Frontend**: React 19 + Vite + Tailwind CSS 4.0 [web:44][web:45].
+- **Banco de Dados**: PostgreSQL 15 (Dockerizado) [web:16].
+- **Ambiente**: Gerenciado via `uv` (Python) e `fnm` (Node) para máxima reprodutibilidade [web:1][web:82].
 
-🚀 Funcionalidades Principais
-👥 Gestão de Alunos: Cadastro completo com anamnese (objetivos, restrições médicas) e dados contratuais.
+## ✨ Funcionalidades Atuais (Barra Verde)
+- ✅ **Gestão de Alunos**: Cadastro completo com validação de CPF e dados financeiros.
+- ✅ **Prescrição Inteligente**: Criação de Planos de Treino com exercícios detalhados.
+- ✅ **Dashboard de Performance**: Visualização dinâmica dos treinos consumindo API em tempo real.
+- ✅ **Integração Robusta**: Fluxo de dados aninhado (Eager Loading) do banco ao frontend [web:119].
 
-📅 Diário de Classe Digital:
+## 🚀 Próximos Marcos (Janeiro 2026)
+- [ ] **Evolução de Performance**: Gráficos analíticos de carga (kg) vs tempo.
+- [ ] **Gestão Financeira Automática**: Status de inadimplência baseado em data de vencimento.
 
-Registro de Aulas e Faltas via Modal.
-
-Controle de Reposições.
-
-Barra de progresso mensal automática (Aulas Feitas vs. Contratadas).
-
-💰 Controle Financeiro Integrado:
-
-Monitoramento de mensalidades com status visual (🟢 Em dia / 🔴 Atrasado).
-
-Registro de pagamentos com data, valor e forma (Pix, Dinheiro, etc.).
-
-Histórico financeiro por aluno.
-
-📊 Interface Reativa: UI construída com Flet (Flutter para Python), oferecendo responsividade e design moderno.
-
-💾 Persistência Robusta: Banco de dados PostgreSQL rodando localmente, garantindo integridade e segurança dos dados.
-
-🛠️ Tecnologias Utilizadas
-Linguagem: Python 3.12+
-
-Interface (Frontend): Flet (Framework baseada em Flutter)
-
-Banco de Dados: PostgreSQL
-
-ORM: SQLAlchemy (Gerenciamento de modelos e sessões)
-
-Driver: Psycopg2-binary
-
-OS: Desenvolvido e testado em ambiente Linux (Zorin OS / Pop!_OS)
-
-📸 Screenshots
-(Aqui você pode colocar aquele print da tela inicial com os cards verdes/vermelhos)
-
-🔧 Como Rodar Localmente
-Clone o repositório:
-
-bash
-git clone https://github.com/Noronha18/Personal_System1.0.git
-cd Personal_System1.0
-Configure o Ambiente Virtual:
-
-bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-Configure o Banco de Dados:
-
-Certifique-se de ter o PostgreSQL rodando.
-
-Crie um banco de dados e usuário (ajuste as credenciais em src/database.py).
-
-Rode o script de inicialização:
-
-bash
-python -m src.init_db
-Execute a Aplicação:
-
-bash
-python -m src.main
-📝 Status do Projeto
-✅ Versão 1.0 (MVP) - Concluída:
-
- CRUD de Alunos
-
- Registro de Aulas/Faltas
-
- Módulo Financeiro com Status Dinâmico
-
- Persistência em PostgreSQL
-
-🔜 Próximos Passos (Roadmap):
-
- Dashboard com Gráficos de Faturamento.
-
- Migrations com Alembic.
-
- Geração de PDF de Treinos.
-
-Desenvolvido por Emmanuel Noronha 🥋💻
-Software Engineer & Personal Trainer
+## ⚙️ Como Executar
+1. Clone o repositório.
+2. No Backend: `uv run uvicorn main:app --reload`.
+3. No Frontend: `cd personal-web && npm install && npm run dev`.
