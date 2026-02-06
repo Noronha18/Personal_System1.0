@@ -59,13 +59,28 @@ async def listar_alunos_ativos(db: AsyncSession):
     return alunos
 
 async def get_aluno(db: AsyncSession, aluno_id: int):
-    stmt = select(models.Aluno).where(models.Aluno.id == aluno_id)
+    stmt = (
+        select(models.Aluno)
+        .where(models.Aluno.id == aluno_id)
+        # O segredo está aqui: carregar TUDO que o Frontend precisa
+        .options(
+            selectinload(models.Aluno.planos_treino)
+            .selectinload(models.PlanoTreino.prescricoes), # Aninhado!
+            selectinload(models.Aluno.pagamentos)
+        )
+    )
+    
     result = await db.execute(stmt)
     aluno = result.scalar_one_or_none()
+    
     if not aluno:
-        raise exceptions.AlunoNaoEncontradoError(F"Aluno {aluno_id} não encontrado.")
+        raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
+    
+    # Preenche status financeiro/aulas (que não vem do banco direto)
     await _preencher_status_aluno(db, aluno)
+    
     return aluno
+
 
 async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
     stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_in.cpf)
