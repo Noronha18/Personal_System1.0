@@ -1,6 +1,8 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -10,7 +12,12 @@ from src import controllers, schemas, exceptions, models
 from src.routes import alunos
 
 
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
 
 
 app = FastAPI(
@@ -47,6 +54,16 @@ async def business_rule_handler(request: Request, exc: exceptions.BusinessRuleEr
         content={"message": str(exc), "type": "BusinessRuleViolation"}
     )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    first_error = errors[0]
+    msg = first_error.get('msg', "Erro de validacao.")
+    clean_msg = msg.replace("Value error, ", "")
+    return JSONResponse(
+        status_code=422,
+        content={"message": clean_msg, "type": "ValidationError", "field": first_error.get("loc")[-1]}
+    )
 # --- ROTAS DE SAÚDE ---
 
 @app.get("/")

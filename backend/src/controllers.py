@@ -1,5 +1,7 @@
 from datetime import datetime, date
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 from src import models, schemas, exceptions
 import logging
 
@@ -7,68 +9,90 @@ logger = logging.getLogger(__name__)
 
 # --- AUXILIARES ---
 
-def _preencher_status_aluno(db: Session, aluno: models.Aluno):
+async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
     """Calcula status financeiro e volumetria de sessões no mês atual."""
     hoje = date.today()
     ref_mes = f"{hoje.month:02d}/{hoje.year}"
     inicio_mes = datetime(hoje.year, hoje.month, 1)
 
     # 1. Status Financeiro
-    pagamento = db.query(models.Pagamento).filter(
+    stmt_pag = select(models.Pagamento).where(
         models.Pagamento.aluno_id == aluno.id,
         models.Pagamento.referencia_mes == ref_mes
-    ).first()
+    )
+    result_pag = await db.execute(stmt_pag)
+    pagamento = result_pag.scalar_one_or_none()
     aluno.status_financeiro = "em_dia" if pagamento else "atrasado"
 
     # 2. Contagem de Sessões Realizadas
-    total_sessoes = db.query(models.SessaoTreino).filter(
+    stmt_sessao = select(func.count(models.SessaoTreino.id)).where(
         models.SessaoTreino.aluno_id == aluno.id,
         models.SessaoTreino.data_hora >= inicio_mes,
-        models.SessaoTreino.realizada
-    ).count()
-    aluno.aulas_feitas_mes = total_sessoes
+        models.SessaoTreino.realizada == True
+    )
+    result_sessao = await db.execute(stmt_sessao)
+    aluno.aulas_feitas_mes = result_sessao.scalar() or 0
     
     return aluno
 
 # --- CONTROLLERS DE ALUNO ---
 
-def listar_alunos_ativos(db: Session):
-    alunos = db.query(models.Aluno).order_by(models.Aluno.nome).all()
+async def listar_alunos_ativos(db: AsyncSession):
+    stmt = (
+        select(models.Aluno)
+        .options(
+            # Carrega planos E, dentro de cada plano, as prescrições
+            selectinload(models.Aluno.planos_treino)
+            .selectinload(models.PlanoTreino.prescricoes),
+            # Carrega também os pagamentos
+            selectinload(models.Aluno.pagamentos)
+        )
+        .order_by(models.Aluno.nome)
+    )
+    
+    result = await db.execute(stmt)
+    alunos = result.scalars().all()
+    
     for aluno in alunos:
-        _preencher_status_aluno(db, aluno)
+        await _preencher_status_aluno(db, aluno)
+        
     return alunos
 
-def get_aluno(db: Session, aluno_id: int):
-    aluno = db.query(models.Aluno).filter(models.Aluno.id == aluno_id).first()
+async def get_aluno(db: AsyncSession, aluno_id: int):
+    stmt = select(models.Aluno).where(models.Aluno.id == aluno_id)
+    result = await db.execute(stmt)
+    aluno = result.scalar_one_or_none()
     if not aluno:
-        raise exceptions.AlunoNaoEncontradoError(aluno_id)
-    _preencher_status_aluno(db, aluno)
+        raise exceptions.AlunoNaoEncontradoError(F"Aluno {aluno_id} não encontrado.")
+    await _preencher_status_aluno(db, aluno)
     return aluno
 
-def criar_aluno(db: Session, aluno_in: schemas.AlunoCreate):
-    if db.query(models.Aluno).filter(models.Aluno.cpf == aluno_in.cpf).first():
-        raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já cadastrado.")
+async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
+    stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_in.cpf)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none():
+        raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
     
     novo_aluno = models.Aluno(**aluno_in.model_dump())
     db.add(novo_aluno)
     try:
-        db.commit()
-        db.refresh(novo_aluno)
+        await db.commit()
+        await db.refresh(novo_aluno)
         return novo_aluno
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise e
 
-def excluir_aluno(db: Session, aluno_id: int):
-    aluno = get_aluno(db, aluno_id) # Reutiliza a lógica de busca/erro
-    db.delete(aluno)
-    db.commit()
+async def excluir_aluno(db: AsyncSession, aluno_id: int):
+    aluno = await get_aluno(db, aluno_id) # Reutiliza a lógica de busca/erro
+    await db.delete(aluno)
+    await db.commit()
     return True
 
 # --- CONTROLLERS DE PLANO DE TREINO ---
 
-def cadastrar_plano_treino(db: Session, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
-    get_aluno(db, aluno_id) # Valida existência
+async def cadastrar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
+    await get_aluno(db, aluno_id) # Valida existência
 
     novo_plano = models.PlanoTreino(
         aluno_id=aluno_id,
@@ -79,7 +103,7 @@ def cadastrar_plano_treino(db: Session, aluno_id: int, plano_in: schemas.PlanoTr
     db.add(novo_plano)
     
     try:
-        db.flush() 
+        await db.flush() 
         for presc_in in plano_in.prescricoes:
             nova_presc = models.PrescricaoExercicio(
                 plano_treino_id=novo_plano.id,
@@ -87,23 +111,23 @@ def cadastrar_plano_treino(db: Session, aluno_id: int, plano_in: schemas.PlanoTr
             )
             db.add(nova_presc)
         
-        db.commit()
-        db.refresh(novo_plano)
+        await db.commit()
+        await db.refresh(novo_plano)
         return novo_plano
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise e
 
-def listar_planos_aluno(db: Session, aluno_id: int):
-    return db.query(models.PlanoTreino).filter(models.PlanoTreino.aluno_id == aluno_id).all()
+async def listar_planos_aluno(db: AsyncSession, aluno_id: int):
+    return select(models.PlanoTreino).order_by(models.PlanoTreino.aluno_id == aluno_id).all()
 
 
-def registrar_sessao(db: Session, aluno_id: int, plano_id: int | None, obs: str, realizada: bool = True):
+async def registrar_sessao(db: AsyncSession, aluno_id: int, plano_id: int | None, obs: str, realizada: bool = True):
     """
     Registra a execução de um treino.
     """
     # Valida o aluno
-    get_aluno(db, aluno_id)
+    await get_aluno(db, aluno_id)
 
     nova_sessao = models.SessaoTreino(
         aluno_id=aluno_id,
@@ -116,18 +140,18 @@ def registrar_sessao(db: Session, aluno_id: int, plano_id: int | None, obs: str,
     
     db.add(nova_sessao)
     try:
-        db.commit()
-        db.refresh(nova_sessao)
+        await db.commit()
+        await db.refresh(nova_sessao)
         return nova_sessao
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise e
 
-def registrar_pagamento(db: Session, aluno_id: int, valor: float, forma: str = "PIX", obs: str = ""):
+async def registrar_pagamento(db: AsyncSession, aluno_id: int, valor: float, forma: str = "PIX", obs: str = ""):
     """
     Registra a entrada financeira de um aluno.
     """
-    get_aluno(db, aluno_id)
+    await get_aluno(db, aluno_id)
     
     hoje = date.today()
     ref = f"{hoje.month:02d}/{hoje.year}"
@@ -143,9 +167,9 @@ def registrar_pagamento(db: Session, aluno_id: int, valor: float, forma: str = "
     
     db.add(novo_pagamento)
     try:
-        db.commit()
-        db.refresh(novo_pagamento)
+        await db.commit()
+        await db.refresh(novo_pagamento)
         return novo_pagamento
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise e
