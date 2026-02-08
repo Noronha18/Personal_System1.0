@@ -3,22 +3,21 @@ from typing import List, Optional
 from datetime import date, datetime
 from validate_docbr import CPF
 
-
 # ===================================================================
-# Schemas de Precricao
+# Schemas de Precricao (Refinado)
 # ===================================================================
 
 class PrescricaoExercicioBase(BaseModel):
-    nome_exercicio: str
-    series: int
-    repeticoes: str
-    carga_kg: Optional[float] = None
-    tempo_descanso_segundos: int = Field(60, description="Descanso em segundos")
+    # Adicionei descrições para documentação automática do Swagger/OpenAPI
+    nome_exercicio: str = Field(..., min_length=2, description="Nome do movimento (ex: Supino)")
+    series: int = Field(..., gt=0)
+    repeticoes: str = Field(..., description="Ex: '10-12', 'Falha'")
+    carga_kg: Optional[float] = Field(None, ge=0)
+    tempo_descanso_segundos: int = Field(60, ge=0, description="Descanso em segundos")
     notas_tecnicas: Optional[str] = None
 
 class PrescricaoExercicioCreate(PrescricaoExercicioBase):
     pass
-
 
 class PrescricaoExercicioPublic(PrescricaoExercicioBase):
     id: int
@@ -28,22 +27,25 @@ class PrescricaoExercicioPublic(PrescricaoExercicioBase):
         from_attributes = True
 
 # ===================================================================
-# Schemas de Plano de Treino
+# Schemas de Plano de Treino (Corrigido para Nested Write)
 # ===================================================================
 
 class PlanoTreinoBase(BaseModel):
-    titulo: str
+    titulo: str = Field(..., min_length=3, description="Título da ficha")
     objetivo_estrategico: Optional[str] = None
     esta_ativo: bool = True
 
 class PlanoTreinoCreate(PlanoTreinoBase):
-    prescricoes: List[PrescricaoExercicioCreate]
-
+    # ADIÇÃO CRÍTICA: Precisamos saber de quem é o plano ao criar!
+    aluno_id: int 
+    # Lista aninhada para salvar tudo de uma vez
+    prescricoes: List[PrescricaoExercicioCreate] = [] 
 
 class PlanoTreinoPublic(PlanoTreinoBase):
     id: int
     aluno_id: int
     data_criacao: datetime
+    # Retorna a árvore completa (Plano -> Exercícios)
     prescricoes: List[PrescricaoExercicioPublic] = []
 
     class Config:

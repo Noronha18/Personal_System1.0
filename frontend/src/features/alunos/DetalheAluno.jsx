@@ -1,5 +1,6 @@
 import { use, Suspense } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { FormPlanoTreino } from "./FormPlanoTreino";
 
 const fetchDetalhes = async (id) => {
     const res = await fetch(`http://localhost:8000/alunos/${id}`);
@@ -71,6 +72,20 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
           <GraficoEvolucao planos={aluno.planos_treino} />
         </div>
         
+        return (
+  <div className="container mx-auto p-4">
+    {/* ... Gráfico e informações existentes ... */}
+
+    <FormPlanoTreino 
+      alunoId={alunoId} 
+      onSuccess={(novoPlano) => {
+        console.log("Plano criado:", novoPlano);
+        // Força reload para ver os dados atualizados
+        window.location.reload();
+      }} 
+    />
+  </div>
+);
         <div className="space-y-4">
           <h3 className="text-xl font-semibold text-slate-200">Plano Atual</h3>
           {aluno.planos_treino?.map(plano => (

@@ -9,7 +9,7 @@ from typing import List
 
 from src.database import get_db, engine, Base
 from src import controllers, schemas, exceptions, models
-from src.routes import alunos
+from src.routes import alunos, planos
 
 
 @asynccontextmanager
@@ -73,6 +73,7 @@ def read_root():
 # --- ROTAS DE ALUNOS ---
 
 app.include_router(alunos.router) 
+app.include_router(planos.router)
 
 # --- ROTAS DE PLANOS DE TREINO ---
 

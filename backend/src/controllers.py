@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from src import models, schemas, exceptions
 import logging
@@ -188,3 +189,45 @@ async def registrar_pagamento(db: AsyncSession, aluno_id: int, valor: float, for
     except Exception as e:
         await db.rollback()
         raise e
+
+async def create_plano_completo(db: AsyncSession, plano_in: schemas.PlanoTreinoCreate):
+
+    aluno =  await db.get(models.Aluno, plano_in.aluno_id)
+    if not aluno:
+        raise exceptions.ResourceNotFoundError("Aluno não encontrado")
+    
+    novo_plano = models.PlanoTreino(
+        aluno_id=plano_in.aluno_id,
+        titulo=plano_in.titulo,
+        objetivo_estrategico=plano_in.objetivo_estrategico,
+        esta_ativo=plano_in.esta_ativo
+    )
+    db.add(novo_plano)
+    
+    await db.flush()
+
+    lista_prescricoes = []
+    for item in plano_in.prescricoes:
+        nova_prescricao = models.PrescricaoExercicio(
+            plano_treino_id=novo_plano.id,
+            nome_exercicio=item.nome_exercicio,
+            series=item.series,
+            repeticoes=item.repeticoes,
+            carga_kg=item.carga_kg,
+            tempo_descanso_segundos=item.tempo_descanso_segundos,
+            notas_tecnicas=item.notas_tecnicas
+        )
+        lista_prescricoes.append(nova_prescricao)
+
+        if lista_prescricoes:
+            db.add_all(lista_prescricoes)
+
+        try:
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=500, detail=f"Erro ao salvar plano:{str(e)}")
+
+    await db.refresh(novo_plano, attribute_names=["prescricoes"])
+    
+    return novo_plano
