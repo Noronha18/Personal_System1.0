@@ -60,14 +60,32 @@ class PagamentoBase(BaseModel):
     forma_pagamento: str = "PIX"
     observacao: Optional[str] = None
 
+    @field_validator('valor')
+    @classmethod
+    def validar_valor_positivo(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("O valor do pagamento deve ser maior que zero.")
+        return round(v, 2)
+
+class PagamentoCreate(PagamentoBase):
+    aluno_id: int
+
+
+
 class PagamentoPublic(PagamentoBase):
     id: int
     aluno_id: int
     data_pagamento: date
-    referencia_mes: str 
+    referencia_mes: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+
+class PagamentoUpdate(PagamentoBase):
+    valor: Optional[float] = None
+    forma_pagamento: Optional[str] = None
+    observacao: Optional[str] = None
+
 
 # ===================================================================
 # Schemas de Aluno

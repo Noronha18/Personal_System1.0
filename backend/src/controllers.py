@@ -163,21 +163,21 @@ async def registrar_sessao(db: AsyncSession, aluno_id: int, plano_id: int | None
         await db.rollback()
         raise e
 
-async def registrar_pagamento(db: AsyncSession, aluno_id: int, valor: float, forma: str = "PIX", obs: str = ""):
+async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) -> models.Pagamento:
     """
     Registra a entrada financeira de um aluno.
     """
-    await get_aluno(db, aluno_id)
+    await get_aluno(db, dados.aluno_id)
     
     hoje = date.today()
     ref = f"{hoje.month:02d}/{hoje.year}"
 
     novo_pagamento = models.Pagamento(
-        aluno_id=aluno_id,
-        valor=valor,
+        aluno_id=dados.aluno_id,
+        valor=dados.valor,
         referencia_mes=ref,
-        forma_pagamento=forma,
-        observacao=obs,
+        forma_pagamento=dados.forma_pagamento,
+        observacao=dados.observacao,
         data_pagamento=hoje
     )
     
@@ -189,6 +189,47 @@ async def registrar_pagamento(db: AsyncSession, aluno_id: int, valor: float, for
     except Exception as e:
         await db.rollback()
         raise e
+
+async def  get_pagamento(db: AsyncSession, pagamento_id: int) -> models.Pagamento:
+    stmt = select(models.Pagamento).where(models.Pagamento.id == pagamento_id)
+    result = await db.execute(stmt)
+    pagamento = result.scalar_one_or_none()
+    
+    if not pagamento:
+        raise exceptions.ResourceNotFoundError(f"Pagamento {pagamento_id} não encontrado")
+
+    return pagamento
+
+async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schemas.PagamentoCreate) -> models.Pagamento:
+
+    pagamento = await get_pagamento(db, pagamento_id)
+
+    pagamento.valor = dados.valor
+    pagamento.forma_pagamento = dados.forma_pagamento
+    pagamento.observacao = dados.observacao
+
+    try:
+        await db.commit()
+        await db.refresh(pagamento)
+        return pagamento
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, 
+                            detail=f"Erro ao atualizar pagamento: {str(e)}")
+
+async def deletar_pagamento(db: AsyncSession, pagamento_id: int) -> dict:
+    pagamento = await get_pagamento(db, pagamento_id)
+
+    try:
+        await db.delete(pagamento)
+        await db.commit()
+        return {"message": f"Pagamento {pagamento_id} deletado com sucesso"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, 
+                            detail=f"Erro ao deletar pagamento: {str(e)}")
+    
+    
 
 async def create_plano_completo(db: AsyncSession, plano_in: schemas.PlanoTreinoCreate):
 

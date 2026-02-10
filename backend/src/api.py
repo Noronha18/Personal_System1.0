@@ -9,7 +9,7 @@ from typing import List
 
 from src.database import get_db, engine, Base
 from src import controllers, schemas, exceptions, models
-from src.routes import alunos, planos
+from src.routes import alunos, planos, pagamentos
 
 
 @asynccontextmanager
@@ -74,6 +74,9 @@ def read_root():
 
 app.include_router(alunos.router) 
 app.include_router(planos.router)
+app.include_router(pagamentos.router)
+
+
 
 # --- ROTAS DE PLANOS DE TREINO ---
 
@@ -90,10 +93,3 @@ def listar_planos_aluno(aluno_id: int, db: Session = Depends(get_db)):
     Lista todos os planos de treino ativos e inativos de um aluno específico.
     """
     return controllers.listar_planos_aluno(db=db, aluno_id=aluno_id)
-
-@app.post("/alunos/{aluno_id}/pagamentos", response_model=schemas.PagamentoPublic)
-def registrar_pagamento(aluno_id: int, valor: float, pagamento: schemas.PagamentoBase, db: Session = Depends(get_db)):
-    """
-    Registra um novo pagamento para um aluno.
-    """
-    return controllers.registrar_pagamento(db=db, aluno_id=aluno_id, valor=valor)
