@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
+from __future__ import annotations
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional
 from datetime import date, datetime
 from validate_docbr import CPF
@@ -140,3 +141,43 @@ class AlunoPublic(AlunoBase):
 
     class Config:
         from_attributes = True
+
+
+
+# ===================================================================
+# Schemas de Sessao de treino
+# ===================================================================
+
+class SessaoTreinoBase(BaseModel):
+    aluno_id: int
+    plano_treino_id: int | None = None
+    data_hora: datetime | None = None
+    realizada: bool = True
+    observacoes_performance: str | None = None
+    motivo_ausencia: str | None = None
+    reposicao_agendada: bool = False
+
+    @model_validator(mode="after")
+    def validar_coerencia_presenca(self) -> "SessaoTreinoBase":
+        # Se não foi realizada, motivo é obrigatório
+        if self.realizada is False and not (self.motivo_ausencia and self.motivo_ausencia.strip()):
+            raise ValueError("motivo_ausencia é obrigatório quando realizada=false")
+        return self
+
+
+class SessaoTreinoCreate(SessaoTreinoBase):
+    pass
+
+
+class SessaoTreinoPublic(SessaoTreinoBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+
+
+class FrequenciaMensalPublic(BaseModel):
+    aluno_id: int
+    referencia_mes: str = Field(pattern=r"^\d{2}/\d{4}$")  # "MM/YYYY"
+    sessoes_previstas: int
+    sessoes_realizadas: int
+    taxa_adesao: float

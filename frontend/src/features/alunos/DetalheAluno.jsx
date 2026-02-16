@@ -3,8 +3,8 @@
 import { use, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { FormPlanoTreino } from "./FormPlanoTreino";
-import FormPagamento from '../financeiro/FormPagamento';
-import TabelaPagamentos from '../financeiro/TabelaPagamentos';
+import FormPagamento from '../pagamentos/FormPagamento';
+import TabelaPagamentos from '../pagamentos/TabelaPagamentos';
 
 // ============================================
 // CACHE E FETCH

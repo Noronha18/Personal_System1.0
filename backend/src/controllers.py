@@ -1,3 +1,5 @@
+from __future__ import annotations
+import calendar
 from datetime import datetime, date
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -272,3 +274,123 @@ async def create_plano_completo(db: AsyncSession, plano_in: schemas.PlanoTreinoC
     await db.refresh(novo_plano, attribute_names=["prescricoes"])
     
     return novo_plano
+
+# --- CONTROLLERS DE SESSAO DE TREINO ---
+
+def _parse_referencia_mes(referencia_mes: str) -> tuple[int, int]:
+    try:
+        mm, yyyy = referencia_mes.split("/")
+        mes = int(mm)
+        ano = int(yyyy)
+        if mes < 1 or mes > 12:
+            raise ValueError
+        return mes, ano
+    except ValueError:
+        raise HTTPException(status_code=422, detail="referencia_mes inválida (use MM/YYYY)")
+
+
+def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
+    ultimo_dia = calendar.monthrange(ano, mes)[1]
+    inicio = datetime(ano, mes, 1, 0, 0, 0)
+    fim = datetime(ano, mes, ultimo_dia, 23, 59, 59)
+    return inicio, fim
+
+
+async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate) -> models.SessaoTreino:
+    aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == payload.aluno_id))
+    if not aluno:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+
+    if payload.plano_treino_id is not None:
+        plano = await db.scalar(
+            select(models.PlanoTreino).where(
+                models.PlanoTreino.id == payload.plano_treino_id,
+                models.PlanoTreino.aluno_id == payload.aluno_id,
+            )
+        )
+        if not plano:
+            raise HTTPException(status_code=422, detail="Plano de treino inválido para este aluno")
+
+    sessao = models.SessaoTreino(**payload.model_dump(exclude_unset=True))
+    db.add(sessao)
+    await db.commit()
+    await db.refresh(sessao)
+    return sessao
+
+
+async def listar_sessoes(
+    db: AsyncSession,
+    aluno_id: int | None = None,
+    de: date | None = None,
+    ate: date | None = None,
+    realizada: bool | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[models.SessaoTreino]:
+    stmt = select(models.SessaoTreino)
+
+    if aluno_id is not None:
+        stmt = stmt.where(models.SessaoTreino.aluno_id == aluno_id)
+    if realizada is not None:
+        stmt = stmt.where(models.SessaoTreino.realizada == realizada)
+    if de is not None:
+        stmt = stmt.where(models.SessaoTreino.data_hora >= datetime.combine(de, datetime.min.time()))
+    if ate is not None:
+        stmt = stmt.where(models.SessaoTreino.data_hora <= datetime.combine(ate, datetime.max.time()))
+
+    stmt = stmt.order_by(models.SessaoTreino.data_hora.desc()).limit(limit).offset(offset)
+
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def calcular_frequencia_mensal(
+    db: AsyncSession,
+    aluno_id: int,
+    referencia_mes: str,
+) -> schemas.FrequenciaMensalPublic:
+    mes, ano = _parse_referencia_mes(referencia_mes)
+    inicio, fim = _inicio_fim_mes(ano, mes)
+
+    aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == aluno_id))
+    if not aluno:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+
+    # Protótipo local: semanas ≈ ceil(dias/7)
+    dias_no_mes = calendar.monthrange(ano, mes)[1]
+    semanas_no_mes = (dias_no_mes + 6) // 7
+    sessoes_previstas = int(aluno.frequencia_semanal_plano) * semanas_no_mes
+
+    sessoes_realizadas = await db.scalar(
+        select(func.count(models.SessaoTreino.id)).where(
+            models.SessaoTreino.aluno_id == aluno_id,
+            models.SessaoTreino.realizada.is_(True),
+            models.SessaoTreino.data_hora >= inicio,
+            models.SessaoTreino.data_hora <= fim,
+        )
+    )
+
+    sessoes_realizadas = int(sessoes_realizadas or 0)
+    taxa_adesao = (sessoes_realizadas / sessoes_previstas) if sessoes_previstas > 0 else 0.0
+
+    return schemas.FrequenciaMensalPublic(
+        aluno_id=aluno_id,
+        referencia_mes=referencia_mes,
+        sessoes_previstas=sessoes_previstas,
+        sessoes_realizadas=sessoes_realizadas,
+        taxa_adesao=round(taxa_adesao, 4),
+    )
+
+async def get_sessao(db: AsyncSession, sessao_id: int) -> models.SessaoTreino:
+    sessao = await db.scalar(
+        select(models.SessaoTreino).where(models.SessaoTreino.id == sessao_id)
+    )
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    return sessao
+
+
+async def deletar_sessao(db: AsyncSession, sessao_id: int) -> None:
+    sessao = await get_sessao(db, sessao_id)
+    db.delete(sessao)
+    await db.commit()
