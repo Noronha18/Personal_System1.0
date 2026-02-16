@@ -9,7 +9,8 @@ from typing import List
 
 from src.database import get_db, engine, Base
 from src import controllers, schemas, exceptions, models
-from src.routes import alunos, planos, pagamentos
+from src.routes import alunos, planos, pagamentos, sessoes
+
 
 
 @asynccontextmanager
@@ -75,6 +76,7 @@ def read_root():
 app.include_router(alunos.router) 
 app.include_router(planos.router)
 app.include_router(pagamentos.router)
+app.include_router(sessoes.router)
 
 
 

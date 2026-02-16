@@ -275,6 +275,40 @@ async def create_plano_completo(db: AsyncSession, plano_in: schemas.PlanoTreinoC
     
     return novo_plano
 
+async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino:
+    plano = await db.scalar(
+        select(models.PlanoTreino)
+        .options(selectinload(models.PlanoTreino.prescricoes)) 
+        .where(models.PlanoTreino.id == plano_id)
+    )
+    
+    if not plano:
+        raise HTTPException(status_code=404, detail="Plano não encontrado")
+    
+    plano.esta_ativo = False
+    await db.commit()
+    await db.refresh(plano)
+    return plano
+async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
+    prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    db.delete(prescricao)
+    await db.commit()
+
+async def atualizar_prescricao(db: AsyncSession, prescricao_id: int, payload: schemas.PrescricaoExercicioCreate) -> models.PrescricaoExercicio:
+    prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
+    if not prescricao:
+        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+    
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(prescricao, key, value)
+    
+    await db.commit()
+    await db.refresh(prescricao)
+    return prescricao
+
 # --- CONTROLLERS DE SESSAO DE TREINO ---
 
 def _parse_referencia_mes(referencia_mes: str) -> tuple[int, int]:
