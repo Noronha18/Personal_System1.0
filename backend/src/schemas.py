@@ -166,6 +166,14 @@ class SessaoTreinoBase(BaseModel):
 
 
 class SessaoTreinoCreate(SessaoTreinoBase):
+    aluno_id: int
+    plano_treino_id: Optional[int] = None
+    data_hora: Optional[datetime] = None
+    realizada: bool = True
+    precisa_reposicao: bool = False
+    observacoes_performance: Optional[str] = None
+    motivo_ausencia: Optional[str] = None
+    
     pass
 
 

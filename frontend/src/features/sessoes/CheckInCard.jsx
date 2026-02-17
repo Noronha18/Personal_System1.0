@@ -1,104 +1,43 @@
-import { useActionState, useEffect } from 'react'; // <--- Adicione useEffect
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ClipboardCheck, Plus } from 'lucide-react';
+import ModalRegistrarSessao from './ModalRegistrarSessao'; // ✅ Importação correta
 
-// Action (Mantém igual)
-async function registrarSessaoAction(prevState, formData) {
-  const aluno_id = formData.get('aluno_id');
-  const tipo = formData.get('tipo'); 
-  
-  const payload = {
-    aluno_id: parseInt(aluno_id),
-    realizada: tipo === 'presente',
-    motivo_ausencia: tipo === 'falta' ? 'Ausência não justificada (Check-in Rápido)' : null,
-    observacoes_performance: tipo === 'presente' ? 'Presença registrada via App' : null
-  };
-
-  try {
-    const response = await fetch('http://localhost:8000/sessoes/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        return { success: false, error: errorData.detail || 'Erro ao registrar' };
-    }
-    
-    // Retorna o tipo para personalizarmos a mensagem
-    return { success: true, tipo: tipo, timestamp: Date.now() };
-  } catch (err) {
-    return { success: false, error: 'Erro de conexão' };
-  }
-}
-
-export function CheckInCard({ alunoId, onSucesso }) {
-  const [state, formAction, isPending] = useActionState(registrarSessaoAction, null);
-
-  // ✅ NOVO: Delay antes do reload para o usuário ler a mensagem
-  useEffect(() => {
-    if (state?.success && onSucesso) {
-      const timer = setTimeout(() => {
-        onSucesso();
-      }, 1500); // Espera 1.5 segundos antes de recarregar
-      return () => clearTimeout(timer);
-    }
-  }, [state, onSucesso]);
+export const CheckInCard = ({ alunoId, planos, onSucesso }) => {
+  const [modalAberto, setModalAberto] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700">
-      <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">
-        Check-in Rápido (Hoje)
-      </h3>
-      
-      {/* Mensagens de Feedback */}
-      {state?.error && (
-          <div className="mb-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800 animate-in slide-in-from-top-1">
-            {state.error}
-          </div>
-      )}
-
-      {state?.success && (
-          <div className={`mb-3 p-2 text-xs rounded border animate-in slide-in-from-top-1 flex items-center gap-2 ${
-            state.tipo === 'presente' 
-              ? 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'
-              : 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
-          }`}>
-            {state.tipo === 'presente' 
-              ? <CheckCircle className="w-4 h-4"/> 
-              : <XCircle className="w-4 h-4"/>}
-            <span className="font-medium">
-              {state.tipo === 'presente' ? 'Presença confirmada!' : 'Falta registrada.'}
-            </span>
-          </div>
-      )}
-
-      <form action={formAction} className="grid grid-cols-2 gap-3">
-        <input type="hidden" name="aluno_id" value={alunoId} />
+    <>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg flex flex-col items-center justify-center text-center h-full hover:border-emerald-500/50 transition-colors group">
         
-        <button
-          type="submit"
-          name="tipo"
-          value="presente"
-          disabled={isPending || state?.success}
-          className="flex items-center justify-center gap-2 p-3 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-          <span className="font-medium">Presente</span>
-        </button>
+        <div className="p-4 bg-slate-800 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300 border border-slate-700 group-hover:border-emerald-500/30">
+          <ClipboardCheck className="w-8 h-8 text-emerald-500" />
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-200 mb-2">
+          Registrar Treino
+        </h3>
+        
+        <p className="text-sm text-slate-400 mb-6 max-w-[200px]">
+          Registre presença, selecione o treino realizado ou justifique faltas.
+        </p>
 
         <button
-          type="submit"
-          name="tipo"
-          value="falta"
-          disabled={isPending || state?.success}
-          className="flex items-center justify-center gap-2 p-3 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => setModalAberto(true)} // ✅ Agora SÓ abre o modal
+          className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all active:scale-95 flex items-center justify-center gap-2"
         >
-          {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
-          <span className="font-medium">Falta</span>
+          <Plus className="w-5 h-5" />
+          Novo Registro
         </button>
-      </form>
-    </div>
+      </div>
+
+      {modalAberto && (
+        <ModalRegistrarSessao
+          alunoId={alunoId}
+          planos={planos}
+          onClose={() => setModalAberto(false)}
+          onSucesso={onSucesso}
+        />
+      )}
+    </>
   );
-}
-
+};

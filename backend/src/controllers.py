@@ -1,7 +1,7 @@
 from __future__ import annotations
 import calendar
 from datetime import datetime, date
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -349,13 +349,26 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
         )
         if not plano:
             raise HTTPException(status_code=422, detail="Plano de treino inválido para este aluno")
+        
 
-    sessao = models.SessaoTreino(**payload.model_dump(exclude_unset=True))
+    if payload.data_hora:
+        # Se vier com timezone, converte para naive (remove info de fuso)
+        # É seguro assumir que o front mandou UTC ou Local correto
+        data_final = payload.data_hora.replace(tzinfo=None)
+    else:
+        data_final = datetime.now() # datetime.now() já é naive por padrão
+
+    dados_sessao = payload.model_dump(exclude={"data_hora"}, exclude_unset=True)
+
+    sessao = models.SessaoTreino(
+        **dados_sessao,
+        data_hora=data_final # ✅ Agora é naive (compatível com timestamp sem timezone)
+    )
+    
     db.add(sessao)
     await db.commit()
     await db.refresh(sessao)
     return sessao
-
 
 async def listar_sessoes(
     db: AsyncSession,
@@ -403,9 +416,15 @@ async def calcular_frequencia_mensal(
     sessoes_realizadas = await db.scalar(
         select(func.count(models.SessaoTreino.id)).where(
             models.SessaoTreino.aluno_id == aluno_id,
-            models.SessaoTreino.realizada.is_(True),
             models.SessaoTreino.data_hora >= inicio,
             models.SessaoTreino.data_hora <= fim,
+            or_(
+                models.SessaoTreino.realizada.is_(True),
+                and_(
+                    models.SessaoTreino.realizada.is_(False),
+                    models.SessaoTreino.precisa_reposicao.is_(False)
+                )
+            )
         )
     )
 

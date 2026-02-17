@@ -23,6 +23,7 @@ class Aluno(Base):
     sessoes = relationship("SessaoTreino", back_populates="aluno", cascade="all, delete-orphan")
     planos_treino = relationship("PlanoTreino", back_populates="aluno", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="aluno", cascade="all, delete-orphan")
+    sessoes_treino = relationship("SessaoTreino", back_populates="aluno", cascade="all, delete-orphan")
 
     # Propriedades auxiliares para a View (não salvas no banco, calculadas na hora)
     aulas_feitas_mes = 0
@@ -58,12 +59,12 @@ class SessaoTreino(Base):
 
     data_hora = Column(DateTime, default=datetime.now)
     realizada = Column(Boolean, default=True)
+    precisa_reposicao = Column(Boolean, default=False)
     observacoes_performance = Column(Text, nullable=True) # Ex: 'Aluno sentiu dor no ombro'
     motivo_ausencia = Column(Text, nullable=True)
-    reposicao_agendada = Column(Boolean, default=False)
-
+    
     # Relacionamentos
-    aluno = relationship("Aluno", back_populates="sessoes")
+    aluno = relationship("Aluno", back_populates="sessoes_treino")
     plano_treino = relationship("PlanoTreino", back_populates="sessoes_executadas")
 
 
