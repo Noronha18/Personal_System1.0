@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import List, Optional
 from datetime import date, datetime
 from validate_docbr import CPF
@@ -181,3 +181,114 @@ class FrequenciaMensalPublic(BaseModel):
     sessoes_previstas: int
     sessoes_realizadas: int
     taxa_adesao: float
+
+
+# === SCHEMAS DE DASHBOARD FINANCEIRO ===
+
+class ReceitaMensalItem(BaseModel):
+    """Receita de um único mês para série histórica."""
+    referencia_mes: str = Field(
+        ...,
+        description="Mês no formato MM/YYYY",
+        pattern=r"^\d{2}/\d{4}$",
+        examples=["02/2026"]
+    )
+    receita: float = Field(
+        ge=0,
+        description="Receita total do mês em R$",
+        examples=[4500.00]
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EstatisticasFinanceirasPublic(BaseModel):
+    """
+    KPIs financeiros do negócio + série histórica de 12 meses.
+    
+    📚 Conceito: Este schema agrega dados de múltiplas queries
+    para fornecer um "snapshot" completo da saúde financeira.
+    """
+    
+    # Contexto temporal
+    referencia_mes: str = Field(
+        ...,
+        description="Mês atual de referência (MM/YYYY)",
+        examples=["02/2026"]
+    )
+    
+    # KPIs do mês atual
+    receita_total: float = Field(
+        ge=0,
+        description="Receita total do mês atual em R$",
+        examples=[4500.00]
+    )
+    
+    ticket_medio: float = Field(
+        ge=0,
+        description="Valor médio por aluno que pagou no mês",
+        examples=[225.00]
+    )
+    
+    inadimplencia: float = Field(
+        ge=0,
+        le=1,
+        description="Taxa de inadimplência (0.0 a 1.0)",
+        examples=[0.15]
+    )
+    
+    # Volumetria
+    total_alunos: int = Field(
+        ge=0,
+        description="Total de alunos cadastrados",
+        examples=[25]
+    )
+    
+    alunos_em_dia: int = Field(
+        ge=0,
+        description="Alunos que pagaram no mês atual",
+        examples=[20]
+    )
+    
+    alunos_inadimplentes: int = Field(
+        ge=0,
+        description="Alunos que NÃO pagaram no mês atual",
+        examples=[5]
+    )
+    
+    # Série histórica
+    receita_mensal_12m: list[ReceitaMensalItem] = Field(
+        ...,
+        description="Receita dos últimos 12 meses (ordem cronológica)",
+        min_length=12,
+        max_length=12
+    )
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "referencia_mes": "02/2026",
+                "receita_total": 4500.00,
+                "ticket_medio": 225.00,
+                "inadimplencia": 0.2,
+                "total_alunos": 25,
+                "alunos_em_dia": 20,
+                "alunos_inadimplentes": 5,
+                "receita_mensal_12m": [
+                    {"referencia_mes": "03/2025", "receita": 3200.00},
+                    {"referencia_mes": "04/2025", "receita": 3500.00},
+                    {"referencia_mes": "05/2025", "receita": 3800.00},
+                    {"referencia_mes": "06/2025", "receita": 4000.00},
+                    {"referencia_mes": "07/2025", "receita": 3900.00},
+                    {"referencia_mes": "08/2025", "receita": 4200.00},
+                    {"referencia_mes": "09/2025", "receita": 4100.00},
+                    {"referencia_mes": "10/2025", "receita": 4300.00},
+                    {"referencia_mes": "11/2025", "receita": 4400.00},
+                    {"referencia_mes": "12/2025", "receita": 4600.00},
+                    {"referencia_mes": "01/2026", "receita": 4350.00},
+                    {"referencia_mes": "02/2026", "receita": 4500.00}
+                ]
+            }
+        }
+    )

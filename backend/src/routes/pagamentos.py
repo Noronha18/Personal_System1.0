@@ -1,10 +1,37 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
-from src.controllers import registrar_pagamento
-from src.schemas import PagamentoCreate, PagamentoPublic  # ✅ IMPORTANDO CORRETO?
+from src.controllers import registrar_pagamento, calcular_estatisticas_financeiras
+from src.schemas import PagamentoCreate, PagamentoPublic, EstatisticasFinanceirasPublic 
 
 router = APIRouter(prefix="/pagamentos", tags=["Pagamentos"])
+
+
+@router.get(
+    "/estatisticas",
+    response_model=EstatisticasFinanceirasPublic,
+    summary="Dashboard Financeiro",
+    description="""
+    Retorna KPIs financeiros agregados:
+    - Receita total do mês atual
+    - Ticket médio por aluno
+    - Taxa de inadimplência
+    - Série histórica de 12 meses
+    
+    🎯 Use este endpoint para alimentar dashboards e gráficos.
+    """
+)
+async def obter_estatisticas_financeiras(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    📊 Endpoint otimizado com apenas 2 queries:
+    1. KPIs do mês (subqueries CTE-style)
+    2. Agregação mensal com date_trunc
+    """
+    resultado = await calcular_estatisticas_financeiras(db)
+    return resultado
+
 
 @router.post(
     "/", 

@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 from src import models, schemas, exceptions
 import logging
 
@@ -289,13 +290,17 @@ async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino
     await db.commit()
     await db.refresh(plano)
     return plano
+
 async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
-    prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
+    prescricao = await db.scalar(
+        select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id)
+    )
     if not prescricao:
         raise HTTPException(status_code=404, detail="Exercício não encontrado")
-    
-    db.delete(prescricao)
+
+    await db.delete(prescricao)
     await db.commit()
+
 
 async def atualizar_prescricao(db: AsyncSession, prescricao_id: int, payload: schemas.PrescricaoExercicioCreate) -> models.PrescricaoExercicio:
     prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
@@ -423,8 +428,101 @@ async def get_sessao(db: AsyncSession, sessao_id: int) -> models.SessaoTreino:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     return sessao
 
-
 async def deletar_sessao(db: AsyncSession, sessao_id: int) -> None:
     sessao = await get_sessao(db, sessao_id)
-    db.delete(sessao)
+    await db.delete(sessao)
     await db.commit()
+
+def _month_starts(ate_mes_atual: date, n: int = 12) -> list[date]:
+    """Retorna lista (ordem crescente) com o 1º dia de cada mês, dos últimos n meses."""
+    y, m = ate_mes_atual.year, ate_mes_atual.month
+    out: list[date] = []
+    for i in range(n - 1, -1, -1):
+        mm = m - i
+        yy = y
+        while mm <= 0:
+            mm += 12
+            yy -= 1
+        out.append(date(yy, mm, 1))
+    return out
+
+
+async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
+    hoje = date.today()
+    ref_mes = f"{hoje.month:02d}/{hoje.year}"
+    mes_atual_inicio = date(hoje.year, hoje.month, 1)
+
+    # === QUERY 1: KPIs do mês atual ===
+    receita_mes_sq = (
+        select(func.coalesce(func.sum(models.Pagamento.valor), 0))
+        .where(models.Pagamento.referencia_mes == ref_mes)
+        .scalar_subquery()
+    )
+
+    alunos_pagaram_sq = (
+        select(func.count(func.distinct(models.Pagamento.aluno_id)))
+        .where(models.Pagamento.referencia_mes == ref_mes)
+        .scalar_subquery()
+    )
+
+    total_alunos_sq = select(func.count(models.Aluno.id)).scalar_subquery()
+
+    kpi_stmt = select(
+        receita_mes_sq.label("receita_total_mes"),
+        alunos_pagaram_sq.label("alunos_em_dia"),
+        total_alunos_sq.label("total_alunos"),
+    )
+
+    kpi_row = (await db.execute(kpi_stmt)).one()
+    receita_total_mes = float(kpi_row.receita_total_mes or 0)
+    alunos_em_dia = int(kpi_row.alunos_em_dia or 0)
+    total_alunos = int(kpi_row.total_alunos or 0)
+
+    alunos_inadimplentes = max(total_alunos - alunos_em_dia, 0)
+    inadimplencia = (alunos_inadimplentes / total_alunos) if total_alunos > 0 else 0.0
+    ticket_medio = (receita_total_mes / alunos_em_dia) if alunos_em_dia > 0 else 0.0
+
+    # === QUERY 2: Série histórica 12 meses ===
+    meses = _month_starts(mes_atual_inicio, n=12)
+    inicio_janela = meses[0]
+
+    bucket_mes = func.date_trunc("month", models.Pagamento.data_pagamento).label("mes")
+    serie_stmt = (
+        select(
+            bucket_mes,
+            func.coalesce(func.sum(models.Pagamento.valor), 0).label("receita"),
+        )
+        .where(models.Pagamento.data_pagamento >= inicio_janela)
+        .group_by(bucket_mes)
+        .order_by(bucket_mes)
+    )
+
+    serie_rows = (await db.execute(serie_stmt)).all()
+
+    # Preenche meses sem receita com 0
+    receita_por_mes: dict[date, float] = {}
+    for mes_dt, receita in serie_rows:
+        mes_date = mes_dt.date() if hasattr(mes_dt, "date") else mes_dt
+        receita_por_mes[mes_date] = float(receita or 0)
+
+    receita_mensal_12m = [
+        {"referencia_mes": f"{m.month:02d}/{m.year}", "receita": receita_por_mes.get(m, 0.0)}
+        for m in meses
+    ]
+
+    resultado = {
+        "referencia_mes": ref_mes,
+        "receita_total": receita_total_mes,
+        "ticket_medio": round(ticket_medio, 2),
+        "inadimplencia": round(inadimplencia, 4),
+        "receita_mensal_12m": receita_mensal_12m,
+        "total_alunos": total_alunos,
+        "alunos_em_dia": alunos_em_dia,
+        "alunos_inadimplentes": alunos_inadimplentes,
+    }
+    
+    # 🐛 LOG TEMPORÁRIO - REMOVER DEPOIS
+    logger.info(f"📊 Resultado gerado: {resultado}")
+    logger.info(f"📏 Tamanho de receita_mensal_12m: {len(receita_mensal_12m)}")
+    
+    return resultado
