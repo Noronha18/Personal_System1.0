@@ -38,6 +38,7 @@ class Pagamento(Base):
 
     data_pagamento = Column(Date, default=date.today)
     valor = Column(Float)
+    quantidade_aulas = Column(Integer, default=0)
     referencia_mes = Column(String(7))  # Ex: "01/2026"
     forma_pagamento = Column(String(50))  # PIX, Dinheiro, Cartão
     observacao = Column(Text, nullable=True)

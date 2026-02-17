@@ -25,7 +25,9 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
         models.Pagamento.referencia_mes == ref_mes
     )
     result_pag = await db.execute(stmt_pag)
-    pagamento = result_pag.scalar_one_or_none()
+    
+    pagamento = result_pag.scalars().first() 
+    
     aluno.status_financeiro = "em_dia" if pagamento else "atrasado"
 
     # 2. Contagem de Sessões Realizadas
@@ -181,7 +183,8 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) 
         referencia_mes=ref,
         forma_pagamento=dados.forma_pagamento,
         observacao=dados.observacao,
-        data_pagamento=hoje
+        data_pagamento=hoje,
+        quantidade_aulas=dados.quantidade_aulas
     )
     
     db.add(novo_pagamento)
@@ -411,7 +414,18 @@ async def calcular_frequencia_mensal(
     # Protótipo local: semanas ≈ ceil(dias/7)
     dias_no_mes = calendar.monthrange(ano, mes)[1]
     semanas_no_mes = (dias_no_mes + 6) // 7
-    sessoes_previstas = int(aluno.frequencia_semanal_plano) * semanas_no_mes
+    meta_base = int(aluno.frequencia_semanal_plano) * semanas_no_mes
+
+    aulas_extras = await db.scalar(
+        select(func.sum(models.Pagamento.quantidade_aulas))
+        .where(
+            models.Pagamento.aluno_id == aluno_id,
+            models.Pagamento.referencia_mes == referencia_mes
+        )
+    )
+    aulas_extras = int(aulas_extras or 0)
+
+    sessoes_previstas = meta_base + aulas_extras
 
     sessoes_realizadas = await db.scalar(
         select(func.count(models.SessaoTreino.id)).where(

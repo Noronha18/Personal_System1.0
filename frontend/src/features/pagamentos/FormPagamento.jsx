@@ -1,152 +1,167 @@
-import { useActionState } from 'react';
-
-async function salvarPagamentoAction(prevState, formData) {
-    try {
-        const alunoId = parseInt(formData.get('aluno_id'));
-        const valor = parseFloat(formData.get('valor'));
-        const formaPagamento = formData.get('forma_pagamento');
-        const observacao = formData.get('observacao') || '';
-
-        const payload = {
-            aluno_id: alunoId,
-            valor: valor,
-            forma_pagamento: formaPagamento,
-            observacao: observacao
-        };
-
-        const response = await fetch('http://localhost:8000/pagamentos/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            return { 
-                success: false, 
-                message: error.detail || 'Erro ao registrar pagamento' 
-            };
-        }
-
-        const pagamento = await response.json();
-        return { 
-            success: true, 
-            message: 'Pagamento registrado com sucesso!',
-            data: pagamento
-        };
-
-    } catch (error) {
-        return { 
-            success: false, 
-            message: 'Erro de conexão com o servidor' 
-        };
-    }
-}
+import { useState } from 'react';
+import { DollarSign, CreditCard, Calendar, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
 
 export default function FormPagamento({ alunoId, onSuccess }) {
-    const [state, formAction, isPending] = useActionState(
-        salvarPagamentoAction,
-        { success: null, message: '', data: null }
-    );
+  const [valor, setValor] = useState('');
+  const [formaPagamento, setFormaPagamento] = useState('PIX');
+  const [referenciaMes, setReferenciaMes] = useState(
+    `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`
+  );
+  
+  // ✅ NOVO STATE
+  const [qtdAulas, setQtdAulas] = useState(''); // Começa vazio ou 0
+  
+  const [observacao, setObservacao] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState(null);
 
-    // Se salvou com sucesso, chamar callback
-    if (state.success && onSuccess) {
-        setTimeout(() => {
-            onSuccess(state.data);
-        }, 100);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErro(null);
+
+    try {
+      const payload = {
+        aluno_id: parseInt(alunoId),
+        valor: parseFloat(valor),
+        forma_pagamento: formaPagamento,
+        referencia_mes: referenciaMes,
+        observacao: observacao || null,
+        
+        // ✅ ENVIO DO CAMPO NOVO
+        quantidade_aulas: qtdAulas ? parseInt(qtdAulas) : 0 
+      };
+
+      const res = await fetch('http://localhost:8000/pagamentos/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Erro ao registrar pagamento');
+
+      setValor('');
+      setQtdAulas('');
+      setObservacao('');
+      onSuccess(); // Atualiza a lista pai
+      
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return (
-        <form action={formAction} className="space-y-4">
-            <input type="hidden" name="aluno_id" value={alunoId} />
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex items-center gap-2 mb-4">
+        <DollarSign className="w-6 h-6 text-emerald-500" />
+        <h3 className="text-lg font-bold text-slate-100">Registrar Pagamento</h3>
+      </div>
 
-            <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Valor (R$) *
-                </label>
-                <input
-                    type="number"
-                    name="valor"
-                    step="0.01"
-                    min="50"
-                    max="5000"
-                    required
-                    placeholder="150.00"
-                    className="w-full px-3 py-2 border border-slate-600 
-                             rounded-lg bg-slate-800 
-                             text-slate-100 placeholder-slate-500
-                             focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
-            </div>
+      {erro && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          {erro}
+        </div>
+      )}
 
-            <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Forma de Pagamento *
-                </label>
-                <select
-                    name="forma_pagamento"
-                    required
-                    defaultValue="PIX"
-                    className="w-full px-3 py-2 border border-slate-600 
-                             rounded-lg bg-slate-800 
-                             text-slate-100
-                             focus:ring-2 focus:ring-emerald-500"
-                >
-                    <option value="PIX">PIX</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Transferência Bancária">Transferência Bancária</option>
-                </select>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Valor */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-300">Valor (R$)</label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <input
+              type="number"
+              step="0.01"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+              placeholder="0.00"
+              required
+            />
+          </div>
+        </div>
 
-            <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Observação (opcional)
-                </label>
-                <textarea
-                    name="observacao"
-                    rows={3}
-                    maxLength={500}
-                    placeholder="Ex: Pagamento referente ao mês de fevereiro"
-                    className="w-full px-3 py-2 border border-slate-600 
-                             rounded-lg bg-slate-800 
-                             text-slate-100 placeholder-slate-500
-                             focus:ring-2 focus:ring-emerald-500 resize-none"
-                />
-            </div>
+        {/* Quantidade de Aulas (Novo) */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-emerald-500" />
+            Aulas no Pacote
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={qtdAulas}
+            onChange={(e) => setQtdAulas(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+            placeholder="Ex: 8, 12 (Soma na meta mensal)"
+          />
+        </div>
 
-            {state.message && (
-                <div className={`p-3 rounded-lg text-sm ${
-                    state.success 
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                }`}>
-                    {state.message}
-                </div>
-            )}
+        {/* Mês Referência */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-300">Referência (MM/AAAA)</label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={referenciaMes}
+              onChange={(e) => setReferenciaMes(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+              placeholder="MM/AAAA"
+              required
+            />
+          </div>
+        </div>
 
-            <button
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 
-                         text-white font-medium py-2.5 px-4 rounded-lg
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors duration-200
-                         flex items-center justify-center gap-2
-                         shadow-lg shadow-emerald-500/30"
+        {/* Forma de Pagamento */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-300">Forma de Pagamento</label>
+          <div className="relative">
+            <CreditCard className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <select
+              value={formaPagamento}
+              onChange={(e) => setFormaPagamento(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
             >
-                {isPending ? (
-                    <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Processando...
-                    </>
-                ) : (
-                    <>
-                        💰 Registrar Pagamento
-                    </>
-                )}
-            </button>
-        </form>
-    );
+              <option value="PIX">PIX</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão Crédito">Cartão de Crédito</option>
+              <option value="Cartão Débito">Cartão de Débito</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Observação */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Observação (Opcional)</label>
+        <textarea
+          value={observacao}
+          onChange={(e) => setObservacao(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none min-h-[80px]"
+          placeholder="Detalhes adicionais..."
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Processando...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="w-5 h-5" />
+            Confirmar Pagamento
+          </>
+        )}
+      </button>
+    </form>
+  );
 }

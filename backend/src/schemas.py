@@ -70,9 +70,12 @@ class PagamentoBase(BaseModel):
 
 class PagamentoCreate(PagamentoBase):
     aluno_id: int
-
-
-
+    valor: float
+    referencia_mes: str
+    forma_pagamento: str
+    observacao: Optional[str] = None
+    quantidade_aulas: Optional[int] = 0
+    
 class PagamentoPublic(PagamentoBase):
     id: int
     aluno_id: int
