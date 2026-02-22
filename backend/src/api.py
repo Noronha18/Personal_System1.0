@@ -78,20 +78,3 @@ app.include_router(planos.router)
 app.include_router(pagamentos.router)
 app.include_router(sessoes.router)
 
-
-
-# --- ROTAS DE PLANOS DE TREINO ---
-
-@app.post("/alunos/{aluno_id}/planos", response_model=schemas.PlanoTreinoPublic, status_code=201)
-def create_plano_treino(aluno_id: int, plano: schemas.PlanoTreinoCreate, db: Session = Depends(get_db)):
-    """
-    Cria um novo plano de treino para um aluno específico.
-    """
-    return controllers.cadastrar_plano_treino(db=db, aluno_id=aluno_id, plano_in=plano)
-
-@app.get("/alunos/{aluno_id}/planos", response_model=List[schemas.PlanoTreinoPublic])
-def listar_planos_aluno(aluno_id: int, db: Session = Depends(get_db)):
-    """
-    Lista todos os planos de treino ativos e inativos de um aluno específico.
-    """
-    return controllers.listar_planos_aluno(db=db, aluno_id=aluno_id)

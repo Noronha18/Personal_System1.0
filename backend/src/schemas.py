@@ -5,16 +5,15 @@ from datetime import date, datetime
 from validate_docbr import CPF
 
 # ===================================================================
-# Schemas de Precricao (Refinado)
+# Schemas de Precricao
 # ===================================================================
 
 class PrescricaoExercicioBase(BaseModel):
-    # Adicionei descrições para documentação automática do Swagger/OpenAPI
-    nome_exercicio: str = Field(..., min_length=2, description="Nome do movimento (ex: Supino)")
-    series: int = Field(..., gt=0)
-    repeticoes: str = Field(..., description="Ex: '10-12', 'Falha'")
-    carga_kg: Optional[float] = Field(None, ge=0)
-    tempo_descanso_segundos: int = Field(60, ge=0, description="Descanso em segundos")
+    nome_exercicio: str
+    series: str
+    repeticoes: str
+    carga_kg: Optional[float] = 0.0
+    tempo_descanso_segundos: Optional[int] = 60
     notas_tecnicas: Optional[str] = None
 
 class PrescricaoExercicioCreate(PrescricaoExercicioBase):
@@ -22,36 +21,48 @@ class PrescricaoExercicioCreate(PrescricaoExercicioBase):
 
 class PrescricaoExercicioPublic(PrescricaoExercicioBase):
     id: int
+    treino_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# ===================================================================
+# Schemas de Treino 
+# ===================================================================
+
+class TreinoBase(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+
+class TreinoCreate(TreinoBase):
+    # Um treino, ao ser criado, TEM que receber uma lista de exercícios
+    prescricoes: List[PrescricaoExercicioCreate]
+
+class TreinoPublic(TreinoBase):
+    id: int
     plano_treino_id: int
+    prescricoes: List[PrescricaoExercicioPublic] = []
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
-
-# ===================================================================
-# Schemas de Plano de Treino (Corrigido para Nested Write)
-# ===================================================================
-
+    # ==========================================
+# 3. PLANO DE TREINO
+# ==========================================
 class PlanoTreinoBase(BaseModel):
-    titulo: str = Field(..., min_length=3, description="Título da ficha")
+    titulo: str
     objetivo_estrategico: Optional[str] = None
-    esta_ativo: bool = True
+    detalhes: Optional[str] = None
+    esta_ativo: Optional[bool] = True
 
 class PlanoTreinoCreate(PlanoTreinoBase):
-    # ADIÇÃO CRÍTICA: Precisamos saber de quem é o plano ao criar!
-    aluno_id: int 
-    # Lista aninhada para salvar tudo de uma vez
-    prescricoes: List[PrescricaoExercicioCreate] = [] 
+    # Um plano, ao ser criado, TEM que receber uma lista de Treinos (A, B, C)
+    treinos: List[TreinoCreate]
 
 class PlanoTreinoPublic(PlanoTreinoBase):
     id: int
     aluno_id: int
     data_criacao: datetime
-    # Retorna a árvore completa (Plano -> Exercícios)
-    prescricoes: List[PrescricaoExercicioPublic] = []
-
-    class Config:
-        from_attributes = True
-
+    data_inicio: Optional[date] = None
+    data_fim: Optional[date] = None
+    treinos: List[TreinoPublic] = []
+    model_config = ConfigDict(from_attributes=True)
 # ===================================================================
 # Schemas de Pagamento
 # ===================================================================

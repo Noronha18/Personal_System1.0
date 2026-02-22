@@ -44,48 +44,42 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
 # --- CONTROLLERS DE ALUNO ---
 
 async def listar_alunos_ativos(db: AsyncSession):
-    stmt = (
+    query = (
         select(models.Aluno)
         .options(
-            # Carrega planos E, dentro de cada plano, as prescrições
             selectinload(models.Aluno.planos_treino)
-            .selectinload(models.PlanoTreino.prescricoes),
-            # Carrega também os pagamentos
+            .selectinload(models.PlanoTreino.treinos)      # <-- NOVO CAMINHO
+            .selectinload(models.Treino.prescricoes),     # <-- NOVO CAMINHO
             selectinload(models.Aluno.pagamentos)
         )
         .order_by(models.Aluno.nome)
     )
-    
-    result = await db.execute(stmt)
-    alunos = result.scalars().all()
-    
-    for aluno in alunos:
-        await _preencher_status_aluno(db, aluno)
-        
-    return alunos
+    result = await db.execute(query)
+    return result.scalars().all()
 
 async def get_aluno(db: AsyncSession, aluno_id: int):
-    stmt = (
+    query = (
         select(models.Aluno)
         .where(models.Aluno.id == aluno_id)
-        # O segredo está aqui: carregar TUDO que o Frontend precisa
         .options(
+            # Caminho correto: Aluno -> Planos -> Treinos -> Prescrições
             selectinload(models.Aluno.planos_treino)
-            .selectinload(models.PlanoTreino.prescricoes), # Aninhado!
+                .selectinload(models.PlanoTreino.treinos)
+                .selectinload(models.Treino.prescricoes),
+            # Carrega também as sessões para o histórico lateral
+            selectinload(models.Aluno.sessoes_treino),
             selectinload(models.Aluno.pagamentos)
         )
     )
     
-    result = await db.execute(stmt)
-    aluno = result.scalar_one_or_none()
+    result = await db.execute(query)
+    aluno = result.scalars().first()
     
     if not aluno:
-        raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
-    
-    # Preenche status financeiro/aulas (que não vem do banco direto)
-    await _preencher_status_aluno(db, aluno)
-    
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+        
     return aluno
+
 
 
 async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
@@ -112,35 +106,73 @@ async def excluir_aluno(db: AsyncSession, aluno_id: int):
 
 # --- CONTROLLERS DE PLANO DE TREINO ---
 
-async def cadastrar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
-    await get_aluno(db, aluno_id) # Valida existência
-
+async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
+    # 1. Cria o Plano pai
     novo_plano = models.PlanoTreino(
         aluno_id=aluno_id,
         titulo=plano_in.titulo,
         objetivo_estrategico=plano_in.objetivo_estrategico,
-        esta_ativo=plano_in.esta_ativo
+        detalhes=plano_in.detalhes,
+        esta_ativo=True
     )
     db.add(novo_plano)
-    
-    try:
-        await db.flush() 
-        for presc_in in plano_in.prescricoes:
-            nova_presc = models.PrescricaoExercicio(
-                plano_treino_id=novo_plano.id,
-                **presc_in.model_dump()
-            )
-            db.add(nova_presc)
-        
-        await db.commit()
-        await db.refresh(novo_plano)
-        return novo_plano
-    except Exception as e:
-        await db.rollback()
-        raise e
+    await db.flush() 
 
-async def listar_planos_aluno(db: AsyncSession, aluno_id: int):
-    return select(models.PlanoTreino).order_by(models.PlanoTreino.aluno_id == aluno_id).all()
+    # 2. Itera sobre os treinos
+    for treino_in in plano_in.treinos:
+        novo_treino = models.Treino(
+            plano_treino_id=novo_plano.id,
+            nome=treino_in.nome,
+            descricao=treino_in.descricao
+        )
+        db.add(novo_treino)
+        await db.flush() 
+
+        # 3. Itera sobre os exercícios
+        for presc_in in treino_in.prescricoes:
+            nova_prescricao = models.PrescricaoExercicio(
+                treino_id=novo_treino.id,
+                nome_exercicio=presc_in.nome_exercicio,
+                series=str(presc_in.series), # Garantindo string pro banco
+                repeticoes=str(presc_in.repeticoes), # Garantindo string pro banco
+                carga_kg=presc_in.carga_kg,
+                tempo_descanso_segundos=presc_in.tempo_descanso_segundos
+            )
+            db.add(nova_prescricao)
+
+    await db.commit()
+    
+    # ========================================================
+    # A SOLUÇÃO DO GREENLET ESTÁ AQUI: 
+    # Buscar o plano novamente, carregando Treinos e Exercícios
+    # ========================================================
+    query = (
+        select(models.PlanoTreino)
+        .where(models.PlanoTreino.id == novo_plano.id)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+        )
+    )
+    resultado = await db.execute(query)
+    plano_carregado = resultado.scalar_one()
+
+    return plano_carregado
+
+async def listar_planos_detalhados_aluno(db: AsyncSession, aluno_id: int):
+
+    query = (
+        select(models.PlanoTreino)
+        .where(models.PlanoTreino.aluno_id == aluno_id)
+        .options(
+            selectinload(models.PlanoTreino.treinos)      # Carrega Treinos A, B...
+            .selectinload(models.Treino.prescricoes)     # Carrega Exercícios de cada Treino
+        )
+        .order_by(models.PlanoTreino.data_criacao.desc())
+    )
+    
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 async def registrar_sessao(db: AsyncSession, aluno_id: int, plano_id: int | None, obs: str, realizada: bool = True):

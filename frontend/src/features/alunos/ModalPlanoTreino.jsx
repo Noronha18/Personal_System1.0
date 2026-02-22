@@ -1,212 +1,203 @@
-import { X, Dumbbell, Calendar, Target, Trash2, Power, AlertCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
+import { X, Dumbbell, Trash2, Plus, Save } from 'lucide-react';
 
-export function ModalPlanoTreino({ plano, onClose, onUpdate }) {
-  const dialogRef = useRef(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [planoAtual, setPlanoAtual] = useState(plano);
-
-  useEffect(() => {
-    setPlanoAtual(plano);
-    if (plano && dialogRef.current) {
-      dialogRef.current.showModal();
-    } else if (!plano && dialogRef.current) {
-      dialogRef.current.close();
-    }
-  }, [plano]);
-
-  const handleClose = () => {
-    if (dialogRef.current) dialogRef.current.close();
-    onClose();
-  };
-
-  // AÇÃO: Desativar Plano
-  const handleDesativar = async () => {
-    if (!confirm('Tem certeza que deseja desativar este plano?')) return;
-    
-    setIsUpdating(true);
-    try {
-      console.log(`Tentando desativar plano: ${plano.id}`);
-      const res = await fetch(`http://localhost:8000/planos/${plano.id}/desativar`, {
-        method: 'PATCH'
-      });
-      
-      if (res.ok) {
-        setPlanoAtual(prev => ({ ...prev, esta_ativo: false }));
-        onUpdate?.(); 
-        alert('Plano desativado com sucesso!');
-      } else {
-        const erro = await res.json();
-        console.error("Erro API:", erro);
-        alert(`Erro ao desativar: ${erro.detail || 'Erro desconhecido'}`);
+export function ModalPlanoTreino({ isOpen, onClose, onSave }) {
+  // 1. Estado Inicial do Formulário (O Novo Modelo do Banco)
+  const [novoPlano, setNovoPlano] = useState({
+    titulo: '',
+    objetivo_estrategico: '',
+    detalhes: '',
+    treinos: [
+      {
+        nome: 'A',
+        descricao: '',
+        prescricoes: [{ nome_exercicio: '', series: 3, repeticoes: 10, carga_kg: 0, tempo_descanso_segundos: 60 }]
       }
-    } catch (err) {
-      console.error("Erro Fetch:", err);
-      alert('Erro de conexão com o servidor');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    ]
+  });
 
-  // AÇÃO: Excluir Exercício
-  const handleExcluirExercicio = async (idExercicio) => {
-    if (!confirm('Remover este exercício do treino?')) return;
+  // Se o modal estiver fechado, não renderiza nada [web:217]
+  if (!isOpen) return null;
 
-    // Backup para rollback
-    const backup = [...planoAtual.prescricoes];
+  // ============================================================================
+  // FUNÇÕES DE MANIPULAÇÃO DE ESTADO
+  // ============================================================================
+  const handleAddTreino = () => {
+    const proximasLetras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const proximaLetra = proximasLetras[novoPlano.treinos.length] || 'Extra';
     
-    // Otimisticamente remove da UI
-    setPlanoAtual(prev => ({
-        ...prev,
-        prescricoes: prev.prescricoes.filter(p => p.id !== idExercicio)
-    }));
-
-    try {
-      console.log(`Tentando excluir exercício: ${idExercicio}`);
-      // ATENÇÃO: Verifique se a rota no backend é exatamente esta
-      const res = await fetch(`http://localhost:8000/planos/exercicios/${idExercicio}`, {
-        method: 'DELETE'
-      });
-
-      if (!res.ok) {
-        const erro = await res.json();
-        throw new Error(erro.detail || 'Erro ao excluir');
-      }
-      
-      // Sucesso: chama atualização
-      onUpdate?.();
-
-    } catch (err) {
-      console.error("Erro Exclusão:", err);
-      alert(`Falha ao excluir: ${err.message}`);
-      setPlanoAtual(prev => ({ ...prev, prescricoes: backup })); // Rollback
-    }
+    setNovoPlano({
+      ...novoPlano,
+      treinos: [
+        ...novoPlano.treinos,
+        {
+          nome: proximaLetra,
+          descricao: '',
+          prescricoes: [{ nome_exercicio: '', series: '3', repeticoes: '10', carga_kg: 0, tempo_descanso_segundos: 60 }]
+        }
+      ]
+    });
   };
 
-  if (!planoAtual) return null;
+  const handleRemoveTreino = (tIndex) => {
+    const treinosAtualizados = novoPlano.treinos.filter((_, i) => i !== tIndex);
+    setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
+  };
+
+  const handleAddExercicio = (tIndex) => {
+    const treinosAtualizados = [...novoPlano.treinos];
+    treinosAtualizados[tIndex].prescricoes.push({ 
+      nome_exercicio: '', series: '3', repeticoes: '10', carga_kg: 0, tempo_descanso_segundos: 60 
+    });
+    setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
+  };
+
+  const handleRemoveExercicio = (tIndex, exIndex) => {
+    const treinosAtualizados = [...novoPlano.treinos];
+    treinosAtualizados[tIndex].prescricoes = treinosAtualizados[tIndex].prescricoes.filter((_, i) => i !== exIndex);
+    setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
+  };
+
+  const handleTreinoChange = (tIndex, campo, valor) => {
+    const treinosAtualizados = [...novoPlano.treinos];
+    treinosAtualizados[tIndex][campo] = valor;
+    setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
+  };
+
+  const handleExercicioChange = (tIndex, exIndex, campo, valor) => {
+    const treinosAtualizados = [...novoPlano.treinos];
+    treinosAtualizados[tIndex].prescricoes[exIndex][campo] = valor;
+    setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
+  };
+
+  const handleFormSubmit = () => {
+    // Aqui você chama a função passada pelo componente PAI (DetalheAluno)
+    onSave(novoPlano);
+    onClose(); // Fecha o modal após salvar
+  };
 
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={onClose}
-      onClick={(e) => {
-          if (e.target === dialogRef.current) handleClose();
-      }}
-      className="backdrop:bg-slate-900/80 bg-transparent p-0 w-full max-w-2xl rounded-2xl shadow-2xl open:animate-in open:fade-in open:zoom-in-95 backdrop:animate-in backdrop:fade-in"
-    >
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden text-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+      
+      {/* Container do Modal */}
+      <div className="bg-[#1e2330] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-slate-700/50">
         
-        {/* Header */}
-        <div className="p-6 border-b border-slate-700 flex justify-between items-start bg-slate-800/50">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-                <span className={`px-2 py-1 text-xs rounded-full border flex items-center gap-1 ${planoAtual.esta_ativo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
-                    {planoAtual.esta_ativo ? 'Ativo' : 'Inativo'}
-                </span>
-                <span className="text-slate-400 text-xs flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(planoAtual.data_criacao).toLocaleDateString('pt-BR')}
-                </span>
-            </div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Dumbbell className="w-6 h-6 text-emerald-500" />
-              {planoAtual.titulo}
-            </h2>
-            <p className="text-slate-400 mt-1 flex items-center gap-2 text-sm">
-                <Target className="w-4 h-4" />
-                {planoAtual.objetivo_estrategico || "Sem objetivo estratégico definido"}
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            {planoAtual.esta_ativo && (
-                <button 
-                    onClick={handleDesativar}
-                    disabled={isUpdating}
-                    className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
-                    title="Desativar Plano"
-                >
-                    <Power className="w-4 h-4" />
-                    <span className="hidden sm:inline">Desativar</span>
-                </button>
-            )}
-            <button 
-                onClick={handleClose}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
-            >
-                <X className="w-5 h-5" />
-            </button>
-          </div>
+        {/* Header Fixo do Modal */}
+        <div className="sticky top-0 bg-[#1e2330] z-10 border-b border-slate-700/50 p-6 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Dumbbell className="text-blue-500" /> Prescrever Novo Plano (com Treinos A/B/C)
+          </h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors">
+            <X size={24} />
+          </button>
         </div>
 
-        {/* Lista de Exercícios */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex justify-between items-center">
-            <span>Prescrição de Exercícios</span>
-            <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">
-                {planoAtual.prescricoes?.length || 0} exercícios
-            </span>
-          </h3>
-          
-          <div className="space-y-3">
-            {planoAtual.prescricoes?.map((ex, index) => (
-              <div key={ex.id || index} className="flex items-center p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 hover:border-emerald-500/30 transition-all group relative">
+        {/* Corpo do Modal (O Formulário) */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Título do Plano *</label>
+              <input 
+                type="text" placeholder="Ex: Ficha Hipertrofia Q1"
+                className="w-full bg-[#151923] border border-slate-700 text-white rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={novoPlano.titulo}
+                onChange={e => setNovoPlano({...novoPlano, titulo: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Objetivo Estratégico</label>
+              <input 
+                type="text" placeholder="Ex: Ganho de massa muscular"
+                className="w-full bg-[#151923] border border-slate-700 text-white rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                value={novoPlano.objetivo_estrategico}
+                onChange={e => setNovoPlano({...novoPlano, objetivo_estrategico: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-slate-700/50 my-6" />
+
+          {/* Iteração dos Treinos */}
+          <div className="space-y-6">
+            {novoPlano.treinos.map((treino, tIndex) => (
+              <div key={tIndex} className="bg-[#151923] border border-slate-700 rounded-xl p-5 relative">
                 
-                {/* Badge Número */}
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold mr-4 text-slate-300 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-colors">
-                    {index + 1}
-                </div>
-                
-                <div className="flex-1 mr-4">
-                    <h4 className="font-medium text-white text-lg">{ex.nome_exercicio}</h4>
-                    {ex.notas_tecnicas && (
-                        <p className="text-xs text-slate-400 mt-1 italic flex items-start gap-1">
-                            <AlertCircle className="w-3 h-3 mt-0.5" />
-                            {ex.notas_tecnicas}
-                        </p>
-                    )}
+                <div className="flex flex-col md:flex-row gap-4 mb-4 items-start md:items-end">
+                  <div className="w-full md:w-1/4">
+                     <label className="block text-[10px] text-blue-400 font-bold uppercase mb-1">Letra do Treino</label>
+                     <input 
+                        type="text" value={treino.nome}
+                        onChange={e => handleTreinoChange(tIndex, 'nome', e.target.value)}
+                        className="w-full bg-[#1e2330] border border-slate-700 text-white font-bold text-lg rounded-lg p-2 text-center"
+                     />
+                  </div>
+                  <div className="w-full md:w-3/4">
+                     <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">Foco / Descrição</label>
+                     <input 
+                        type="text" placeholder="Ex: Peito e Tríceps" value={treino.descricao}
+                        onChange={e => handleTreinoChange(tIndex, 'descricao', e.target.value)}
+                        className="w-full bg-[#1e2330] border border-slate-700 text-white rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
+                     />
+                  </div>
+                  {novoPlano.treinos.length > 1 && (
+                    <button onClick={() => handleRemoveTreino(tIndex)} className="p-2.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex gap-6 text-right mr-8">
-                    <div>
-                        <p className="text-xs text-slate-500 uppercase">Séries/Rep</p>
-                        <p className="font-mono text-emerald-400 font-bold">
-                            {ex.series} x {ex.repeticoes}
-                        </p>
+                <div className="space-y-3">
+                  {treino.prescricoes.map((ex, exIndex) => (
+                    <div key={exIndex} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[#1e2330] p-2 rounded-lg border border-slate-700/50">
+                      <span className="text-slate-500 font-bold text-xs w-6 text-center">{exIndex + 1}</span>
+                      
+                      <input 
+                        type="text" placeholder="Nome do Exercício" value={ex.nome_exercicio}
+                        onChange={e => handleExercicioChange(tIndex, exIndex, 'nome_exercicio', e.target.value)}
+                        className="flex-grow bg-transparent border-b border-slate-600 focus:border-blue-500 text-white text-sm p-1 outline-none"
+                      />
+                      
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" title="Séries" value={ex.series}
+                          onChange={e => handleExercicioChange(tIndex, exIndex, 'series', e.target.value)}
+                          className="w-16 bg-[#151923] border border-slate-600 text-white text-center text-sm p-1 rounded"
+                        />
+                      <input 
+                        type="text" title="Repetições" value={ex.repeticoes}
+                        onChange={e => handleExercicioChange(tIndex, exIndex, 'repeticoes', e.target.value)}
+                        className="w-16 bg-[#151923] border border-slate-600 text-white text-center text-sm p-1 rounded"
+                        />
+
+                      </div>
+
+                      <button onClick={() => handleRemoveExercicio(tIndex, exIndex)} className="text-slate-500 hover:text-red-500 p-1">
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                    {ex.carga_kg > 0 && (
-                        <div>
-                            <p className="text-xs text-slate-500 uppercase">Carga</p>
-                            <p className="font-mono text-slate-200">
-                                {ex.carga_kg}kg
-                            </p>
-                        </div>
-                    )}
+                  ))}
                 </div>
 
-                {/* Botão de Excluir */}
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation(); // Impede clique no pai se houver
-                        handleExcluirExercicio(ex.id);
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
-                    title="Remover exercício"
-                >
-                    <Trash2 className="w-4 h-4" />
+                <button onClick={() => handleAddExercicio(tIndex)} className="mt-4 text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                  <Plus size={14} /> ADICIONAR EXERCÍCIO
                 </button>
+
               </div>
             ))}
-
-            {(!planoAtual.prescricoes || planoAtual.prescricoes.length === 0) && (
-                <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-xl">
-                    <Dumbbell className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-500">Nenhum exercício neste plano.</p>
-                </div>
-            )}
           </div>
         </div>
+
+        {/* Footer Fixo do Modal com as Ações Globais */}
+        <div className="sticky bottom-0 bg-[#1e2330] z-10 border-t border-slate-700/50 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <button onClick={handleAddTreino} className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg flex items-center gap-2">
+            <Plus size={16} /> Adicionar Novo Treino (B, C...)
+          </button>
+          <button onClick={handleFormSubmit} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black uppercase tracking-widest rounded-lg flex items-center gap-2">
+            <Save size={18} /> Salvar Plano
+          </button>
+        </div>
+
       </div>
-    </dialog>
+    </div>
   );
 }

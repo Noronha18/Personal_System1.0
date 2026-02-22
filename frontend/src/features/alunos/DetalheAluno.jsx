@@ -8,13 +8,15 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { Dumbbell, Loader2 } from 'lucide-react';
+import { Loader2, User, Target, AlertTriangle, Plus, History, Dumbbell, CheckCircle2 } from 'lucide-react';
 import { FormPlanoTreino } from './FormPlanoTreino';
 import FormPagamento from '../pagamentos/FormPagamento';
 import TabelaPagamentos from '../pagamentos/TabelaPagamentos';
 import { CheckInCard } from '../sessoes/CheckInCard';
 import { IndicadorFrequencia } from '../sessoes/IndicadorFrequencia';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
+import { PlanoTreinoCard } from "../../components/PlanoTreinoCard";
+
 
 const fetchAluno = async (id) => {
   const res = await fetch(`http://localhost:8000/alunos/${id}`);
@@ -40,7 +42,6 @@ const fetchSessoes = async ({
   params.set('limit', String(limit));
   params.set('offset', String(offset));
 
-  // Ajuste para "/sessoes/" se sua rota estiver com barra final
   const res = await fetch(`http://localhost:8000/sessoes?${params.toString()}`);
   if (!res.ok) throw new Error('Erro ao buscar sessões');
   return res.json();
@@ -116,8 +117,6 @@ const GraficoEvolucao = ({ alunoId, planos, refreshKey }) => {
 
         if (!cancelado) {
           setPontos(arr);
-          // Se quiser depurar:
-          // console.log({ ignoradasSemPlano, sessoes: sessoes?.length, pontos: arr.length });
         }
       } catch (e) {
         if (!cancelado) setErro(e?.message || 'Erro ao carregar evolução');
@@ -183,53 +182,27 @@ const GraficoEvolucao = ({ alunoId, planos, refreshKey }) => {
               <stop offset="100%" stopColor="#10b981" stopOpacity={0.15} />
             </linearGradient>
           </defs>
-
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.35} />
-
-          <XAxis
-            dataKey="dataISO"
-            stroke="#94a3b8"
-            fontSize={12}
-            tick={{ fill: '#94a3b8' }}
-            tickFormatter={formatarTickData}
-          />
-
-          <YAxis
-            stroke="#94a3b8"
-            fontSize={12}
-            tick={{ fill: '#94a3b8' }}
-            tickFormatter={formatarVolume}
-          />
-
+          <XAxis dataKey="dataISO" stroke="#94a3b8" fontSize={12} tick={{ fill: '#94a3b8' }} tickFormatter={formatarTickData} />
+          <YAxis stroke="#94a3b8" fontSize={12} tick={{ fill: '#94a3b8' }} tickFormatter={formatarVolume} />
           <Tooltip
-            contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #334155',
-              borderRadius: '10px',
-              color: '#f1f5f9',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
-            }}
+            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#f1f5f9', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}
             labelStyle={{ color: '#e2e8f0', fontWeight: 700 }}
             itemStyle={{ color: '#10b981', fontWeight: 600 }}
             labelFormatter={formatarLabelTooltip}
             formatter={(value) => [`${formatarVolume(value)} kg`, 'Volume do dia']}
           />
-
-          <Line
-            type="monotone"
-            dataKey="volume"
-            stroke="#10b981"
-            strokeWidth={3}
-            dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }}
-            activeDot={{ r: 6, fill: '#10b981', strokeWidth: 3, stroke: '#0f172a' }}
-            fill="url(#linhaEvolucao)"
-          />
+          <Line type="monotone" dataKey="volume" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} activeDot={{ r: 6, fill: '#10b981', strokeWidth: 3, stroke: '#0f172a' }} fill="url(#linhaEvolucao)" />
         </LineChart>
       </ResponsiveContainer>
     </div>
   );
 };
 
+
+// =========================================================================
+// COMPONENTE PRINCIPAL
+// =========================================================================
 export const DetalheAluno = ({ alunoId, onBack }) => {
   const [aluno, setAluno] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -241,6 +214,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
   // Estados de UI
   const [mostrarFormPagamento, setMostrarFormPagamento] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const carregarDados = async () => {
     try {
@@ -267,14 +241,31 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     setRefreshKey((k) => k + 1);
   };
 
-  if (loading)
+  const salvarNovoPlano = async (dadosDoPlano) => {
+    try {
+      const response = await fetch(`http://localhost:8000/alunos/${alunoId}/planos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dadosDoPlano)
+      });
+      
+      if (response.ok) {
+         handleRecarregarDados(); 
+      }
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="text-red-500 text-center p-10">
         Erro: {error}
@@ -283,6 +274,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         </button>
       </div>
     );
+  }
 
   if (!aluno) return null;
 
@@ -298,6 +290,14 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
           className="text-slate-400 hover:text-emerald-400 flex items-center gap-2 transition-colors text-sm font-medium"
         >
           ← Voltar para Lista
+        </button>
+        
+        {/* BOTÃO DE NOVO PLANO (ABRE O MODAL) */}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 flex items-center gap-2 rounded-xl transition-colors"
+        >
+          <Plus size={18} /> Novo Plano
         </button>
       </div>
 
@@ -316,11 +316,9 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             >
               {statusAtrasado ? 'Atrasado' : 'Em dia'}
             </span>
-
             <span className="text-slate-400 text-sm flex items-center gap-1">
               Vencimento dia {aluno.dia_vencimento}
             </span>
-
             <span className="text-slate-400 text-sm flex items-center gap-1">CPF: {aluno.cpf}</span>
           </div>
         </div>
@@ -331,7 +329,6 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
           <IndicadorFrequencia alunoId={aluno.id} />
         </div>
-
         <div className="lg:col-span-2">
           <CheckInCard alunoId={aluno.id} planos={aluno.planos_treino} onSucesso={handleRecarregarDados} />
         </div>
@@ -348,7 +345,6 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
               (volume por sessão/dia, baseado nas prescrições do plano)
             </span>
           </div>
-
           <GraficoEvolucao
             alunoId={aluno.id}
             planos={aluno.planos_treino}
@@ -381,18 +377,14 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                         <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                       )}
                     </div>
-
                     <p className="text-xs text-slate-400 line-clamp-2 mb-2">
                       {plano.objetivo_estrategico || 'Sem objetivo estratégico definido'}
                     </p>
-
                     <div className="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-700/50 pt-2 mt-2">
                       <span className="flex items-center gap-1">
                         <Dumbbell className="w-3 h-3" />
-                        {plano.prescricoes?.length || 0} exercícios
+                        {plano.treinos?.length || 0} treinos
                       </span>
-                      <span>•</span>
-                      <span>{new Date(plano.data_criacao).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </div>
                 </button>
@@ -405,14 +397,6 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
           </div>
         </div>
       </div>
-
-      {/* Novo Plano */}
-      <section className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
-        <h3 className="text-xl font-semibold text-slate-200 mb-6 flex items-center gap-2">
-          Prescrever Novo Treino
-        </h3>
-        <FormPlanoTreino alunoId={alunoId} onSuccess={handleRecarregarDados} />
-      </section>
 
       {/* Histórico Financeiro */}
       <section className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
@@ -449,11 +433,19 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         </div>
       </section>
 
-      {/* Modal */}
+      {/* Modais */}
+      {/* 1. Modal Antigo (ou de Edição) que já existia */}
       <ModalPlanoTreino
         plano={planoSelecionado}
         onClose={() => setPlanoSelecionado(null)}
         onUpdate={handleRecarregarDados}
+      />
+
+      {/* 2. Modal NOVO de Criação de Plano A/B/C */}
+      <ModalPlanoTreino
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={salvarNovoPlano}
       />
     </div>
   );

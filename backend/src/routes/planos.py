@@ -1,26 +1,37 @@
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from src import controllers, schemas, database
 
+# Ajuste os imports dependendo de onde fica sua pasta 'src'
+from src import schemas, controllers
+from src.database import get_db
+
+# Cria o roteador para Planos
 router = APIRouter(
-    prefix="/planos",
     tags=["Planos de Treino"]
 )
 
-
-@router.post("/", response_model=schemas.PlanoTreinoPublic, status_code=status.HTTP_201_CREATED)
-async def criar_plano(
-        plano: schemas.PlanoTreinoCreate,
-    db: AsyncSession = Depends(database.get_db)
-    ):
-    return await controllers.create_plano_completo(db=db, plano_in=plano)
-
-@router.patch("/{plano_id}/desativar", response_model=schemas.PlanoTreinoPublic)
-async def desativar_plano_endpoint(plano_id: int, db: AsyncSession = Depends(database.get_db)):
-    return await controllers.desativar_plano(db, plano_id)
-
-@router.delete("/exercicios/{prescricao_id}", status_code=204)
-async def deletar_exercicio_endpoint(prescricao_id: int, db: AsyncSession = Depends(database.get_db)):
-    await controllers.deletar_prescricao(db, prescricao_id)
-    return Response(status_code=204)
+@router.post("/alunos/{aluno_id}/planos", response_model=schemas.PlanoTreinoPublic, status_code=status.HTTP_201_CREATED)
+async def criar_plano_para_aluno(
+    aluno_id: int,
+    plano_in: schemas.PlanoTreinoCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Cria um novo plano de treino para um aluno, incluindo a 
+    hierarquia completa de Treinos (A, B, C) e Prescrições.
+    """
+    try:
+        # Aqui chamamos o nome correto da função do controller!
+        novo_plano = await controllers.criar_plano_treino(
+            db=db, 
+            aluno_id=aluno_id, 
+            plano_in=plano_in
+        )
+        return novo_plano
+    except Exception as e:
+        # Captura erros do banco de dados e devolve de forma limpa para o Frontend
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao salvar o plano no banco de dados: {str(e)}"
+        )
