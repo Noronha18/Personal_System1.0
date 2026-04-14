@@ -5,6 +5,31 @@ from datetime import date, datetime
 from validate_docbr import CPF
 
 # ===================================================================
+# Schemas de Autenticação
+# ===================================================================
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    role: Optional[str] = "aluno"
+    aluno_id: Optional[int] = None
+
+class UserPublic(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    model_config = ConfigDict(from_attributes=True)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+# ===================================================================
 # Schemas de Precricao
 # ===================================================================
 

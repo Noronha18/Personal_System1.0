@@ -4,6 +4,20 @@ from src.database import Base
 from datetime import date, datetime
 
 
+class Usuario(Base):
+    __tablename__ = 'usuarios'
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="aluno")  # "trainer" ou "aluno"
+    is_active = Column(Boolean, default=True)
+    data_criacao = Column(DateTime, default=datetime.now)
+
+    # Vínculo com o Aluno (opcional para trainers, obrigatório para alunos)
+    aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='SET NULL'), nullable=True)
+
 class Aluno(Base):
     __tablename__ = 'alunos'
 

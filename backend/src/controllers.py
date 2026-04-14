@@ -3,7 +3,6 @@ import calendar
 from datetime import datetime, date
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
 from src import models, schemas, exceptions
@@ -107,6 +106,9 @@ async def excluir_aluno(db: AsyncSession, aluno_id: int):
 # --- CONTROLLERS DE PLANO DE TREINO ---
 
 async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
+    # Valida se o aluno existe. Se não existir, o get_aluno lança ResourceNotFoundError
+    await get_aluno(db, aluno_id)
+
     # 1. Cria o Plano pai
     novo_plano = models.PlanoTreino(
         aluno_id=aluno_id,
