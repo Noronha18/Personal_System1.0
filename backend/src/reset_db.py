@@ -1,20 +1,16 @@
-# reset_db.py
+import asyncio
 from src.database import engine, Base
-# Importe os models para que o SQLAlchemy saiba o que criar
-from src.models import Aluno, Aula
+from src.models import Aluno, SessaoTreino # Aula renomeada para SessaoTreino
 
-
-def resetar_banco():
-    print("🗑️  Apagando tabelas antigas...")
-    # O comando drop_all apaga TODAS as tabelas ligadas a essa Base
-    Base.metadata.drop_all(bind=engine)
-
-    print("✨ Criando tabelas novas com as colunas atualizadas...")
-    # O comando create_all recria tudo do zero
-    Base.metadata.create_all(bind=engine)
-
+async def resetar_banco():
+    async with engine.begin() as conn:
+        print("🗑️  Apagando tabelas antigas...")
+        await conn.run_sync(Base.metadata.drop_all)
+        
+        print("✨ Criando tabelas novas...")
+        await conn.run_sync(Base.metadata.create_all)
+        
     print("✅ Banco de dados resetado com sucesso!")
 
-
 if __name__ == "__main__":
-    resetar_banco()
+    asyncio.run(resetar_banco())

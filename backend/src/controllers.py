@@ -76,7 +76,7 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
     aluno = result.scalars().first()
     
     if not aluno:
-        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
         
     return aluno
 
@@ -175,30 +175,6 @@ async def listar_planos_detalhados_aluno(db: AsyncSession, aluno_id: int):
     return result.scalars().all()
 
 
-async def registrar_sessao(db: AsyncSession, aluno_id: int, plano_id: int | None, obs: str, realizada: bool = True):
-    """
-    Registra a execução de um treino.
-    """
-    # Valida o aluno
-    await get_aluno(db, aluno_id)
-
-    nova_sessao = models.SessaoTreino(
-        aluno_id=aluno_id,
-        plano_treino_id=plano_id,
-        observacoes_performance=obs if realizada else None,
-        motivo_ausencia=obs if not realizada else None,
-        realizada=realizada,
-        data_hora=datetime.now()
-    )
-    
-    db.add(nova_sessao)
-    try:
-        await db.commit()
-        await db.refresh(nova_sessao)
-        return nova_sessao
-    except Exception as e:
-        await db.rollback()
-        raise e
 
 async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) -> models.Pagamento:
     """
@@ -252,64 +228,13 @@ async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schema
         return pagamento
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, 
-                            detail=f"Erro ao atualizar pagamento: {str(e)}")
+        raise e
 
 async def deletar_pagamento(db: AsyncSession, pagamento_id: int) -> dict:
     pagamento = await get_pagamento(db, pagamento_id)
-
-    try:
-        await db.delete(pagamento)
-        await db.commit()
-        return {"message": f"Pagamento {pagamento_id} deletado com sucesso"}
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=500, 
-                            detail=f"Erro ao deletar pagamento: {str(e)}")
-    
-    
-
-async def create_plano_completo(db: AsyncSession, plano_in: schemas.PlanoTreinoCreate):
-
-    aluno =  await db.get(models.Aluno, plano_in.aluno_id)
-    if not aluno:
-        raise exceptions.ResourceNotFoundError("Aluno não encontrado")
-    
-    novo_plano = models.PlanoTreino(
-        aluno_id=plano_in.aluno_id,
-        titulo=plano_in.titulo,
-        objetivo_estrategico=plano_in.objetivo_estrategico,
-        esta_ativo=plano_in.esta_ativo
-    )
-    db.add(novo_plano)
-    
-    await db.flush()
-
-    lista_prescricoes = []
-    for item in plano_in.prescricoes:
-        nova_prescricao = models.PrescricaoExercicio(
-            plano_treino_id=novo_plano.id,
-            nome_exercicio=item.nome_exercicio,
-            series=item.series,
-            repeticoes=item.repeticoes,
-            carga_kg=item.carga_kg,
-            tempo_descanso_segundos=item.tempo_descanso_segundos,
-            notas_tecnicas=item.notas_tecnicas
-        )
-        lista_prescricoes.append(nova_prescricao)
-
-        if lista_prescricoes:
-            db.add_all(lista_prescricoes)
-
-        try:
-            await db.commit()
-        except Exception as e:
-            await db.rollback()
-            raise HTTPException(status_code=500, detail=f"Erro ao salvar plano:{str(e)}")
-
-    await db.refresh(novo_plano, attribute_names=["prescricoes"])
-    
-    return novo_plano
+    await db.delete(pagamento)
+    await db.commit()
+    return {"message": f"Pagamento {pagamento_id} deletado com sucesso"}
 
 async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino:
     plano = await db.scalar(
@@ -319,7 +244,7 @@ async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino
     )
     
     if not plano:
-        raise HTTPException(status_code=404, detail="Plano não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Plano {plano_id} não encontrado")
     
     plano.esta_ativo = False
     await db.commit()
@@ -331,7 +256,7 @@ async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
         select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id)
     )
     if not prescricao:
-        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Prescrição {prescricao_id} não encontrada")
 
     await db.delete(prescricao)
     await db.commit()
@@ -340,7 +265,7 @@ async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
 async def atualizar_prescricao(db: AsyncSession, prescricao_id: int, payload: schemas.PrescricaoExercicioCreate) -> models.PrescricaoExercicio:
     prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
     if not prescricao:
-        raise HTTPException(status_code=404, detail="Exercício não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Prescrição {prescricao_id} não encontrada")
     
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(prescricao, key, value)
@@ -360,7 +285,7 @@ def _parse_referencia_mes(referencia_mes: str) -> tuple[int, int]:
             raise ValueError
         return mes, ano
     except ValueError:
-        raise HTTPException(status_code=422, detail="referencia_mes inválida (use MM/YYYY)")
+        raise exceptions.BusinessRuleError("referencia_mes inválida (use MM/YYYY)")
 
 
 def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
@@ -373,7 +298,7 @@ def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
 async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate) -> models.SessaoTreino:
     aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == payload.aluno_id))
     if not aluno:
-        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Aluno {payload.aluno_id} não encontrado")
 
     if payload.plano_treino_id is not None:
         plano = await db.scalar(
@@ -383,7 +308,7 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
             )
         )
         if not plano:
-            raise HTTPException(status_code=422, detail="Plano de treino inválido para este aluno")
+            raise exceptions.BusinessRuleError("Plano de treino inválido para este aluno")
         
 
     if payload.data_hora:
@@ -441,7 +366,7 @@ async def calcular_frequencia_mensal(
 
     aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == aluno_id))
     if not aluno:
-        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+        raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
 
     # Protótipo local: semanas ≈ ceil(dias/7)
     dias_no_mes = calendar.monthrange(ano, mes)[1]
@@ -490,7 +415,7 @@ async def get_sessao(db: AsyncSession, sessao_id: int) -> models.SessaoTreino:
         select(models.SessaoTreino).where(models.SessaoTreino.id == sessao_id)
     )
     if not sessao:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        raise exceptions.ResourceNotFoundError(f"Sessão {sessao_id} não encontrada")
     return sessao
 
 async def deletar_sessao(db: AsyncSession, sessao_id: int) -> None:

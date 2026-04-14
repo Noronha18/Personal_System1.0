@@ -1,40 +1,31 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy.orm import Session
-from typing import List
 
-
-from src.database import get_db, engine, Base
-from src import controllers, schemas, exceptions, models
+from src import exceptions
 from src.routes import alunos, planos, pagamentos, sessoes
-
-
+from src.config import settings # Importa as configurações
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # A criação de tabelas agora é gerida via Alembic Migrations.
+    # O lifespan agora apenas sinaliza a prontidão do sistema.
+    print(f"Sistema {settings.PROJECT_NAME} (v{settings.VERSION}) pronto!")
     yield
 
 
-
 app = FastAPI(
-    title="Personal System API",
+    title=settings.PROJECT_NAME,
     description="API profissional para Personal Trainers",
-    version="1.1.0"
+    version=settings.VERSION
 )
 
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 # --- MIDDLEWARES ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Em produção, restrinja para o seu domínio de frontend
+    allow_origins=settings.CORS_ORIGINS,  # Em produção, restrinja para o seu domínio de frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,7 +60,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.get("/")
 def read_root():
-    return{"status": "online", "version": "1.1.0"}
+    return{"status": "online", "version": settings.VERSION}
 
 # --- ROTAS DE ALUNOS ---
 
@@ -77,4 +68,3 @@ app.include_router(alunos.router)
 app.include_router(planos.router)
 app.include_router(pagamentos.router)
 app.include_router(sessoes.router)
-

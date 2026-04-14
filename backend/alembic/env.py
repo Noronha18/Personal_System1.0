@@ -12,7 +12,8 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Importa os modelos e a URL do banco
-from src.database import Base, DATABASE_URL
+from src.database import Base
+from src.config import settings
 from src.models import * # Importa todos os modelos para garantir que sejam registrados na Base
 
 # this is the Alembic Config object, which provides
@@ -21,7 +22,7 @@ config = context.config
 
 # Sobrescreve a URL do arquivo .ini com a URL do nosso código Python
 # Isso garante que usamos sempre a mesma configuração (porta 5434, senha, etc)
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

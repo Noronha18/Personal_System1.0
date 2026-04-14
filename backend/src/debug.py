@@ -1,11 +1,11 @@
-from src.database import get_db
-from src.models import Aula, Aluno
+import asyncio
+from sqlalchemy import select
+from src.database import SessionLocal
+from src.models import SessaoTreino, Aluno
 from datetime import datetime
 
-
-def investigar():
-    db = next(get_db())
-    try:
+async def investigar():
+    async with SessionLocal() as db:
         print("-" * 50)
         print(f"🕒 Hora do Sistema (Python): {datetime.now()}")
 
@@ -16,7 +16,8 @@ def investigar():
         print("-" * 50)
 
         # 2. Listar TODAS as aulas no banco
-        aulas = db.query(Aula).all()
+        result = await db.execute(select(SessaoTreino))
+        aulas = result.scalars().all()
         print(f"📂 Total de aulas no banco: {len(aulas)}")
 
         if not aulas:
@@ -46,11 +47,5 @@ def investigar():
             print(
                 f"{aula.id:<5} | {aula.data_hora.strftime('%d/%m/%Y %H:%M')} | {str(aula.realizada):<10} | {aula.aluno_id:<10} | {conta}")
 
-    except Exception as e:
-        print(f"Erro fatal: {e}")
-    finally:
-        db.close()
-
-
 if __name__ == "__main__":
-    investigar()
+    asyncio.run(investigar())

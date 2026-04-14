@@ -1,18 +1,10 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
+from src.config import settings  # Importa o novo orquestrador de config
 
 
-
-# --- CREDENCIAIS ---
-DB_USER = "noronha_dev"
-DB_PASS = "123456"
-DB_HOST = "localhost"
-DB_NAME = "personal_db_v2"
-DB_PORT = "5434"
-
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Agora não montamos mais a string na mão aqui, usamos o que vem do config
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
 SessionLocal = async_sessionmaker(
     bind=engine,
