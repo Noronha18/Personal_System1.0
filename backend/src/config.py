@@ -1,8 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from typing import Optional
 
 class Settings(BaseSettings):
-    # O Pydantic lerá automaticamente essas variáveis do .env ou do SO
+    # Campos de Banco Obrigatórios para Postgres
     DB_USER: str
     DB_PASS: str
     DB_HOST: str
@@ -20,7 +21,13 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        # URL assíncrona para o motor da API
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @property
+    def ALEMBIC_DATABASE_URL(self) -> str:
+        # URL síncrona para o Alembic rodar as migrações
+        return f"postgresql://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # Configuração para ler do arquivo .env
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

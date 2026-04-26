@@ -21,8 +21,7 @@ from src.models import * # Importa todos os modelos para garantir que sejam regi
 config = context.config
 
 # Sobrescreve a URL do arquivo .ini com a URL do nosso código Python
-# Isso garante que usamos sempre a mesma configuração (porta 5434, senha, etc)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.ALEMBIC_DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

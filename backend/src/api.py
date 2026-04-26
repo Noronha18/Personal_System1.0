@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src import exceptions
-from src.routes import alunos, planos, pagamentos, sessoes, auth
+from src.routes import alunos, planos, pagamentos, sessoes, auth, exercicios
 from src.config import settings # Importa as configurações
 
 # Configuração básica de logging
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # A criação de tabelas agora é gerida via Alembic Migrations.
-    # O lifespan agora apenas sinaliza a prontidão do sistema.
     print(f"Sistema {settings.PROJECT_NAME} (v{settings.VERSION}) pronto!")
     yield
 
@@ -31,7 +30,7 @@ app = FastAPI(
 # --- MIDDLEWARES ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,  # Em produção, restrinja para o seu domínio de frontend
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +53,6 @@ async def business_rule_handler(request: Request, exc: exceptions.BusinessRuleEr
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    # Padroniza erros do próprio FastAPI (como 404 ou 405)
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.detail, "type": "HTTPError"}
@@ -73,24 +71,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # Registra o erro detalhado no servidor para o desenvolvedor
     logger.error(f"Erro inesperado: {str(exc)}", exc_info=True)
-    
     return JSONResponse(
         status_code=500,
         content={"message": "Ocorreu um erro interno inesperado no servidor.", "type": "InternalError"}
     )
 
 # --- ROTAS DE SAÚDE ---
-
 @app.get("/")
 def read_root():
     return{"status": "online", "version": settings.VERSION}
 
-# --- ROTAS DE ALUNOS ---
-
+# --- REGISTRO DE ROTAS ---
 app.include_router(auth.router)
 app.include_router(alunos.router) 
 app.include_router(planos.router)
+app.include_router(exercicios.router)
 app.include_router(pagamentos.router)
 app.include_router(sessoes.router)

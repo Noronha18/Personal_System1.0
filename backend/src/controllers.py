@@ -518,3 +518,42 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
     logger.info(f"📏 Tamanho de receita_mensal_12m: {len(receita_mensal_12m)}")
     
     return resultado
+
+async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
+    # 1. Cria o Plano
+    novo_plano = models.PlanoTreino(
+        aluno_id=aluno_id,
+        titulo=plano_in.titulo,
+        objetivo_estrategico=plano_in.objetivo_estrategico
+    )
+    db.add(novo_plano)
+    await db.flush() # Garante que temos o ID do plano
+
+    # 2. Cria os Treinos (A, B, C...)
+    for treino_data in plano_in.treinos:
+        novo_treino = models.Treino(
+            plano_id=novo_plano.id,
+            nome=treino_data.nome
+        )
+        db.add(novo_treino)
+        await db.flush()
+
+        # 3. Cria as Prescrições para cada treino
+        for pres_data in treino_data.prescricoes:
+            nova_pres = models.Prescricao(
+                treino_id=novo_treino.id,
+                **pres_data.model_dump()
+            )
+            db.add(nova_pres)
+
+    try:
+        await db.commit()
+        await db.refresh(novo_plano)
+        return novo_plano
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+async def listar_exercicios(db: AsyncSession):
+    result = await db.execute(select(models.Exercicio).order_by(models.Exercicio.grupo_muscular))
+    return result.scalars().all()

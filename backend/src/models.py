@@ -26,19 +26,19 @@ class Aluno(Base):
     cpf = Column(String, unique=True, index=True)
     data_inicio = Column(Date, default=date.today)
     dia_vencimento = Column(Integer, default=5)
-    # Campos Novos
-    frequencia_semanal_plano = Column("frequencia_semanal", Integer, default=3)  # Mapeando nome do banco
+    
+    frequencia_semanal_plano = Column("frequencia_semanal", Integer, default=3)
     valor_mensalidade = Column(Float, default=0.0)
     idade = Column(Integer, default=0)
     objetivo = Column(Text, nullable=True)
     restricoes = Column(Text, nullable=True)
 
-    # Relacionamento
+    # Relacionamentos
     planos_treino = relationship("PlanoTreino", back_populates="aluno", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="aluno", cascade="all, delete-orphan")
     sessoes_treino = relationship("SessaoTreino", back_populates="aluno", cascade="all, delete-orphan")
 
-    # Propriedades auxiliares para a View (não salvas no banco, calculadas na hora)
+    # Propriedades auxiliares para a View
     aulas_feitas_mes = 0
     status_financeiro = "em_dia"
 
@@ -60,21 +60,16 @@ class Pagamento(Base):
 
 
 class SessaoTreino(Base):
-    """
-    Representa a execução real do treino (o evento).
-    Antigamente chamada de 'Aula'.
-    """
     __tablename__ = 'sessoes_treino'
 
     id = Column(Integer, primary_key=True)
     aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='CASCADE'))
-    # Vincula a sessão a um plano específico (ex: Hoje o aluno veio fazer o 'Plano A')
     plano_treino_id = Column(Integer, ForeignKey('planos_treino.id', ondelete='SET NULL'), nullable=True)
 
     data_hora = Column(DateTime, default=datetime.now)
     realizada = Column(Boolean, default=True)
     precisa_reposicao = Column(Boolean, default=False)
-    observacoes_performance = Column(Text, nullable=True) # Ex: 'Aluno sentiu dor no ombro'
+    observacoes_performance = Column(Text, nullable=True)
     motivo_ausencia = Column(Text, nullable=True)
     
     # Relacionamentos
@@ -83,51 +78,53 @@ class SessaoTreino(Base):
 
 
 class PlanoTreino(Base):
- 
     __tablename__ = 'planos_treino'
 
     id = Column(Integer, primary_key=True, index=True)
     aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='CASCADE'))
     
-    titulo = Column(String, index=True) # Ex: 'Hipertrofia - 12 semanas'
-    objetivo_estrategico = Column(Text, nullable=True) # Ex: 'Foco em força máxima'
+    titulo = Column(String, index=True)
+    objetivo_estrategico = Column(Text, nullable=True) 
     detalhes = Column(Text, nullable=True)
     data_inicio = Column(Date, default=date.today)
-    data_fim = Column(Date, nullable=True)
     esta_ativo = Column(Boolean, default=True)
-    data_criacao = Column(DateTime, default=datetime.now)
 
     # Relacionamentos
     aluno = relationship("Aluno", back_populates="planos_treino")
-    treinos = relationship("Treino", back_populates="plano_treino", cascade="all, delete-orphan")
+    treinos = relationship("Treino", back_populates="plano", cascade="all, delete-orphan")
     sessoes_executadas = relationship("SessaoTreino", back_populates="plano_treino")
-    
+
 class Treino(Base):
-
+    """Um grupo de exercícios, ex: 'Treino A - Superiores'"""
     __tablename__ = 'treinos'
+    id = Column(Integer, primary_key=True)
+    plano_id = Column(Integer, ForeignKey('planos_treino.id', ondelete='CASCADE'))
+    nome = Column(String) 
+    ordem = Column(Integer, default=0)
 
-    id = Column(Integer, primary_key=True, index=True)
-    plano_treino_id = Column(Integer, ForeignKey('planos_treino.id', ondelete='CASCADE'))
+    plano = relationship("PlanoTreino", back_populates="treinos")
+    prescricoes = relationship("Prescricao", back_populates="treino", cascade="all, delete-orphan")
 
-    nome = Column(String, index=True) #Ex: "A", "Superior", "Perna"
-    descricao = Column(Text, nullable=True) #Ex: "Foco em quadriceps"
+class Exercicio(Base):
+    """A Biblioteca Global de Exercícios"""
+    __tablename__ = 'exercicios'
+    id = Column(Integer, primary_key=True)
+    nome = Column(String, unique=True, index=True)
+    grupo_muscular = Column(String, index=True)
+    video_url = Column(String, nullable=True)
 
-    plano_treino = relationship("PlanoTreino", back_populates="treinos")
-    prescricoes = relationship("PrescricaoExercicio", back_populates="treino", cascade="all, delete-orphan")
-    
-
-class PrescricaoExercicio(Base):
-
-    __tablename__ = 'prescricoes_exercicio'
+class Prescricao(Base):
+    """A ligação entre um Treino e um Exercício com as cargas/séries"""
+    __tablename__ = 'prescricoes'
     id = Column(Integer, primary_key=True)
     treino_id = Column(Integer, ForeignKey('treinos.id', ondelete='CASCADE'))
+    exercicio_id = Column(Integer, ForeignKey('exercicios.id'))
     
-    nome_exercicio = Column(String, index=True) 
-    series = Column(String)
-    repeticoes = Column(String) # Permite '10-12' ou 'Até a falha'
-    carga_kg = Column(Float, nullable=True)
-    tempo_descanso_segundos = Column(Integer, default=60)
-    notas_tecnicas = Column(Text, nullable=True) # Ex: 'Manter escápulas retraídas'
+    series = Column(Integer, default=3)
+    repeticoes = Column(String) 
+    descanso = Column(Integer) # Em segundos
+    carga = Column(String, nullable=True)
+    observacoes = Column(Text, nullable=True)
 
-    # Relacionamentos
     treino = relationship("Treino", back_populates="prescricoes")
+    exercicio = relationship("Exercicio")
