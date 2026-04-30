@@ -50,9 +50,28 @@ export const alunoService = {
 
 export const treinoService = {
     listarExercicios: () => apiFetch('/exercicios/'),
+    criarExercicio: (dados) => apiFetch('/exercicios/', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    }),
     criarPlano: (alunoId, dados) => apiFetch(`/alunos/${alunoId}/planos/`, {
         method: 'POST',
         body: JSON.stringify(dados),
+    }),
+};
+
+export const financeiroService = {
+    obterEstatisticas: () => apiFetch('/pagamentos/estatisticas'),
+};
+
+export const pagamentoService = {
+    listar: () => apiFetch('/pagamentos/'),
+    registrar: (dados) => apiFetch('/pagamentos/', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    }),
+    deletar: (id) => apiFetch(`/pagamentos/${id}`, {
+        method: 'DELETE',
     }),
 };
 

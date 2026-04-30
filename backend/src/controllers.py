@@ -206,6 +206,35 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) 
         await db.rollback()
         raise e
 
+async def listar_pagamentos(db: AsyncSession) -> list[dict[str, Any]]:
+    stmt = (
+        select(
+            models.Pagamento,
+            models.Aluno.nome.label("aluno_nome")
+        )
+        .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
+        .order_by(models.Pagamento.data_pagamento.desc())
+    )
+    result = await db.execute(stmt)
+    
+    pagamentos = []
+    for row in result.all():
+        pagamento = row.Pagamento
+        # Converte o objeto do banco em um dicionário compatível com o schema
+        pag_dict = {
+            "id": pagamento.id,
+            "aluno_id": pagamento.aluno_id,
+            "aluno_nome": row.aluno_nome,
+            "valor": pagamento.valor,
+            "referencia_mes": pagamento.referencia_mes,
+            "forma_pagamento": pagamento.forma_pagamento,
+            "data_pagamento": pagamento.data_pagamento,
+            "observacao": pagamento.observacao
+        }
+        pagamentos.append(pag_dict)
+    
+    return pagamentos
+
 async def  get_pagamento(db: AsyncSession, pagamento_id: int) -> models.Pagamento:
     stmt = select(models.Pagamento).where(models.Pagamento.id == pagamento_id)
     result = await db.execute(stmt)
@@ -557,3 +586,19 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.
 async def listar_exercicios(db: AsyncSession):
     result = await db.execute(select(models.Exercicio).order_by(models.Exercicio.grupo_muscular))
     return result.scalars().all()
+
+async def criar_exercicio(db: AsyncSession, exercicio_in: schemas.ExercicioCreate):
+    stmt = select(models.Exercicio).where(models.Exercicio.nome == exercicio_in.nome)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none():
+        raise exceptions.BusinessRuleError(f"Exercício '{exercicio_in.nome}' já cadastrado.")
+    
+    novo_exercicio = models.Exercicio(**exercicio_in.model_dump())
+    db.add(novo_exercicio)
+    try:
+        await db.commit()
+        await db.refresh(novo_exercicio)
+        return novo_exercicio
+    except Exception as e:
+        await db.rollback()
+        raise e

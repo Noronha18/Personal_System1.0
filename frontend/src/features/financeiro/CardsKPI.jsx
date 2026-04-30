@@ -2,7 +2,7 @@ import { DollarSign, TrendingUp, AlertTriangle, Users } from 'lucide-react';
 
 function CardKPI({ titulo, valor, subtitulo, icone: Icon, corFundo, corTexto, corIcone }) {
   return (
-    <div className={`${corFundo} border border-slate-800 rounded-xl p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:border-slate-700`}>
+    <div className={`${corFundo} border border-slate-800 rounded-3xl p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:border-slate-700 h-full flex flex-col justify-between`}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-slate-400 uppercase tracking-wide">
@@ -17,7 +17,7 @@ function CardKPI({ titulo, valor, subtitulo, icone: Icon, corFundo, corTexto, co
             </p>
           )}
         </div>
-        <div className={`p-4 rounded-2xl ${corIcone} shadow-lg`}>
+        <div className={`p-4 rounded-2xl ${corIcone} shadow-lg ml-4`}>
           <Icon className="h-8 w-8" />
         </div>
       </div>

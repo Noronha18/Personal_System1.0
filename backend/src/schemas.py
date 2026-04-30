@@ -11,10 +11,16 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 # --- SCHEMAS DE EXERCÍCIO ---
-class ExercicioPublic(BaseModel):
-    id: int
+class ExercicioBase(BaseModel):
     nome: str
     grupo_muscular: str
+    video_url: Optional[str] = None
+
+class ExercicioCreate(ExercicioBase):
+    pass
+
+class ExercicioPublic(ExercicioBase):
+    id: int
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE PRESCRIÇÃO ---
@@ -66,6 +72,7 @@ class PagamentoCreate(BaseModel):
 class PagamentoPublic(PagamentoCreate):
     id: int
     data_pagamento: date
+    aluno_nome: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE ESTATÍSTICAS FINANCEIRAS ---

@@ -8,6 +8,18 @@ router = APIRouter(prefix="/pagamentos", tags=["Pagamentos"])
 
 
 @router.get(
+    "/",
+    response_model=list[PagamentoPublic],
+    summary="Listar pagamentos",
+    description="Retorna a lista de todos os pagamentos com o nome do aluno."
+)
+async def listar_pagamentos(
+    db: AsyncSession = Depends(get_db)
+):
+    return await controllers.listar_pagamentos(db)
+
+
+@router.get(
     "/estatisticas",
     response_model=EstatisticasFinanceirasPublic,
     summary="Dashboard Financeiro",

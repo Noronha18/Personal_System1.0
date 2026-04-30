@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { alunoService } from '../../services/api';
+import { alunoService, pagamentoService } from '../../services/api';
 
 export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
     const [alunos, setAlunos] = useState([]);
@@ -25,13 +25,16 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // Aqui chamaremos o serviço de pagamento no futuro
-            // await pagamentoService.registrar(formData);
-            console.log("Simulando registro de pagamento:", formData);
+            await pagamentoService.registrar({
+                ...formData,
+                aluno_id: parseInt(formData.aluno_id),
+                valor: parseFloat(formData.valor)
+            });
             if (onSuccess) onSuccess();
             onClose();
         } catch (err) {
             console.error(err);
+            alert(err.message || "Erro ao registrar pagamento");
         } finally {
             setLoading(false);
         }
