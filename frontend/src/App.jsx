@@ -36,20 +36,20 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-100 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#F2F2F7] text-slate-900 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         
-        <header className="flex flex-col lg:flex-row justify-between items-center mb-12 gap-6 bg-slate-900/40 p-6 rounded-3xl border border-slate-800/50 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center font-black text-black">P</div>
-            <h1 className="text-xl font-bold text-white tracking-tight">SYSTEM<span className="text-emerald-500">1.0</span></h1>
+        <header className="sticky top-4 z-40 flex flex-col md:flex-row justify-between items-center mb-12 gap-6 bg-white/70 p-4 md:p-5 rounded-[2rem] border border-white/20 backdrop-blur-2xl shadow-xl shadow-black/5">
+          <div className="flex items-center gap-4 pl-2">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-500/20">P</div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">System<span className="text-emerald-500">1.0</span></h1>
           </div>
           
-          <nav className="flex p-1 bg-black/40 rounded-xl border border-slate-800/50">
+          <nav className="flex p-1 bg-slate-200/50 rounded-2xl border border-white/20 shadow-inner">
             {[
-              { id: 'alunos', label: 'Alunos', icon: '👥' },
-              { id: 'treinos', label: 'Treinos', icon: '💪' },
-              { id: 'financeiro', label: 'Financeiro', icon: '💰' }
+              { id: 'alunos', label: 'Alunos' },
+              { id: 'treinos', label: 'Treinos' },
+              { id: 'financeiro', label: 'Financeiro' }
             ].map((aba) => (
               <button
                 key={aba.id}
@@ -57,10 +57,10 @@ function App() {
                   setAbaAtiva(aba.id);
                   setSelectedAlunoId(null);
                 }}
-                className={`px-6 py-2.5 rounded-lg text-xs font-bold uppercase transition-all duration-300 ${
+                className={`px-6 py-2 rounded-[0.85rem] text-sm font-semibold transition-all duration-300 active:scale-95 ${
                   abaAtiva === aba.id
-                    ? 'bg-slate-800 text-white shadow-lg'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'
+                    ? 'bg-white text-slate-900 shadow-md'
+                    : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {aba.label}
@@ -70,13 +70,13 @@ function App() {
 
           <button 
             onClick={handleLogout}
-            className="px-4 py-2 border border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:text-red-500 hover:border-red-500/20 transition-all"
+            className="px-6 py-2.5 bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-600 rounded-2xl transition-all active:scale-95"
           >
-            LOGOUT
+            Logout
           </button>
         </header>
 
-        <main className="min-h-[60vh] animate-in fade-in duration-700">
+        <main className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-2 duration-1000">
            {renderConteudo()}
         </main>
 
