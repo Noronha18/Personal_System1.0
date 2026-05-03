@@ -192,7 +192,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                                 <input 
                                     type="number"
                                     min="1"
-                                    max="31"
+                                max="31"
                                     className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none"
                                     value={formData.dia_vencimento}
                                     onChange={(e) => setFormData({...formData, dia_vencimento: parseInt(e.target.value) || 0})}

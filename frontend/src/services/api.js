@@ -43,6 +43,16 @@ export const alunoService = {
         method: 'POST',
         body: JSON.stringify(dados),
     }),
+    atualizarStatus: (id, status) => apiFetch(`/alunos/${id}/status?status=${status}`, {
+        method: 'PATCH',
+    }),
+    registrarPresenca: (alunoId) => apiFetch('/sessoes/', {
+        method: 'POST',
+        body: JSON.stringify({
+            aluno_id: alunoId,
+            realizada: true
+        }),
+    }),
     deletar: (id) => apiFetch(`/alunos/${id}`, {
         method: 'DELETE',
     }),

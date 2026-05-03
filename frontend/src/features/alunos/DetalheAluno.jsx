@@ -31,6 +31,26 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         }
     };
 
+    const handleStatusUpdate = async (novoStatus) => {
+        try {
+            await alunoService.atualizarStatus(alunoId, novoStatus);
+            alert(`Status atualizado para ${novoStatus}`);
+            carregar();
+        } catch (err) {
+            alert('Erro ao atualizar status: ' + err.message);
+        }
+    };
+
+    const handleCheckIn = async () => {
+        try {
+            await alunoService.registrarPresenca(alunoId);
+            alert('Presença registrada com sucesso!');
+            carregar();
+        } catch (err) {
+            alert('Erro ao registrar presença: ' + err.message);
+        }
+    };
+
     useEffect(() => {
         carregar();
     }, [alunoId]);
@@ -99,6 +119,29 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                     <ArrowLeft size={18} /> <span className="hidden sm:inline">Lista</span>
                 </button>
                 <div className="flex items-center gap-3 sm:gap-6">
+                    {aluno.status === 'ativo' && (
+                        <button 
+                            onClick={handleCheckIn}
+                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                        >
+                            <CheckCircle2 size={18} />
+                            <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">Check-in Hoje</span>
+                        </button>
+                    )}
+                    
+                    <select 
+                        value={aluno.status}
+                        onChange={(e) => handleStatusUpdate(e.target.value)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer
+                            ${aluno.status === 'ativo' ? 'bg-emerald-500/10 text-emerald-600' : 
+                              aluno.status === 'suspenso' ? 'bg-amber-500/10 text-amber-600' : 
+                              'bg-red-500/10 text-red-600'}`}
+                    >
+                        <option value="ativo">Ativo</option>
+                        <option value="suspenso">Suspenso</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+
                     <span className={`px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider
                         ${aluno.status_financeiro === 'atrasado' 
                             ? 'bg-red-500/10 text-red-500' 

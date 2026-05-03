@@ -50,9 +50,11 @@ async def listar_alunos_ativos(db: AsyncSession):
         select(models.Aluno)
         .options(
             selectinload(models.Aluno.planos_treino)
-            .selectinload(models.PlanoTreino.treinos)      # <-- NOVO CAMINHO
-            .selectinload(models.Treino.prescricoes),     # <-- NOVO CAMINHO
-            selectinload(models.Aluno.pagamentos)
+            .selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+            .selectinload(models.Prescricao.exercicio),
+            selectinload(models.Aluno.pagamentos),
+            selectinload(models.Aluno.sessoes_treino)
         )
         .order_by(models.Aluno.nome)
     )
@@ -69,11 +71,10 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
         select(models.Aluno)
         .where(models.Aluno.id == aluno_id)
         .options(
-            # Caminho correto: Aluno -> Planos -> Treinos -> Prescrições
             selectinload(models.Aluno.planos_treino)
                 .selectinload(models.PlanoTreino.treinos)
-                .selectinload(models.Treino.prescricoes),
-            # Carrega também as sessões para o histórico lateral
+                .selectinload(models.Treino.prescricoes)
+                .selectinload(models.Prescricao.exercicio),
             selectinload(models.Aluno.sessoes_treino),
             selectinload(models.Aluno.pagamentos)
         )
@@ -107,7 +108,11 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
         # possa acessar as propriedades (como planos_treino) sem disparar lazy loading async.
         stmt = (
             select(models.Aluno)
-            .options(selectinload(models.Aluno.planos_treino))
+            .options(
+                selectinload(models.Aluno.planos_treino),
+                selectinload(models.Aluno.pagamentos),
+                selectinload(models.Aluno.sessoes_treino)
+            )
             .where(models.Aluno.id == novo_aluno.id)
         )
         result = await db.execute(stmt)
@@ -117,7 +122,7 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
         aluno_final.status_financeiro = "em_dia"
         aluno_final.aulas_feitas_mes = 0
         
-        # Garante que data_inicio exista (caso o refresh/scalar não tenha carregado por algum motivo)
+        # Garante que data_inicio exista
         if not aluno_final.data_inicio:
             aluno_final.data_inicio = date.today()
         
@@ -125,6 +130,13 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
     except Exception as e:
         await db.rollback()
         raise e
+
+async def atualizar_status_aluno(db: AsyncSession, aluno_id: int, novo_status: str):
+    aluno = await get_aluno(db, aluno_id)
+    aluno.status = novo_status
+    await db.commit()
+    await db.refresh(aluno)
+    return aluno
 
 async def excluir_aluno(db: AsyncSession, aluno_id: int):
     aluno = await get_aluno(db, aluno_id) # Reutiliza a lógica de busca/erro
@@ -142,8 +154,9 @@ async def listar_planos_detalhados_aluno(db: AsyncSession, aluno_id: int):
         .options(
             selectinload(models.PlanoTreino.treinos)      # Carrega Treinos A, B...
             .selectinload(models.Treino.prescricoes)     # Carrega Exercícios de cada Treino
+            .selectinload(models.Prescricao.exercicio)
         )
-        .order_by(models.PlanoTreino.data_criacao.desc())
+        .order_by(models.PlanoTreino.data_inicio.desc())
     )
     
     result = await db.execute(query)
@@ -584,8 +597,19 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.
 
     try:
         await db.commit()
-        await db.refresh(novo_plano)
-        return novo_plano
+        
+        # Re-busca com selectinload para evitar erro de lazy loading no schema
+        stmt = (
+            select(models.PlanoTreino)
+            .options(
+                selectinload(models.PlanoTreino.treinos)
+                .selectinload(models.Treino.prescricoes)
+                .selectinload(models.Prescricao.exercicio)
+            )
+            .where(models.PlanoTreino.id == novo_plano.id)
+        )
+        result = await db.execute(stmt)
+        return result.scalar()
     except Exception as e:
         await db.rollback()
         raise e

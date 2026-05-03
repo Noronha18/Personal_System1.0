@@ -33,6 +33,10 @@ class PrescricaoCreate(BaseModel):
 
 class PrescricaoPublic(PrescricaoCreate):
     id: int
+    nome_exercicio: Optional[str] = None
+    carga_kg: Optional[str] = Field(None, validation_alias="carga")
+    tempo_descanso_segundos: int = Field(60, validation_alias="descanso")
+    
     model_config = ConfigDict(from_attributes=True)
 
 # --- SCHEMAS DE TREINO ---
@@ -55,6 +59,7 @@ class PlanoTreinoCreate(BaseModel):
 class PlanoTreinoPublic(BaseModel):
     id: int
     titulo: str
+    objetivo_estrategico: Optional[str] = None
     data_inicio: date
     esta_ativo: bool
     treinos: List[TreinoPublic]
@@ -124,6 +129,7 @@ class AlunoBase(BaseModel):
     idade: int = 0
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
+    status: str = "ativo"
 
 class AlunoCreate(AlunoBase):
     pass
@@ -141,8 +147,11 @@ class AlunoPublic(BaseModel):
     idade: int
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
+    status: str = "ativo"
     status_financeiro: str = "em_dia"
     aulas_feitas_mes: int = 0
     planos_treino: List[PlanoTreinoPublic] = []
+    pagamentos: List[PagamentoPublic] = []
+    sessoes: List[SessaoTreinoPublic] = Field(default=[], validation_alias="sessoes_treino")
     
     model_config = ConfigDict(from_attributes=True)

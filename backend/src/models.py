@@ -34,6 +34,7 @@ class Aluno(Base):
     idade = Column(Integer, default=0)
     objetivo = Column(Text, nullable=True)
     restricoes = Column(Text, nullable=True)
+    status = Column(String, default="ativo") # "ativo", "suspenso", "cancelado"
 
     # Relacionamentos
     planos_treino = relationship("PlanoTreino", back_populates="aluno", cascade="all, delete-orphan")
@@ -130,3 +131,7 @@ class Prescricao(Base):
 
     treino = relationship("Treino", back_populates="prescricoes")
     exercicio = relationship("Exercicio")
+
+    @property
+    def nome_exercicio(self):
+        return self.exercicio.nome if self.exercicio else "Exercício Removido"

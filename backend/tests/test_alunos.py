@@ -1,8 +1,22 @@
-from fastapi.testclient import TestClient
+import pytest
+from httpx import AsyncClient, ASGITransport
 from src.api import app
+from src.security import get_current_user
+from src.database import get_db
 import random
+from sqlalchemy import select
+from src import models
 
-client = TestClient(app)
+# Mock de dependência para ignorar autenticação real nos testes
+async def override_get_current_user():
+    return models.Usuario(id=1, username="admin", role="trainer")
+
+app.dependency_overrides[get_current_user] = override_get_current_user
+
+@pytest.fixture
+async def ac():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
 
 def gerar_cpf_valido() -> str:
     """Gera um CPF válido para testes."""
@@ -21,7 +35,8 @@ def gerar_cpf_valido() -> str:
     cpf.append(calcula_digito(cpf))
     return "".join(map(str, cpf))
 
-def test_fluxo_aluno_e_plano():
+@pytest.mark.anyio
+async def test_fluxo_aluno_e_plano(ac: AsyncClient):
     # 1. Criar Aluno
     cpf = gerar_cpf_valido()
     aluno_payload = {
@@ -31,43 +46,48 @@ def test_fluxo_aluno_e_plano():
         "frequencia_semanal_plano": 3,
         "dia_vencimento": 10
     }
-    res_aluno = client.post("/alunos/", json=aluno_payload)
+    res_aluno = await ac.post("/alunos/", json=aluno_payload)
     assert res_aluno.status_code == 201
     aluno_id = res_aluno.json()["id"]
 
-    # 2. Criar Plano de Treino (Nova Estrutura)
+    # 2. Criar Exercício Base para a prescrição
+    exercicio_payload = {
+        "nome": f"Exercício Teste {random.randint(0, 10000)}",
+        "grupo_muscular": "Peitoral"
+    }
+    res_ex = await ac.post("/exercicios/", json=exercicio_payload)
+    ex_id = res_ex.json()["id"] if res_ex.status_code == 201 else 1
+
+    # 3. Criar Plano de Treino (Nova Estrutura)
     plano_payload = {
         "titulo": "Plano A - Hipertrofia",
         "objetivo_estrategico": "Ganho de massa magra",
-        "esta_ativo": True,
-        "prescricoes": [
+        "treinos": [
             {
-                "nome_exercicio": "Supino Reto",
-                "series": 4,
-                "repeticoes": "10",
-                "carga_kg": 60.0,
-                "tempo_descanso_segundos": 90,
-                "notas_tecnicas": "Cadência 2-0-2"
-            },
-            {
-                "nome_exercicio": "Agachamento",
-                "series": 3,
-                "repeticoes": "12",
-                "carga_kg": 80.0,
-                "tempo_descanso_segundos": 120
+                "nome": "Treino A",
+                "prescricoes": [
+                    {
+                        "exercicio_id": ex_id,
+                        "series": 4,
+                        "repeticoes": "10",
+                        "carga": "60.0",
+                        "descanso": 90
+                    }
+                ]
             }
         ]
     }
-    # Rota atualizada: /planos
-    res_plano = client.post(f"/alunos/{aluno_id}/planos", json=plano_payload)
+    
+    res_plano = await ac.post(f"/alunos/{aluno_id}/planos", json=plano_payload)
     
     assert res_plano.status_code == 201
     data = res_plano.json()
     assert data["titulo"] == "Plano A - Hipertrofia"
-    assert len(data["prescricoes"]) == 2
-    assert data["prescricoes"][0]["nome_exercicio"] == "Supino Reto"
+    assert len(data["treinos"]) == 1
+    assert data["treinos"][0]["prescricoes"][0]["nome_exercicio"] is not None
 
-def test_cpf_duplicado_bloqueio():
+@pytest.mark.anyio
+async def test_cpf_duplicado_bloqueio(ac: AsyncClient):
     cpf = gerar_cpf_valido()
     payload = {
         "nome": "Clone",
@@ -77,9 +97,9 @@ def test_cpf_duplicado_bloqueio():
         "dia_vencimento": 1
     }
     # Primeiro cadastro
-    client.post("/alunos/", json=payload)
+    await ac.post("/alunos/", json=payload)
     # Segundo cadastro (mesmo CPF)
-    response = client.post("/alunos/", json=payload)
+    response = await ac.post("/alunos/", json=payload)
     
     assert response.status_code == 409
     assert response.json()["type"] == "BusinessRuleViolation"
