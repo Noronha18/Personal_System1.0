@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, DollarSign } from 'lucide-react';
 import CardsKPI from './CardsKPI';
 import GraficoReceita from './GraficoReceita';
 import GraficoInadimplencia from './GraficoInadimplencia';
@@ -48,50 +48,55 @@ const DashboardFinanceiro = () => {
 
     const handlePagamentoRegistrado = () => {
         setIsModalOpen(false);
-        carregarDados(); // Recarrega tudo após novo pagamento
+        carregarDados();
     };
 
     if (loading && !financeiroData.receita_total) {
         return (
-            <div className="flex flex-col items-center justify-center h-96 space-y-4">
+            <div className="flex flex-col items-center justify-center py-40 space-y-4">
                 <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 font-medium animate-pulse">Carregando inteligência financeira...</p>
+                <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest animate-pulse">Sincronizando Fluxo de Caixa...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
                 <div>
-                    <h2 className="text-3xl font-black text-white tracking-tight">Gestão Financeira</h2>
-                    <p className="text-slate-500 text-sm font-medium">Controle de receitas e saúde do seu negócio.</p>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tight">Financeiro</h2>
+                    <p className="text-slate-500 text-sm font-medium">Saúde financeira e previsibilidade do negócio.</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 w-full md:w-auto justify-center"
+                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-3 active:scale-95 uppercase text-xs tracking-widest"
                 >
-                    <Plus size={20} /> Registrar Pagamento
+                    <Plus size={20} /> Registrar Recebimento
                 </button>
             </div>
 
             {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm font-medium flex items-center gap-2">
-                    <AlertCircle size={16} /> {error}
+                <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-5 rounded-[2rem] text-sm font-bold flex items-center gap-3 mx-2">
+                    <AlertCircle size={20} /> {error}
                 </div>
             )}
 
             <CardsKPI dados={financeiroData} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch mx-2">
                 <GraficoReceita dados={financeiroData.receita_mensal_12m} />
                 <GraficoInadimplencia dados={financeiroData} />
             </div>
 
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 backdrop-blur-md">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white">Últimos Lançamentos</h3>
-                    <span className="text-slate-500 text-xs font-mono uppercase tracking-widest">Tempo Real</span>
+            <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 mx-2">
+                <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-50 text-emerald-500 rounded-xl flex items-center justify-center">
+                            <DollarSign size={20} />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Lançamentos Recentes</h3>
+                    </div>
+                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest bg-slate-50 px-4 py-1.5 rounded-full">Histórico</span>
                 </div>
                 <TabelaPagamentos pagamentos={ultimosPagamentos} onDelete={carregarDados} />
             </div>

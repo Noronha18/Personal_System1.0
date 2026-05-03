@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Dumbbell, Trash2, Plus, Save } from 'lucide-react';
 
 export function ModalPlanoTreino({ isOpen, onClose, onSave }) {
-  // 1. Estado Inicial do Formulário (O Novo Modelo do Banco)
   const [novoPlano, setNovoPlano] = useState({
     titulo: '',
     objetivo_estrategico: '',
@@ -16,12 +15,8 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave }) {
     ]
   });
 
-  // Se o modal estiver fechado, não renderiza nada [web:217]
   if (!isOpen) return null;
 
-  // ============================================================================
-  // FUNÇÕES DE MANIPULAÇÃO DE ESTADO
-  // ============================================================================
   const handleAddTreino = () => {
     const proximasLetras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const proximaLetra = proximasLetras[novoPlano.treinos.length] || 'Extra';
@@ -71,129 +66,153 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave }) {
   };
 
   const handleFormSubmit = () => {
-    // Aqui você chama a função passada pelo componente PAI (DetalheAluno)
     onSave(novoPlano);
-    onClose(); // Fecha o modal após salvar
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-500">
       
-      {/* Container do Modal */}
-      <div className="bg-[#1e2330] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-slate-700/50">
+      <div className="bg-[#F2F2F7] w-full max-w-5xl h-[92vh] md:h-auto md:max-h-[85vh] overflow-hidden rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col animate-in slide-in-from-bottom-full duration-700">
         
-        {/* Header Fixo do Modal */}
-        <div className="sticky top-0 bg-[#1e2330] z-10 border-b border-slate-700/50 p-6 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Dumbbell className="text-blue-500" /> Prescrever Novo Plano (com Treinos A/B/C)
-          </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors">
+        {/* Header */}
+        <div className="p-8 border-b border-black/5 flex justify-between items-center bg-white z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Dumbbell size={24} />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Prescrever Plano</h2>
+              <p className="text-slate-500 font-medium text-sm">Estruture a rotina de performance do aluno.</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90">
             <X size={24} />
           </button>
         </div>
 
-        {/* Corpo do Modal (O Formulário) */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Título do Plano *</label>
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-10 custom-scrollbar">
+          
+          {/* Plano Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-8 rounded-[2rem] border border-black/5 shadow-sm">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título do Plano *</label>
               <input 
-                type="text" placeholder="Ex: Ficha Hipertrofia Q1"
-                className="w-full bg-[#151923] border border-slate-700 text-white rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                type="text" placeholder="Ex: Hipertrofia Q1"
+                className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 value={novoPlano.titulo}
                 onChange={e => setNovoPlano({...novoPlano, titulo: e.target.value})}
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Objetivo Estratégico</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Objetivo Estratégico</label>
               <input 
-                type="text" placeholder="Ex: Ganho de massa muscular"
-                className="w-full bg-[#151923] border border-slate-700 text-white rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                type="text" placeholder="Ex: Ganho de Massa"
+                className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 value={novoPlano.objetivo_estrategico}
                 onChange={e => setNovoPlano({...novoPlano, objetivo_estrategico: e.target.value})}
               />
             </div>
           </div>
 
-          <div className="h-px w-full bg-slate-700/50 my-6" />
-
-          {/* Iteração dos Treinos */}
-          <div className="space-y-6">
+          {/* Treinos List */}
+          <div className="space-y-12 pb-10">
             {novoPlano.treinos.map((treino, tIndex) => (
-              <div key={tIndex} className="bg-[#151923] border border-slate-700 rounded-xl p-5 relative">
-                
-                <div className="flex flex-col md:flex-row gap-4 mb-4 items-start md:items-end">
-                  <div className="w-full md:w-1/4">
-                     <label className="block text-[10px] text-blue-400 font-bold uppercase mb-1">Letra do Treino</label>
-                     <input 
-                        type="text" value={treino.nome}
-                        onChange={e => handleTreinoChange(tIndex, 'nome', e.target.value)}
-                        className="w-full bg-[#1e2330] border border-slate-700 text-white font-bold text-lg rounded-lg p-2 text-center"
-                     />
-                  </div>
-                  <div className="w-full md:w-3/4">
-                     <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">Foco / Descrição</label>
-                     <input 
-                        type="text" placeholder="Ex: Peito e Tríceps" value={treino.descricao}
-                        onChange={e => handleTreinoChange(tIndex, 'descricao', e.target.value)}
-                        className="w-full bg-[#1e2330] border border-slate-700 text-white rounded-lg p-2.5 text-sm outline-none focus:border-blue-500"
-                     />
+              <div key={tIndex} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between mb-6 px-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xl">
+                      {treino.nome}
+                    </div>
+                    <input 
+                      type="text" placeholder="Foco do Treino (ex: Peito e Tríceps)" 
+                      className="bg-transparent text-xl font-black text-slate-900 outline-none focus:border-b-2 border-emerald-500 transition-all placeholder:text-slate-300"
+                      value={treino.descricao}
+                      onChange={e => handleTreinoChange(tIndex, 'descricao', e.target.value)}
+                    />
                   </div>
                   {novoPlano.treinos.length > 1 && (
-                    <button onClick={() => handleRemoveTreino(tIndex)} className="p-2.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors">
-                      <Trash2 size={18} />
+                    <button onClick={() => handleRemoveTreino(tIndex)} className="text-red-400 hover:text-red-600 transition-colors p-2">
+                      <Trash2 size={20} />
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4">
                   {treino.prescricoes.map((ex, exIndex) => (
-                    <div key={exIndex} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[#1e2330] p-2 rounded-lg border border-slate-700/50">
-                      <span className="text-slate-500 font-bold text-xs w-6 text-center">{exIndex + 1}</span>
+                    <div key={exIndex} className="bg-white border border-black/5 rounded-3xl p-6 flex flex-wrap md:flex-nowrap items-center gap-6 shadow-sm hover:shadow-md transition-all group">
+                      <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
+                        {exIndex + 1}
+                      </div>
                       
-                      <input 
-                        type="text" placeholder="Nome do Exercício" value={ex.nome_exercicio}
-                        onChange={e => handleExercicioChange(tIndex, exIndex, 'nome_exercicio', e.target.value)}
-                        className="flex-grow bg-transparent border-b border-slate-600 focus:border-blue-500 text-white text-sm p-1 outline-none"
-                      />
-                      
-                      <div className="flex gap-2">
+                      <div className="flex-1 min-w-[200px]">
                         <input 
-                          type="text" title="Séries" value={ex.series}
-                          onChange={e => handleExercicioChange(tIndex, exIndex, 'series', e.target.value)}
-                          className="w-16 bg-[#151923] border border-slate-600 text-white text-center text-sm p-1 rounded"
+                          type="text" placeholder="Nome do Exercício" 
+                          className="w-full bg-transparent text-lg font-bold text-slate-900 outline-none placeholder:text-slate-200"
+                          value={ex.nome_exercicio}
+                          onChange={e => handleExercicioChange(tIndex, exIndex, 'nome_exercicio', e.target.value)}
                         />
-                      <input 
-                        type="text" title="Repetições" value={ex.repeticoes}
-                        onChange={e => handleExercicioChange(tIndex, exIndex, 'repeticoes', e.target.value)}
-                        className="w-16 bg-[#151923] border border-slate-600 text-white text-center text-sm p-1 rounded"
-                        />
-
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Séries</label>
+                          <input 
+                            type="text" value={ex.series}
+                            className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
+                            onChange={e => handleExercicioChange(tIndex, exIndex, 'series', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Reps</label>
+                          <input 
+                            type="text" value={ex.repeticoes}
+                            className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
+                            onChange={e => handleExercicioChange(tIndex, exIndex, 'repeticoes', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Carga</label>
+                          <input 
+                            type="number" value={ex.carga_kg}
+                            className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-emerald-600"
+                            onChange={e => handleExercicioChange(tIndex, exIndex, 'carga_kg', e.target.value)}
+                          />
+                        </div>
                       </div>
 
-                      <button onClick={() => handleRemoveExercicio(tIndex, exIndex)} className="text-slate-500 hover:text-red-500 p-1">
-                        <Trash2 size={16} />
+                      <button onClick={() => handleRemoveExercicio(tIndex, exIndex)} className="p-2 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   ))}
+                  
+                  <button 
+                    onClick={() => handleAddExercicio(tIndex)}
+                    className="mt-2 py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 hover:border-emerald-500/30 hover:text-emerald-500 hover:bg-emerald-50/30 transition-all font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                  >
+                    <Plus size={16} /> Adicionar Exercício
+                  </button>
                 </div>
-
-                <button onClick={() => handleAddExercicio(tIndex)} className="mt-4 text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                  <Plus size={14} /> ADICIONAR EXERCÍCIO
-                </button>
-
               </div>
             ))}
           </div>
         </div>
 
-        {/* Footer Fixo do Modal com as Ações Globais */}
-        <div className="sticky bottom-0 bg-[#1e2330] z-10 border-t border-slate-700/50 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button onClick={handleAddTreino} className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg flex items-center gap-2">
-            <Plus size={16} /> Adicionar Novo Treino (B, C...)
+        {/* Footer */}
+        <div className="p-8 bg-white border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4">
+          <button 
+            onClick={handleAddTreino}
+            className="w-full md:w-auto px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Plus size={18} /> Adicionar Treino (A/B/C)
           </button>
-          <button onClick={handleFormSubmit} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black uppercase tracking-widest rounded-lg flex items-center gap-2">
-            <Save size={18} /> Salvar Plano
+          <button 
+            onClick={handleFormSubmit}
+            className="w-full md:w-auto px-12 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Save size={18} /> Salvar Plano Completo
           </button>
         </div>
 

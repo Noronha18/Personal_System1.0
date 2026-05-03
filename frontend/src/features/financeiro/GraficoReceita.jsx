@@ -11,13 +11,13 @@ export default function GraficoReceita({ dados }) {
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-sm h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-          <TrendingUp size={20} className="text-emerald-500" /> Evolução da Receita
+    <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 h-full flex flex-col animate-in fade-in duration-700">
+      <div className="flex items-center justify-between mb-10">
+        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
+          <TrendingUp size={24} className="text-emerald-500" /> Fluxo de Receita
         </h3>
-        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-          <span className="text-xs font-medium text-emerald-400">Últimos 12 meses</span>
+        <div className="px-4 py-1.5 bg-slate-50 border border-black/5 rounded-full shadow-inner">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">12 Meses</span>
         </div>
       </div>
       
@@ -26,35 +26,38 @@ export default function GraficoReceita({ dados }) {
           <BarChart data={dados} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.6} />
+                <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                <stop offset="100%" stopColor="#10b981" stopOpacity={0.6} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis 
               dataKey="referencia_mes" 
-              stroke="#64748b"
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
-              tickLine={{ stroke: '#475569' }}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
+              dy={10}
             />
             <YAxis 
-              stroke="#64748b"
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
-              tickLine={{ stroke: '#475569' }}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
               tickFormatter={formatarMoeda}
             />
             <Tooltip
+              cursor={{ fill: '#f8fafc' }}
               contentStyle={{
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '12px',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                backgroundColor: '#ffffff',
+                border: '1px solid rgba(0,0,0,0.05)',
+                borderRadius: '20px',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                padding: '12px 16px'
               }}
-              labelStyle={{ color: '#e2e8f0', fontWeight: 'bold', marginBottom: '8px' }}
-              itemStyle={{ color: '#10b981' }}
+              labelStyle={{ color: '#0f172a', fontWeight: '900', marginBottom: '4px', fontSize: '12px' }}
+              itemStyle={{ color: '#10b981', fontSize: '12px', fontWeight: 'bold' }}
               formatter={(value) => [formatarMoeda(value), 'Receita']}
             />
-            <Bar dataKey="receita" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="receita" fill="url(#barGradient)" radius={[10, 10, 10, 10]} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       </div>

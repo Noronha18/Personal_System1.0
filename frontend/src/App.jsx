@@ -80,8 +80,8 @@ function App() {
            {renderConteudo()}
         </main>
 
-        <footer className="mt-20 pt-8 border-t border-slate-900 text-center">
-          <p className="text-slate-600 text-[10px] font-medium uppercase tracking-[0.3em]">
+        <footer className="mt-20 pt-8 border-t border-black/5 text-center">
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
             © 2026 Personal System v1.0
           </p>
         </footer>
