@@ -84,11 +84,12 @@ class PlanoTreino(Base):
     __tablename__ = 'planos_treino'
 
     id = Column(Integer, primary_key=True, index=True)
-    aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='CASCADE'))
+    aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='CASCADE'), nullable=True)
     
     titulo = Column(String, index=True)
     objetivo_estrategico = Column(Text, nullable=True) 
     detalhes = Column(Text, nullable=True)
+    duracao_semanas = Column(Integer, default=4)
     data_inicio = Column(Date, default=date.today)
     esta_ativo = Column(Boolean, default=True)
 

@@ -66,17 +66,61 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             }
         }
     };
-
-    const handleSavePlano = async (novoPlano) => {
-        try {
+const handleSavePlano = async (novoPlano) => {
+    try {
+        if (planoEdicao) {
+            await treinoService.atualizarPlano(planoEdicao.id, novoPlano);
+            alert("Plano de treino atualizado com sucesso!");
+        } else {
             await treinoService.criarPlano(alunoId, novoPlano);
             alert("Plano de treino criado com sucesso!");
-            carregar(); 
-            setIsModalPlanoOpen(false);
-        } catch (err) {
-            alert("Erro ao salvar plano: " + err.message);
         }
+        carregar(); 
+        setIsModalPlanoOpen(false);
+        setPlanoEdicao(null);
+    } catch (err) {
+        alert("Erro ao salvar plano: " + err.message);
+    }
+};
+
+const handleClonarPlano = async (planoId) => {
+    try {
+        await treinoService.clonarPlano(planoId, alunoId);
+        alert("Plano clonado e ativado para este aluno!");
+        carregar();
+    } catch (err) {
+        alert("Erro ao clonar plano: " + err.message);
+    }
+};
+
+const [planoEdicao, setPlanoEdicao] = useState(null);
+
+const handleEditPlano = (plano) => {
+    // Converte o plano do formato Public (com nomes e carga_kg) 
+    // para o formato Update (com ids e carga)
+    const formatadoParaEdicao = {
+        titulo: plano.titulo,
+        objetivo_estrategico: plano.objetivo_estrategico,
+        duracao_semanas: plano.duracao_semanas,
+        treinos: plano.treinos.map(t => ({
+            id: t.id,
+            nome: t.nome,
+            prescricoes: t.prescricoes.map(p => ({
+                id: p.id,
+                exercicio_id: p.exercicio_id,
+                series: p.series,
+                repeticoes: p.repeticoes,
+                carga: p.carga_kg,
+                descanso: p.tempo_descanso_segundos
+            }))
+        }))
     };
+    setPlanoEdicao(formatadoParaEdicao);
+    setPlanoSelecionado(null);
+    setIsModalPlanoOpen(true);
+};
+
+if (loading) return (
 
     const handleDeletePlano = async (planoId) => {
         if (confirm("⚠️ Deseja excluir este plano de treino permanentemente?")) {
@@ -232,17 +276,33 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                         {aluno.planos_treino?.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {aluno.planos_treino.map(plano => (
-                                    <div key={plano.id} className="p-5 sm:p-6 bg-slate-50 border border-black/5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-emerald-500/30 transition-all active:scale-[0.98]">
+                                    <div key={plano.id} className={`p-5 sm:p-6 border rounded-2xl sm:rounded-3xl flex flex-col justify-between group transition-all active:scale-[0.98] ${plano.esta_ativo ? 'bg-emerald-50/50 border-emerald-500/20' : 'bg-slate-50 border-black/5 opacity-80'}`}>
                                         <div className="mb-4 sm:mb-6">
-                                            <p className="font-bold text-slate-900 text-base sm:text-lg leading-tight">{plano.titulo}</p>
-                                            <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Criado em {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}</p>
+                                            <div className="flex justify-between items-start">
+                                                <p className="font-bold text-slate-900 text-base sm:text-lg leading-tight">{plano.titulo}</p>
+                                                {plano.esta_ativo && <span className="bg-emerald-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-lg">Ativo</span>}
+                                            </div>
+                                            <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                                {plano.duracao_semanas} semanas • Criado em {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}
+                                            </p>
                                         </div>
-                                        <button 
-                                            onClick={() => setPlanoSelecionado(plano)}
-                                            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 bg-white border border-black/5 shadow-sm hover:bg-slate-50 text-slate-900 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold transition-all"
-                                        >
-                                            <Eye size={16} /> Detalhes
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => setPlanoSelecionado(plano)}
+                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-3 bg-white border border-black/5 shadow-sm hover:bg-slate-50 text-slate-900 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold transition-all"
+                                            >
+                                                <Eye size={16} /> Visualizar
+                                            </button>
+                                            {!plano.esta_ativo && (
+                                                <button 
+                                                    onClick={() => handleClonarPlano(plano.id)}
+                                                    className="p-3 bg-white border border-black/5 shadow-sm hover:border-emerald-500/30 text-emerald-600 rounded-xl sm:rounded-2xl transition-all"
+                                                    title="Reativar/Clonar"
+                                                >
+                                                    <Copy size={16} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -316,8 +376,12 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             {/* Modais */}
             <ModalPlanoTreino 
                 isOpen={isModalPlnoOpen} 
-                onClose={() => setIsModalPlanoOpen(false)} 
+                onClose={() => {
+                    setIsModalPlanoOpen(false);
+                    setPlanoEdicao(null);
+                }} 
                 onSave={handleSavePlano}
+                planoEdicao={planoEdicao}
             />
 
             {/* Modal de Visualização de Plano */}
@@ -369,10 +433,10 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
 
                         <div className="p-8 bg-white flex flex-col md:flex-row justify-end gap-4 border-t border-black/5">
                             <button 
-                                onClick={() => alert("A edição requer atualização do backend.")}
+                                onClick={() => handleEditPlano(planoSelecionado)}
                                 className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
                             >
-                                Editar Treino
+                                Editar Plano
                             </button>
                             <button 
                                 onClick={() => handleDeletePlano(planoSelecionado.id)}

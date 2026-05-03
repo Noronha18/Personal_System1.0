@@ -31,6 +31,14 @@ class PrescricaoCreate(BaseModel):
     carga: Optional[str] = None
     descanso: int = 60
 
+class PrescricaoUpdate(BaseModel):
+    id: Optional[int] = None # ID opcional: se vier, atualiza. Se não, cria nova.
+    exercicio_id: int
+    series: int
+    repeticoes: str
+    carga: Optional[str] = None
+    descanso: int = 60
+
 class PrescricaoPublic(PrescricaoCreate):
     id: int
     nome_exercicio: Optional[str] = None
@@ -44,6 +52,11 @@ class TreinoCreate(BaseModel):
     nome: str
     prescricoes: List[PrescricaoCreate]
 
+class TreinoUpdate(BaseModel):
+    id: Optional[int] = None
+    nome: str
+    prescricoes: List[PrescricaoUpdate]
+
 class TreinoPublic(BaseModel):
     id: int
     nome: str
@@ -54,12 +67,21 @@ class TreinoPublic(BaseModel):
 class PlanoTreinoCreate(BaseModel):
     titulo: str
     objetivo_estrategico: Optional[str] = None
+    duracao_semanas: int = 4
     treinos: List[TreinoCreate]
+
+class PlanoTreinoUpdate(BaseModel):
+    titulo: Optional[str] = None
+    objetivo_estrategico: Optional[str] = None
+    duracao_semanas: Optional[int] = None
+    treinos: Optional[List[TreinoUpdate]] = None
 
 class PlanoTreinoPublic(BaseModel):
     id: int
     titulo: str
+    aluno_id: Optional[int] = None
     objetivo_estrategico: Optional[str] = None
+    duracao_semanas: int
     data_inicio: date
     esta_ativo: bool
     treinos: List[TreinoPublic]

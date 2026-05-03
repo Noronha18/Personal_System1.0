@@ -64,12 +64,29 @@ export const treinoService = {
         method: 'POST',
         body: JSON.stringify(dados),
     }),
-    criarPlano: (alunoId, dados) => apiFetch(`/alunos/${alunoId}/planos/`, {
+    
+    // Gestão de Planos
+    criarPlano: (alunoId, dados) => apiFetch(`/alunos/${alunoId}/planos`, {
         method: 'POST',
+        body: JSON.stringify(dados),
+    }),
+    atualizarPlano: (planoId, dados) => apiFetch(`/planos/${planoId}`, {
+        method: 'PATCH',
         body: JSON.stringify(dados),
     }),
     deletarPlano: (id) => apiFetch(`/planos/${id}`, {
         method: 'DELETE',
+    }),
+    clonarPlano: (planoId, alunoId = null) => {
+        const url = alunoId ? `/planos/${planoId}/clonar?aluno_id=${alunoId}` : `/planos/${planoId}/clonar`;
+        return apiFetch(url, { method: 'POST' });
+    },
+
+    // Templates Globais
+    listarTemplates: () => apiFetch('/planos/templates'),
+    criarTemplate: (dados) => apiFetch('/planos/templates', {
+        method: 'POST',
+        body: JSON.stringify(dados),
     }),
 };
 

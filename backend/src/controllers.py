@@ -1,7 +1,7 @@
 from __future__ import annotations
 import calendar
 from datetime import datetime, date
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, func, or_, and_, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
@@ -159,6 +159,23 @@ async def listar_planos_detalhados_aluno(db: AsyncSession, aluno_id: int):
         .order_by(models.PlanoTreino.data_inicio.desc())
     )
     
+    result = await db.execute(query)
+    return result.scalars().all()
+
+async def listar_templates_globais(db: AsyncSession):
+    """
+    Retorna todos os planos que não possuem aluno_id vinculado (templates).
+    """
+    query = (
+        select(models.PlanoTreino)
+        .where(models.PlanoTreino.aluno_id == None)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+            .selectinload(models.Prescricao.exercicio)
+        )
+        .order_by(models.PlanoTreino.titulo)
+    )
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -568,12 +585,22 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
     
     return resultado
 
-async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
-    # 1. Cria o Plano
+async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: schemas.PlanoTreinoCreate):
+    # 1. Se for para um aluno específico, desativa os planos anteriores
+    if aluno_id:
+        stmt_desativa = (
+            update(models.PlanoTreino)
+            .where(models.PlanoTreino.aluno_id == aluno_id, models.PlanoTreino.esta_ativo == True)
+            .values(esta_ativo=False)
+        )
+        await db.execute(stmt_desativa)
+
+    # 2. Cria o Plano
     novo_plano = models.PlanoTreino(
         aluno_id=aluno_id,
         titulo=plano_in.titulo,
-        objetivo_estrategico=plano_in.objetivo_estrategico
+        objetivo_estrategico=plano_in.objetivo_estrategico,
+        duracao_semanas=plano_in.duracao_semanas
     )
     db.add(novo_plano)
     await db.flush() # Garante que temos o ID do plano
@@ -627,6 +654,170 @@ async def deletar_plano_treino(db: AsyncSession, plano_id: int) -> None:
     
     await db.delete(plano)
     await db.commit()
+
+async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno_id: int | None) -> models.PlanoTreino:
+    """
+    Clona um plano existente para um novo aluno (ou como template se novo_aluno_id for None).
+    """
+    # 1. Carrega o plano original com toda a hierarquia
+    stmt = (
+        select(models.PlanoTreino)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+        )
+        .where(models.PlanoTreino.id == plano_origem_id)
+    )
+    result = await db.execute(stmt)
+    plano_origem = result.scalar_one_or_none()
+
+    if not plano_origem:
+        raise exceptions.ResourceNotFoundError(f"Plano de origem {plano_origem_id} não encontrado")
+
+    # 2. Se for para um aluno, desativa os planos atuais dele
+    if novo_aluno_id:
+        await db.execute(
+            update(models.PlanoTreino)
+            .where(models.PlanoTreino.aluno_id == novo_aluno_id, models.PlanoTreino.esta_ativo == True)
+            .values(esta_ativo=False)
+        )
+
+    # 3. Cria o novo plano (Cópia profunda)
+    novo_plano = models.PlanoTreino(
+        aluno_id=novo_aluno_id,
+        titulo=f"{plano_origem.titulo} (Cópia)",
+        objetivo_estrategico=plano_origem.objetivo_estrategico,
+        detalhes=plano_origem.detalhes,
+        duracao_semanas=plano_origem.duracao_semanas,
+        esta_ativo=True if novo_aluno_id else False # Templates começam inativos ou neutros
+    )
+    db.add(novo_plano)
+    await db.flush()
+
+    for treino_origem in plano_origem.treinos:
+        novo_treino = models.Treino(
+            plano_id=novo_plano.id,
+            nome=treino_origem.nome,
+            ordem=treino_origem.ordem
+        )
+        db.add(novo_treino)
+        await db.flush()
+
+        for pres_origem in treino_origem.prescricoes:
+            nova_pres = models.Prescricao(
+                treino_id=novo_treino.id,
+                exercicio_id=pres_origem.exercicio_id,
+                series=pres_origem.series,
+                repeticoes=pres_origem.repeticoes,
+                descanso=pres_origem.descanso,
+                carga=pres_origem.carga,
+                observacoes=pres_origem.observacoes
+            )
+            db.add(nova_pres)
+
+    await db.commit()
+    
+    # Retorna o plano clonado com os dados carregados
+    stmt_final = (
+        select(models.PlanoTreino)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+            .selectinload(models.Prescricao.exercicio)
+        )
+        .where(models.PlanoTreino.id == novo_plano.id)
+    )
+    res_final = await db.execute(stmt_final)
+    return res_final.scalar()
+
+async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schemas.PlanoTreinoUpdate) -> models.PlanoTreino:
+    """
+    Atualiza um plano de treino e toda sua hierarquia (treinos e prescrições).
+    Implementa lógica de sincronização: o que não vier no payload é removido.
+    """
+    # 1. Busca o plano existente com toda a hierarquia carregada
+    stmt = (
+        select(models.PlanoTreino)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+        )
+        .where(models.PlanoTreino.id == plano_id)
+    )
+    result = await db.execute(stmt)
+    plano = result.scalar_one_or_none()
+
+    if not plano:
+        raise exceptions.ResourceNotFoundError(f"Plano {plano_id} não encontrado")
+
+    # 2. Atualiza campos básicos do plano
+    dados_plano = payload.model_dump(exclude={"treinos"}, exclude_unset=True)
+    for key, value in dados_plano.items():
+        setattr(plano, key, value)
+
+    # 3. Sincroniza Treinos se fornecido
+    if payload.treinos is not None:
+        # Forçamos o carregamento/acesso para garantir que o SQLAlchemy não se perca
+        treinos_atuais_map = {t.id: t for t in plano.treinos}
+        ids_no_payload = {t.id for t in payload.treinos if t.id is not None}
+
+        # 3a. Remover treinos que não estão no payload
+        # Usamos uma lista auxiliar para iterar e deletar com segurança
+        for t_id, t_obj in list(treinos_atuais_map.items()):
+            if t_id not in ids_no_payload:
+                # Remove da coleção da relação também
+                plano.treinos.remove(t_obj)
+                await db.delete(t_obj)
+
+        # 3b. Atualizar ou Criar
+        for i, t_data in enumerate(payload.treinos):
+            if t_data.id and t_data.id in treinos_atuais_map:
+                # Atualizar existente
+                treino = treinos_atuais_map[t_data.id]
+                treino.nome = t_data.nome
+                treino.ordem = i
+
+                # Sincronizar Prescrições
+                pres_atuais_map = {p.id: p for p in treino.prescricoes}
+                p_ids_no_payload = {p.id for p in t_data.prescricoes if p.id is not None}
+
+                for p_id, p_obj in list(pres_atuais_map.items()):
+                    if p_id not in p_ids_no_payload:
+                        treino.prescricoes.remove(p_obj)
+                        await db.delete(p_obj)
+
+                for p_data in t_data.prescricoes:
+                    if p_data.id and p_data.id in pres_atuais_map:
+                        pres = pres_atuais_map[p_data.id]
+                        for k, v in p_data.model_dump(exclude={"id"}).items():
+                            setattr(pres, k, v)
+                    else:
+                        nova_p = models.Prescricao(treino_id=treino.id, **p_data.model_dump(exclude={"id"}))
+                        db.add(nova_p)
+            else:
+                # Criar novo treino
+                novo_treino = models.Treino(plano_id=plano.id, nome=t_data.nome, ordem=i)
+                plano.treinos.append(novo_treino)
+                db.add(novo_treino)
+                await db.flush() # Para ganhar o ID do novo treino
+                for p_data in t_data.prescricoes:
+                    nova_p = models.Prescricao(treino_id=novo_treino.id, **p_data.model_dump(exclude={"id"}))
+                    db.add(nova_p)
+
+    await db.commit()
+
+    # Retorna o plano atualizado com relações novas
+    stmt_final = (
+        select(models.PlanoTreino)
+        .options(
+            selectinload(models.PlanoTreino.treinos)
+            .selectinload(models.Treino.prescricoes)
+            .selectinload(models.Prescricao.exercicio)
+        )
+        .where(models.PlanoTreino.id == plano.id)
+    )
+    res_final = await db.execute(stmt_final)
+    return res_final.scalar()
 
 async def listar_exercicios(db: AsyncSession):
     result = await db.execute(select(models.Exercicio).order_by(models.Exercicio.grupo_muscular))
