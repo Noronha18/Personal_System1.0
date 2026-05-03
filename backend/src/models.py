@@ -26,6 +26,8 @@ class Aluno(Base):
     cpf = Column(String, unique=True, index=True)
     data_inicio = Column(Date, default=date.today)
     dia_vencimento = Column(Integer, default=5)
+    tipo_pagamento = Column(String, default="mensal") # "mensal" ou "pacote"
+    saldo_aulas = Column(Integer, default=0)
     
     frequencia_semanal_plano = Column("frequencia_semanal", Integer, default=3)
     valor_mensalidade = Column(Float, default=0.0)

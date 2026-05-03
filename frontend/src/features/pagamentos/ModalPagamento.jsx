@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { X, DollarSign, UserCircle2, Calendar } from 'lucide-react';
+import { X, DollarSign, UserCircle2, Calendar, Hash } from 'lucide-react';
 import { alunoService, pagamentoService } from '../../services/api';
 
 export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
     const [alunos, setAlunos] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [alunoSelecionado, setAlunoSelecionado] = useState(null);
     const [formData, setFormData] = useState({
         aluno_id: '',
         valor: '',
         referencia_mes: new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }),
         forma_pagamento: 'PIX',
+        quantidade_aulas: 0,
         observacao: ''
     });
 
@@ -18,6 +20,19 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
             alunoService.listar().then(setAlunos).catch(console.error);
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (formData.aluno_id) {
+            const aluno = alunos.find(a => a.id === parseInt(formData.aluno_id));
+            setAlunoSelecionado(aluno);
+            // Se for pacote, podemos sugerir o valor
+            if (aluno && aluno.tipo_pagamento === 'pacote' && !formData.valor) {
+                setFormData(prev => ({ ...prev, valor: aluno.valor_mensalidade }));
+            }
+        } else {
+            setAlunoSelecionado(null);
+        }
+    }, [formData.aluno_id, alunos]);
 
     if (!isOpen) return null;
 
@@ -28,7 +43,8 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
             await pagamentoService.registrar({
                 ...formData,
                 aluno_id: parseInt(formData.aluno_id),
-                valor: parseFloat(formData.valor)
+                valor: parseFloat(formData.valor),
+                quantidade_aulas: parseInt(formData.quantidade_aulas)
             });
             if (onSuccess) onSuccess();
             onClose();
@@ -71,7 +87,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                         >
                             <option value="">Selecione o atleta...</option>
                             {alunos.map(aluno => (
-                                <option key={aluno.id} value={aluno.id}>{aluno.nome}</option>
+                                <option key={aluno.id} value={aluno.id}>{aluno.nome} ({aluno.tipo_pagamento})</option>
                             ))}
                         </select>
                     </div>
@@ -101,6 +117,26 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                                 onChange={(e) => setFormData({...formData, referencia_mes: e.target.value})}
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <Hash size={14} className="text-emerald-500" /> 
+                            {alunoSelecionado?.tipo_pagamento === 'pacote' ? 'Qtd. de Aulas (Reseta Saldo)' : 'Aulas Extras (Opcional)'}
+                        </label>
+                        <input 
+                            type="number"
+                            className={`w-full bg-slate-50 border rounded-2xl px-5 py-4 text-slate-900 font-black outline-none transition-all
+                                ${alunoSelecionado?.tipo_pagamento === 'pacote' ? 'border-emerald-500/30 ring-2 ring-emerald-500/5' : 'border-black/5'}`}
+                            value={formData.quantidade_aulas}
+                            onChange={(e) => setFormData({...formData, quantidade_aulas: e.target.value})}
+                            placeholder="Ex: 10"
+                        />
+                        {alunoSelecionado?.tipo_pagamento === 'pacote' && (
+                            <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-tight ml-1 animate-pulse">
+                                ⚠️ O saldo atual será substituído por este novo valor.
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-4">

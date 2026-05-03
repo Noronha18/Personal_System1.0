@@ -78,6 +78,20 @@ export const pagamentoService = {
     }),
 };
 
+export const sessaoService = {
+    listar: (params) => {
+        const query = new URLSearchParams(params).toString();
+        return apiFetch(`/sessoes/?${query}`);
+    },
+    registrar: (dados) => apiFetch('/sessoes/', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    }),
+    deletar: (id) => apiFetch(`/sessoes/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
 export const authService = {
     login: async (username, password) => {
         const formData = new FormData();

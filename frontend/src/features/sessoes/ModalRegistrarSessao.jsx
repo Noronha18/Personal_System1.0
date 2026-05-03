@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Dumbbell, CheckCircle2, AlertCircle, Clock, AlertTriangle } from 'lucide-react';
+import { X, Calendar, Dumbbell, CheckCircle2, AlertCircle, Clock, AlertTriangle, MessageSquare } from 'lucide-react';
+import { sessaoService } from '../../services/api';
 
 export default function ModalRegistrarSessao({ alunoId, planos, onClose, onSucesso }) {
-  // Estados do Formulário
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [planoId, setPlanoId] = useState('');
-  const [status, setStatus] = useState('realizada'); // 'realizada' | 'falta_com_reposicao' | 'falta_sem_reposicao'
+  const [status, setStatus] = useState('realizada'); 
   const [observacao, setObservacao] = useState('');
-  
-  // Estados de UI
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Seleciona o primeiro plano ativo automaticamente ao abrir
   useEffect(() => {
     const planoAtivo = planos?.find(p => p.esta_ativo);
     if (planoAtivo) {
@@ -26,42 +23,30 @@ export default function ModalRegistrarSessao({ alunoId, planos, onClose, onSuces
     setErro(null);
 
     try {
-      // Validação básica
       if (status === 'realizada' && !planoId) {
         throw new Error("Selecione qual treino foi realizado.");
       }
       
       if (status !== 'realizada' && !observacao) {
-          throw new Error("Informe o motivo da ausência/falta.");
+          throw new Error("Informe o motivo da ausência.");
       }
 
-      // Mapeia o status do frontend para o payload do backend
       const isRealizada = status === 'realizada';
       const precisaReposicao = status === 'falta_com_reposicao';
 
       const payload = {
         aluno_id: alunoId,
         plano_treino_id: isRealizada ? parseInt(planoId) : null,
-        data_hora: new Date(data).toISOString(), // Backend espera ISO
+        data_hora: new Date(data).toISOString(),
         realizada: isRealizada,
-        precisa_reposicao: precisaReposicao, // Campo novo para controle de crédito
+        precisa_reposicao: precisaReposicao,
         observacoes_performance: isRealizada ? observacao : null,
         motivo_ausencia: !isRealizada ? observacao : null
       };
 
-      const response = await fetch('http://localhost:8000/sessoes/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || 'Erro ao registrar sessão');
-      }
-
-      onSucesso(); // Atualiza a tela pai (DetalheAluno)
-      onClose();   // Fecha o modal
+      await sessaoService.registrar(payload);
+      onSucesso();
+      onClose();
 
     } catch (err) {
       setErro(err.message);
@@ -71,181 +56,116 @@ export default function ModalRegistrarSessao({ alunoId, planos, onClose, onSuces
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white border border-black/5 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900">
-          <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-            Registrar Sessão
-          </h3>
-          <button 
-            onClick={onClose} 
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
+        <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 size={24} />
+            </div>
+            <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Check-in</h2>
+                <p className="text-slate-500 text-sm font-medium">Registre a atividade do aluno.</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90">
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-10 space-y-8">
           {erro && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <p>{erro}</p>
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-600 text-xs font-bold text-center">
+              {erro}
             </div>
           )}
 
-          {/* Seleção de Data */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-500" />
-              Data da Sessão
-            </label>
-            <input
-              type="date"
-              value={data}
-              max={new Date().toISOString().split('T')[0]} // Bloqueia datas futuras
-              onChange={(e) => setData(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-              required
-            />
-          </div>
-
-          {/* Seleção de Status (Tabs Visuais) */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">O que aconteceu?</label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setStatus('realizada')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                  status === 'realizada'
-                    ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
-                }`}
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                Realizada
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatus('falta_com_reposicao')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                  status === 'falta_com_reposicao'
-                    ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
-                }`}
-              >
-                <Clock className="w-5 h-5" />
-                Reposição
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatus('falta_sem_reposicao')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                  status === 'falta_sem_reposicao'
-                    ? 'bg-red-500/10 border-red-500 text-red-400'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
-                }`}
-              >
-                <AlertTriangle className="w-5 h-5" />
-                Falta (Perdida)
-              </button>
+          <div className="grid grid-cols-1 gap-8">
+            {/* Data */}
+            <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <Calendar size={14} className="text-emerald-500" /> Data da Sessão
+                </label>
+                <input
+                    type="date"
+                    value={data}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setData(e.target.value)}
+                    className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-bold outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                    required
+                />
             </div>
-            
-            {/* Explicação do Status Selecionado */}
-            <div className="text-xs text-slate-500 px-1">
-              {status === 'realizada' && "O aluno compareceu e treinou. Conta como aula dada."}
-              {status === 'falta_com_reposicao' && "O aluno faltou mas tem direito a repor. NÃO desconta do pacote."}
-              {status === 'falta_sem_reposicao' && "O aluno faltou sem justificativa. Desconta do pacote (aula dada)."}
+
+            {/* Status Selector */}
+            <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status da Aula</label>
+                <div className="grid grid-cols-3 gap-3">
+                    {[
+                        { id: 'realizada', label: 'Presente', icon: CheckCircle2, color: 'emerald' },
+                        { id: 'falta_com_reposicao', label: 'Reposição', icon: Clock, color: 'amber' },
+                        { id: 'falta_sem_reposicao', label: 'Falta', icon: AlertTriangle, color: 'red' }
+                    ].map(s => (
+                        <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setStatus(s.id)}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all
+                                ${status === s.id 
+                                    ? `bg-${s.color}-500 text-white border-${s.color}-400 shadow-lg` 
+                                    : 'bg-slate-50 text-slate-400 border-black/5 hover:bg-slate-100'}`}
+                        >
+                            <s.icon size={20} />
+                            <span className="text-[10px] font-black uppercase tracking-tight">{s.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Plano Selector */}
+            {status === 'realizada' && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <Dumbbell size={14} className="text-emerald-500" /> Treino Aplicado
+                    </label>
+                    <select
+                        value={planoId}
+                        onChange={(e) => setPlanoId(e.target.value)}
+                        className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-bold outline-none appearance-none cursor-pointer"
+                    >
+                        <option value="">Selecione o plano...</option>
+                        {planos?.filter(p => p.esta_ativo).map(p => (
+                            <option key={p.id} value={p.id}>{p.titulo}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {/* Observação */}
+            <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <MessageSquare size={14} className="text-emerald-500" /> 
+                    {status === 'realizada' ? 'Notas de Performance' : 'Motivo da Ausência'}
+                </label>
+                <textarea
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                    placeholder={status === 'realizada' ? "Ex: Evoluiu carga..." : "Ex: Problema de saúde..."}
+                    className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-medium outline-none min-h-[100px] resize-none focus:ring-2 focus:ring-emerald-500/10 transition-all placeholder:text-slate-300"
+                />
             </div>
           </div>
 
-          {/* Seleção de Plano (Apenas se realizada) */}
-          {status === 'realizada' && (
-  <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-    <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-      <Dumbbell className="w-4 h-4 text-emerald-500" />
-      Qual treino foi executado?
-    </label>
-    <select
-      value={planoId}
-      onChange={(e) => setPlanoId(e.target.value)}
-      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
-    >
-      <option value="">Selecione um plano...</option>
-      
-      {/* ✅ FILTRO ADICIONADO AQUI: */}
-      {planos
-        ?.filter(plano => plano.esta_ativo) // Só mostra se esta_ativo === true
-        .map(plano => (
-          <option key={plano.id} value={plano.id}>
-            {plano.titulo}
-          </option>
-      ))}
-
-    </select>
-    
-    {/* Feedback visual caso não tenha planos ativos */}
-    {planos?.filter(p => p.esta_ativo).length === 0 && (
-      <p className="text-xs text-amber-500 mt-1">
-        ⚠️ Nenhum plano ativo encontrado. Ative um plano no perfil do aluno.
-      </p>
-    )}
-  </div>
-)}
-
-          {/* Observações */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              {status === 'realizada' ? 'Observações de Performance (Opcional)' : 'Motivo da Falta (Obrigatório)'}
-            </label>
-            <textarea
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-              placeholder={
-                status === 'realizada' 
-                ? "Ex: Aumentou carga no supino, sentiu desconforto no joelho..." 
-                : "Ex: Viagem a trabalho, gripe, carro quebrou..."
-              }
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none min-h-[100px] resize-none"
-            />
-          </div>
-
-          {/* Footer / Ações */}
-          <div className="flex gap-3 pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`flex-1 px-4 py-3 text-white rounded-lg font-bold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                status === 'realizada' 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20' 
-                  : status === 'falta_com_reposicao'
-                    ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20'
-                    : 'bg-red-600 hover:bg-red-500 shadow-red-900/20'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Confirmar Registro'
-              )}
-            </button>
-          </div>
-
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3
+                ${loading ? 'bg-slate-100 text-slate-300' : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20'}`}
+          >
+            {loading ? <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={18} />}
+            {loading ? 'Sincronizando...' : 'Confirmar Check-in'}
+          </button>
         </form>
       </div>
     </div>

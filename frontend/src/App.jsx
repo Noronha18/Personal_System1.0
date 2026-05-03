@@ -89,7 +89,7 @@ function App() {
 
       {/* Visão de Prontuário (Sobreposta) */}
       {selectedAlunoId && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 bg-[#F2F2F7] overflow-y-auto custom-scrollbar">
             <div className="max-w-7xl mx-auto w-full p-4 md:p-12">
                 <DetalheAluno 
                     alunoId={selectedAlunoId} 

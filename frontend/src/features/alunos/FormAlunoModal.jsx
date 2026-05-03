@@ -8,6 +8,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
         nome: '',
         cpf: '',
         dia_vencimento: 5,
+        tipo_pagamento: 'mensal', // 'mensal' ou 'pacote'
         frequencia_semanal_plano: 3,
         valor_mensalidade: 0,
         idade: 0,
@@ -78,16 +79,40 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimento</label>
-                            <input 
-                                type="number"
-                                className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold"
-                                value={formData.dia_vencimento}
-                                onChange={(e) => setFormData({...formData, dia_vencimento: e.target.value})}
-                            />
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modalidade de Pagamento</label>
+                        <div className="flex gap-4">
+                            {[
+                                { id: 'mensal', label: 'Mensalidade' },
+                                { id: 'pacote', label: 'Pacote de Aulas' }
+                            ].map(tipo => (
+                                <button
+                                    key={tipo.id}
+                                    type="button"
+                                    onClick={() => setFormData({...formData, tipo_pagamento: tipo.id})}
+                                    className={`flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border
+                                        ${formData.tipo_pagamento === tipo.id 
+                                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' 
+                                            : 'bg-slate-50 text-slate-400 border-black/5 hover:bg-slate-100'}`}
+                                >
+                                    {tipo.label}
+                                </button>
+                            ))}
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        {formData.tipo_pagamento === 'mensal' && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-500">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimento</label>
+                                <input 
+                                    type="number"
+                                    className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold"
+                                    value={formData.dia_vencimento}
+                                    onChange={(e) => setFormData({...formData, dia_vencimento: e.target.value})}
+                                />
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frequência</label>
                             <select 
@@ -102,7 +127,9 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mensalidade</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                {formData.tipo_pagamento === 'mensal' ? 'Mensalidade' : 'Valor do Pacote'}
+                            </label>
                             <input 
                                 type="number"
                                 className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold"

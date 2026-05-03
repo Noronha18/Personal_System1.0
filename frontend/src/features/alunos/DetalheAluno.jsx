@@ -150,8 +150,19 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                     <p className="text-sm text-slate-900 font-bold">{new Date(aluno.data_inicio).toLocaleDateString('pt-BR')}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencimento</p>
-                                    <p className="text-sm text-slate-900 font-bold">Dia {aluno.dia_vencimento}</p>
+                                    {aluno.tipo_pagamento === 'pacote' ? (
+                                        <>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo</p>
+                                            <p className={`text-sm font-black ${aluno.saldo_aulas > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                {aluno.saldo_aulas} {aluno.saldo_aulas === 1 ? 'Aula' : 'Aulas'}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencimento</p>
+                                            <p className="text-sm text-slate-900 font-bold">Dia {aluno.dia_vencimento}</p>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>

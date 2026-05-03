@@ -19,15 +19,18 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
     inicio_mes = datetime(hoje.year, hoje.month, 1)
 
     # 1. Status Financeiro
-    stmt_pag = select(models.Pagamento).where(
-        models.Pagamento.aluno_id == aluno.id,
-        models.Pagamento.referencia_mes == ref_mes
-    )
-    result_pag = await db.execute(stmt_pag)
-    
-    pagamento = result_pag.scalars().first() 
-    
-    aluno.status_financeiro = "em_dia" if pagamento else "atrasado"
+    if aluno.tipo_pagamento == "pacote":
+        # Se for pacote, está em dia se tiver saldo de aulas
+        aluno.status_financeiro = "em_dia" if aluno.saldo_aulas > 0 else "atrasado"
+    else:
+        # Se for mensal, verifica pagamento no mês de referência
+        stmt_pag = select(models.Pagamento).where(
+            models.Pagamento.aluno_id == aluno.id,
+            models.Pagamento.referencia_mes == ref_mes
+        )
+        result_pag = await db.execute(stmt_pag)
+        pagamento = result_pag.scalars().first() 
+        aluno.status_financeiro = "em_dia" if pagamento else "atrasado"
 
     # 2. Contagem de Sessões Realizadas
     stmt_sessao = select(func.count(models.SessaoTreino.id)).where(
@@ -54,7 +57,12 @@ async def listar_alunos_ativos(db: AsyncSession):
         .order_by(models.Aluno.nome)
     )
     result = await db.execute(query)
-    return result.scalars().all()
+    alunos = result.scalars().all()
+    
+    for aluno in alunos:
+        await _preencher_status_aluno(db, aluno)
+        
+    return alunos
 
 async def get_aluno(db: AsyncSession, aluno_id: int):
     query = (
@@ -76,6 +84,8 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
     
     if not aluno:
         raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
+    
+    await _preencher_status_aluno(db, aluno)
         
     return aluno
 
@@ -126,10 +136,10 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) 
     """
     Registra a entrada financeira de um aluno.
     """
-    await get_aluno(db, dados.aluno_id)
+    aluno = await get_aluno(db, dados.aluno_id)
     
     hoje = date.today()
-    ref = f"{hoje.month:02d}/{hoje.year}"
+    ref = dados.referencia_mes or f"{hoje.month:02d}/{hoje.year}"
 
     novo_pagamento = models.Pagamento(
         aluno_id=dados.aluno_id,
@@ -141,6 +151,10 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) 
         quantidade_aulas=dados.quantidade_aulas
     )
     
+    # Se informou quantidade de aulas, soma ao saldo do aluno (recarga)
+    if dados.quantidade_aulas > 0:
+        aluno.saldo_aulas += dados.quantidade_aulas
+
     db.add(novo_pagamento)
     try:
         await db.commit()
@@ -173,7 +187,8 @@ async def listar_pagamentos(db: AsyncSession) -> list[dict[str, Any]]:
             "referencia_mes": pagamento.referencia_mes,
             "forma_pagamento": pagamento.forma_pagamento,
             "data_pagamento": pagamento.data_pagamento,
-            "observacao": pagamento.observacao
+            "observacao": pagamento.observacao,
+            "quantidade_aulas": pagamento.quantidade_aulas
         }
         pagamentos.append(pag_dict)
     
@@ -271,10 +286,8 @@ def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
 
 
 async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate) -> models.SessaoTreino:
-    aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == payload.aluno_id))
-    if not aluno:
-        raise exceptions.ResourceNotFoundError(f"Aluno {payload.aluno_id} não encontrado")
-
+    aluno = await get_aluno(db, payload.aluno_id)
+    
     if payload.plano_treino_id is not None:
         plano = await db.scalar(
             select(models.PlanoTreino).where(
@@ -300,6 +313,13 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
         data_hora=data_final # ✅ Agora é naive (compatível com timestamp sem timezone)
     )
     
+    # Se a sessão conta como aula dada (realizada ou falta sem reposição) e o aluno é de pacote, debita 1 aula
+    aula_contabilizada = payload.realizada or (not payload.realizada and not payload.precisa_reposicao)
+    
+    if aula_contabilizada and aluno.tipo_pagamento == "pacote":
+        if aluno.saldo_aulas > 0:
+            aluno.saldo_aulas -= 1
+
     db.add(sessao)
     await db.commit()
     await db.refresh(sessao)
@@ -424,9 +444,26 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
         .scalar_subquery()
     )
 
-    alunos_pagaram_sq = (
-        select(func.count(func.distinct(models.Pagamento.aluno_id)))
-        .where(models.Pagamento.referencia_mes == ref_mes)
+    # Alunos em dia são aqueles que pagaram no mês atual (mensal) 
+    # OU alunos de pacote que possuem saldo positivo
+    alunos_em_dia_sq = (
+        select(func.count(models.Aluno.id))
+        .where(
+            or_(
+                # Caso Mensal: tem pagamento na referência
+                and_(
+                    models.Aluno.tipo_pagamento == "mensal",
+                    models.Aluno.id.in_(
+                        select(models.Pagamento.aluno_id).where(models.Pagamento.referencia_mes == ref_mes)
+                    )
+                ),
+                # Caso Pacote: tem saldo de aulas
+                and_(
+                    models.Aluno.tipo_pagamento == "pacote",
+                    models.Aluno.saldo_aulas > 0
+                )
+            )
+        )
         .scalar_subquery()
     )
 
@@ -434,7 +471,7 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
 
     kpi_stmt = select(
         receita_mes_sq.label("receita_total_mes"),
-        alunos_pagaram_sq.label("alunos_em_dia"),
+        alunos_em_dia_sq.label("alunos_em_dia"),
         total_alunos_sq.label("total_alunos"),
     )
 
@@ -445,9 +482,16 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
 
     alunos_inadimplentes = max(total_alunos - alunos_em_dia, 0)
     inadimplencia = (alunos_inadimplentes / total_alunos) if total_alunos > 0 else 0.0
-    ticket_medio = (receita_total_mes / alunos_em_dia) if alunos_em_dia > 0 else 0.0
+    
+    # Ticket médio baseado em quem pagou no mês (para evitar distorção com alunos de pacote que não pagaram ESTE mês)
+    alunos_que_pagaram_este_mes = await db.scalar(
+        select(func.count(func.distinct(models.Pagamento.aluno_id)))
+        .where(models.Pagamento.referencia_mes == ref_mes)
+    )
+    ticket_medio = (receita_total_mes / alunos_que_pagaram_este_mes) if alunos_que_pagaram_este_mes and alunos_que_pagaram_este_mes > 0 else 0.0
 
     # === QUERY 2: Série histórica 12 meses ===
+
     meses = _month_starts(mes_atual_inicio, n=12)
     inicio_janela = meses[0]
 

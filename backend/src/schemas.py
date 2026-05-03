@@ -66,6 +66,7 @@ class PagamentoCreate(BaseModel):
     valor: float
     referencia_mes: str # Ex: "02/2026"
     forma_pagamento: str # PIX, Dinheiro, etc
+    quantidade_aulas: int = 0
     data_pagamento: Optional[date] = None
     observacao: Optional[str] = None
 
@@ -96,7 +97,9 @@ class SessaoTreinoCreate(BaseModel):
     plano_treino_id: Optional[int] = None
     data_hora: datetime = Field(default_factory=datetime.now)
     realizada: bool = True
+    precisa_reposicao: bool = False
     observacoes_performance: Optional[str] = None
+    motivo_ausencia: Optional[str] = None
 
 class SessaoTreinoPublic(SessaoTreinoCreate):
     id: int
@@ -114,6 +117,8 @@ class AlunoBase(BaseModel):
     nome: str
     cpf: str
     dia_vencimento: int = 5
+    tipo_pagamento: str = "mensal"
+    saldo_aulas: int = 0
     frequencia_semanal_plano: int = 3
     valor_mensalidade: float = 0.0
     idade: int = 0
@@ -128,6 +133,8 @@ class AlunoPublic(BaseModel):
     nome: str
     cpf: str
     dia_vencimento: int
+    tipo_pagamento: str
+    saldo_aulas: int
     frequencia_semanal_plano: int
     valor_mensalidade: float
     status_financeiro: str = "em_dia"

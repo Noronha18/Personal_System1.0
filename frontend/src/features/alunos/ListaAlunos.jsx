@@ -74,7 +74,15 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                             
                             <div className="flex-1">
                                 <h3 className="text-slate-900 font-bold text-lg leading-tight">{aluno.nome}</h3>
-                                <p className="text-slate-400 text-xs font-mono tracking-tight">{aluno.cpf}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-slate-400 text-xs font-mono tracking-tight">{aluno.cpf}</p>
+                                    <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                                        {aluno.tipo_pagamento === 'pacote' 
+                                            ? `Pacote: ${aluno.saldo_aulas} aulas` 
+                                            : 'Mensalidade'}
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4">
