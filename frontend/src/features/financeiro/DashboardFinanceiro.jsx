@@ -61,17 +61,17 @@ const DashboardFinanceiro = () => {
     }
 
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-2">
                 <div>
-                    <h2 className="text-4xl font-black text-slate-900 tracking-tight">Financeiro</h2>
-                    <p className="text-slate-500 text-sm font-medium">Saúde financeira e previsibilidade do negócio.</p>
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Financeiro</h2>
+                    <p className="text-slate-500 text-xs sm:text-sm font-medium">Saúde financeira e previsibilidade do negócio.</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/20 flex items-center gap-3 active:scale-95 uppercase text-xs tracking-widest"
+                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-white px-6 sm:px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 uppercase text-[10px] sm:text-xs tracking-widest"
                 >
-                    <Plus size={20} /> Registrar Recebimento
+                    <Plus size={20} /> <span className="sm:inline">Registrar</span>
                 </button>
             </div>
 

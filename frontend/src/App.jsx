@@ -36,16 +36,25 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] text-slate-900 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+    <div className="min-h-screen bg-ios-bg text-slate-900 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
         
-        <header className="sticky top-4 z-40 flex flex-col md:flex-row justify-between items-center mb-12 gap-6 bg-white/70 p-4 md:p-5 rounded-[2rem] border border-white/20 backdrop-blur-2xl shadow-xl shadow-black/5">
-          <div className="flex items-center gap-4 pl-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-500/20">P</div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">System<span className="text-emerald-500">1.0</span></h1>
+        <header className="sticky top-4 z-40 flex flex-col lg:flex-row justify-between items-center mb-8 md:mb-12 gap-6 bg-white/70 p-4 md:p-5 rounded-[2rem] border border-white/20 backdrop-blur-2xl shadow-xl shadow-black/5">
+          <div className="flex items-center justify-between w-full lg:w-auto px-2">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-500/20">P</div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">System<span className="text-emerald-500">1.0</span></h1>
+            </div>
+            
+            <button 
+              onClick={handleLogout}
+              className="lg:hidden px-4 py-2 bg-slate-200/50 hover:bg-slate-200 text-[10px] font-bold text-slate-600 rounded-xl transition-all active:scale-95 uppercase tracking-widest"
+            >
+              Sair
+            </button>
           </div>
           
-          <nav className="flex p-1 bg-slate-200/50 rounded-2xl border border-white/20 shadow-inner">
+          <nav className="flex p-1 bg-slate-200/50 rounded-2xl border border-white/20 shadow-inner w-full lg:w-auto overflow-x-auto no-scrollbar">
             {[
               { id: 'alunos', label: 'Alunos' },
               { id: 'treinos', label: 'Treinos' },
@@ -57,7 +66,7 @@ function App() {
                   setAbaAtiva(aba.id);
                   setSelectedAlunoId(null);
                 }}
-                className={`px-6 py-2 rounded-[0.85rem] text-sm font-semibold transition-all duration-300 active:scale-95 ${
+                className={`flex-1 lg:flex-none px-4 sm:px-6 py-2 rounded-[0.85rem] text-xs sm:text-sm font-semibold transition-all duration-300 active:scale-95 whitespace-nowrap ${
                   abaAtiva === aba.id
                     ? 'bg-white text-slate-900 shadow-md'
                     : 'text-slate-500 hover:text-slate-700'
@@ -70,7 +79,7 @@ function App() {
 
           <button 
             onClick={handleLogout}
-            className="px-6 py-2.5 bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-600 rounded-2xl transition-all active:scale-95"
+            className="hidden lg:block px-6 py-2.5 bg-slate-200/50 hover:bg-slate-200 text-xs font-bold text-slate-600 rounded-2xl transition-all active:scale-95"
           >
             Logout
           </button>
@@ -89,7 +98,7 @@ function App() {
 
       {/* Visão de Prontuário (Sobreposta) */}
       {selectedAlunoId && (
-        <div className="fixed inset-0 z-50 bg-[#F2F2F7] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 bg-ios-bg overflow-y-auto custom-scrollbar">
             <div className="max-w-7xl mx-auto w-full p-4 md:p-12">
                 <DetalheAluno 
                     alunoId={selectedAlunoId} 

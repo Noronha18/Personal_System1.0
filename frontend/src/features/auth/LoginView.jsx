@@ -24,7 +24,7 @@ export const LoginView = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] p-6 font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-ios-bg p-6 font-sans">
             <div className="w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-1000">
                 <div className="text-center mb-12">
                     <div className="w-20 h-20 bg-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/30 animate-bounce duration-[2000ms]">

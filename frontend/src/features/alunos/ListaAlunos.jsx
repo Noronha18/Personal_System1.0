@@ -35,15 +35,15 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
     }
 
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex justify-between items-center px-2">
                 <div>
-                    <h2 className="text-4xl font-black text-slate-900 tracking-tight">Alunos</h2>
-                    <p className="text-slate-500 text-sm font-medium">Gestão de performance ativa.</p>
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Alunos</h2>
+                    <p className="text-slate-500 text-xs sm:text-sm font-medium">Gestão de performance ativa.</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white p-4 rounded-full font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-90"
+                    className="bg-emerald-500 hover:bg-emerald-400 text-white p-3 sm:p-4 rounded-full font-bold transition-all shadow-lg shadow-emerald-500/20 active:scale-90"
                 >
                     <Plus size={24} />
                 </button>
@@ -56,44 +56,47 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
             )}
 
             {alunos.length === 0 ? (
-                <div className="py-32 border-2 border-dashed border-slate-300 rounded-[2.5rem] text-center mx-2">
+                <div className="py-20 sm:py-32 border-2 border-dashed border-slate-300 rounded-[2rem] sm:rounded-[2.5rem] text-center mx-2">
                     <p className="text-slate-400 font-medium italic">Nenhum aluno cadastrado.</p>
                 </div>
             ) : (
-                <div className="space-y-1 mx-2 bg-white border border-black/5 rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5">
+                <div className="space-y-1 mx-2 bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5">
                     {alunos.map((aluno, idx) => (
                         <div 
                             key={aluno.id} 
                             onClick={() => onSelectAluno(aluno.id)}
-                            className={`group flex items-center gap-4 p-5 transition-all cursor-pointer active:bg-slate-50
+                            className={`group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 transition-all cursor-pointer active:bg-slate-50
                                 ${idx !== alunos.length - 1 ? 'border-b border-slate-100' : ''}`}
                         >
-                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500/10 group-hover:text-emerald-500 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500/10 group-hover:text-emerald-500 transition-colors">
                                 <UserCircle2 size={24} />
                             </div>
                             
-                            <div className="flex-1">
-                                <h3 className="text-slate-900 font-bold text-lg leading-tight">{aluno.nome}</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-slate-400 text-xs font-mono tracking-tight">{aluno.cpf}</p>
-                                    <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-slate-900 font-bold text-base sm:text-lg leading-tight truncate">{aluno.nome}</h3>
+                                <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1">
+                                    <p className="text-slate-400 text-[10px] sm:text-xs font-mono tracking-tight">{aluno.cpf || "Sem CPF"}</p>
+                                    <span className="w-1 h-1 rounded-full bg-slate-200 hidden sm:inline" />
+                                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-widest hidden sm:block">
                                         {aluno.tipo_pagamento === 'pacote' 
                                             ? `Pacote: ${aluno.saldo_aulas} aulas` 
                                             : 'Mensalidade'}
                                     </p>
                                 </div>
+                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest sm:hidden mt-1">
+                                    {aluno.tipo_pagamento === 'pacote' ? `${aluno.saldo_aulas} aulas` : 'Mensal'}
+                                </p>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                            <div className="flex items-center gap-2 sm:gap-4">
+                                <span className={`px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider
                                     ${aluno.status_financeiro === 'atrasado'
                                         ? 'bg-red-500/10 text-red-500'
                                         : 'bg-emerald-500/10 text-emerald-500'
                                     }`}>
-                                    {aluno.status_financeiro === 'atrasado' ? 'Pendente' : 'Regular'}
+                                    {aluno.status_financeiro === 'atrasado' ? 'Pend' : 'OK'}
                                 </span>
-                                <ChevronRight className="text-slate-300 group-hover:text-slate-500 transition-colors" size={20} />
+                                <ChevronRight className="text-slate-300 group-hover:text-slate-500 transition-colors" size={16} sm:size={20} />
                             </div>
                         </div>
                     ))}

@@ -92,17 +92,36 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
 
 
 async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
-    stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_in.cpf)
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none():
-        raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
+    if aluno_in.cpf:
+        stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_in.cpf)
+        result = await db.execute(stmt)
+        if result.scalar_one_or_none():
+            raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
     
     novo_aluno = models.Aluno(**aluno_in.model_dump())
     db.add(novo_aluno)
     try:
         await db.commit()
-        await db.refresh(novo_aluno)
-        return novo_aluno
+        
+        # Re-buscamos o aluno com selectinload para garantir que o schema Pydantic
+        # possa acessar as propriedades (como planos_treino) sem disparar lazy loading async.
+        stmt = (
+            select(models.Aluno)
+            .options(selectinload(models.Aluno.planos_treino))
+            .where(models.Aluno.id == novo_aluno.id)
+        )
+        result = await db.execute(stmt)
+        aluno_final = result.scalar()
+        
+        # Atributos auxiliares para o schema
+        aluno_final.status_financeiro = "em_dia"
+        aluno_final.aulas_feitas_mes = 0
+        
+        # Garante que data_inicio exista (caso o refresh/scalar não tenha carregado por algum motivo)
+        if not aluno_final.data_inicio:
+            aluno_final.data_inicio = date.today()
+        
+        return aluno_final
     except Exception as e:
         await db.rollback()
         raise e

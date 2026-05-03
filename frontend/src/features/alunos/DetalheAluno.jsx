@@ -89,17 +89,17 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     const pagamentosExibidos = expandirPagamentos ? aluno.pagamentos : aluno.pagamentos?.slice(0, 3);
 
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
+        <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
             {/* Cabeçalho de Ação */}
             <div className="flex items-center justify-between px-2">
                 <button 
                     onClick={onBack}
                     className="flex items-center gap-1 text-emerald-600 hover:text-emerald-500 transition-colors font-bold text-sm active:scale-95"
                 >
-                    <ArrowLeft size={20} /> Lista
+                    <ArrowLeft size={18} /> <span className="hidden sm:inline">Lista</span>
                 </button>
-                <div className="flex items-center gap-6">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                <div className="flex items-center gap-3 sm:gap-6">
+                    <span className={`px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider
                         ${aluno.status_financeiro === 'atrasado' 
                             ? 'bg-red-500/10 text-red-500' 
                             : 'bg-emerald-500/10 text-emerald-500'}`}>
@@ -110,57 +110,57 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                         className="p-2 text-slate-300 hover:text-red-500 transition-all active:scale-90"
                         title="Excluir Aluno"
                     >
-                        <Trash2 size={22} />
+                        <Trash2 size={20} />
                     </button>
                 </div>
             </div>
 
             {/* Grid Principal */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
                 
                 {/* Coluna 1: Perfil e Anamnese */}
-                <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5">
-                        <div className="flex flex-col items-center text-center mb-10">
-                            <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center mb-4 shadow-inner">
-                                <User size={48} className="text-slate-300" />
+                <div className="lg:col-span-4 space-y-6 sm:space-y-8">
+                    <div className="bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-black/5">
+                        <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[1.5rem] sm:rounded-[2rem] bg-slate-50 flex items-center justify-center mb-4 shadow-inner">
+                                <User size={40} className="text-slate-300" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{aluno.nome}</h2>
-                            <p className="text-slate-400 text-sm font-mono mt-1 tracking-tight">{aluno.cpf}</p>
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{aluno.nome}</h2>
+                            <p className="text-slate-400 text-xs sm:text-sm font-mono mt-1 tracking-tight">{aluno.cpf || "CPF não informado"}</p>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="bg-slate-50 p-6 rounded-3xl border border-black/5">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-black/5">
+                                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 sm:mb-2 flex items-center gap-2">
                                     <Target size={14} className="text-emerald-500" /> Objetivo
                                 </p>
-                                <p className="text-sm text-slate-700 leading-relaxed font-semibold">{aluno.objetivo || "Não informado"}</p>
+                                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-semibold">{aluno.objetivo || "Não informado"}</p>
                             </div>
                             
-                            <div className="bg-slate-50 p-6 rounded-3xl border border-black/5">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-black/5">
+                                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 sm:mb-2 flex items-center gap-2">
                                     <AlertTriangle size={14} className="text-amber-500" /> Restrições
                                 </p>
-                                <p className="text-sm text-slate-700 leading-relaxed font-semibold">{aluno.restricoes || "Nenhuma restrição"}</p>
+                                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-semibold">{aluno.restricoes || "Nenhuma restrição"}</p>
                             </div>
 
-                            <div className="pt-8 border-t border-slate-100 grid grid-cols-2 gap-8 text-center">
+                            <div className="pt-6 sm:pt-8 border-t border-slate-100 grid grid-cols-2 gap-4 sm:gap-8 text-center">
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Início</p>
-                                    <p className="text-sm text-slate-900 font-bold">{new Date(aluno.data_inicio).toLocaleDateString('pt-BR')}</p>
+                                    <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Início</p>
+                                    <p className="text-xs sm:text-sm text-slate-900 font-bold">{new Date(aluno.data_inicio).toLocaleDateString('pt-BR')}</p>
                                 </div>
                                 <div>
                                     {aluno.tipo_pagamento === 'pacote' ? (
                                         <>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo</p>
-                                            <p className={`text-sm font-black ${aluno.saldo_aulas > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo</p>
+                                            <p className={`text-xs sm:text-sm font-black ${aluno.saldo_aulas > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                                 {aluno.saldo_aulas} {aluno.saldo_aulas === 1 ? 'Aula' : 'Aulas'}
                                             </p>
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencimento</p>
-                                            <p className="text-sm text-slate-900 font-bold">Dia {aluno.dia_vencimento}</p>
+                                            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencimento</p>
+                                            <p className="text-xs sm:text-sm text-slate-900 font-bold">Dia {aluno.dia_vencimento}</p>
                                         </>
                                     )}
                                 </div>
@@ -170,33 +170,33 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                 </div>
 
                 {/* Coluna 2 e 3: Treinos e Histórico */}
-                <div className="lg:col-span-8 space-y-10">
+                <div className="lg:col-span-8 space-y-6 sm:space-y-10">
                     
                     {/* Seção de Planos de Treino */}
-                    <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                                <Dumbbell className="text-emerald-500" size={24} /> Planos
+                    <div className="bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-black/5">
+                        <div className="flex justify-between items-center mb-6 sm:mb-8">
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                                <Dumbbell className="text-emerald-500" size={20} sm:size={24} /> Planos
                             </h3>
                             <button 
                                 onClick={() => setIsModalPlanoOpen(true)}
-                                className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-full transition-all active:scale-90 shadow-lg shadow-emerald-500/20"
+                                className="bg-emerald-500 hover:bg-emerald-400 text-white p-2 rounded-full transition-all active:scale-90 shadow-lg shadow-emerald-500/20"
                             >
                                 <Plus size={20} />
                             </button>
                         </div>
                         
                         {aluno.planos_treino?.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {aluno.planos_treino.map(plano => (
-                                    <div key={plano.id} className="p-6 bg-slate-50 border border-black/5 rounded-3xl flex flex-col justify-between group hover:border-emerald-500/30 transition-all active:scale-[0.98]">
-                                        <div className="mb-6">
-                                            <p className="font-bold text-slate-900 text-lg leading-tight">{plano.titulo}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Criado em {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}</p>
+                                    <div key={plano.id} className="p-5 sm:p-6 bg-slate-50 border border-black/5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-emerald-500/30 transition-all active:scale-[0.98]">
+                                        <div className="mb-4 sm:mb-6">
+                                            <p className="font-bold text-slate-900 text-base sm:text-lg leading-tight">{plano.titulo}</p>
+                                            <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Criado em {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}</p>
                                         </div>
                                         <button 
                                             onClick={() => setPlanoSelecionado(plano)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-black/5 shadow-sm hover:bg-slate-50 text-slate-900 rounded-2xl text-xs font-bold transition-all"
+                                            className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 bg-white border border-black/5 shadow-sm hover:bg-slate-50 text-slate-900 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold transition-all"
                                         >
                                             <Eye size={16} /> Detalhes
                                         </button>
@@ -204,35 +204,35 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-400 italic text-sm font-medium">
+                            <div className="text-center py-12 sm:py-20 border-2 border-dashed border-slate-200 rounded-[1.5rem] sm:rounded-[2rem] text-slate-400 italic text-xs sm:text-sm font-medium">
                                 Nenhum plano de treino ativo.
                             </div>
                         )}
                     </div>
 
                     {/* Histórico de Atividades Recentes */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 items-start">
                         {/* Últimas Sessões */}
-                        <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                        <div className="bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-black/5">
+                            <h3 className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 sm:mb-8 flex items-center gap-2">
                                 <Clock size={16} className="text-emerald-500" /> Frequência
                             </h3>
-                            <div className="space-y-4">
+                            <div className="space-y-3 sm:space-y-4">
                                 {sessoesExibidas?.map(sessao => (
-                                    <div key={sessao.id} className="flex items-center justify-between text-sm py-3 border-b border-slate-50 last:border-0">
+                                    <div key={sessao.id} className="flex items-center justify-between text-xs sm:text-sm py-2.5 sm:py-3 border-b border-slate-50 last:border-0">
                                         <span className="text-slate-500 font-medium">{new Date(sessao.data_hora).toLocaleDateString('pt-BR')}</span>
                                         <span className={sessao.realizada ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
                                             {sessao.realizada ? "Check-in" : "Falta"}
                                         </span>
                                     </div>
                                 )) || (
-                                    <p className="text-xs text-slate-400 italic">Sem registros.</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 italic">Sem registros.</p>
                                 )}
                                 
                                 {aluno.sessoes?.length > 3 && (
                                     <button 
                                         onClick={() => setExpandirSessoes(!expandirSessoes)}
-                                        className="w-full text-center pt-6 text-[10px] font-black text-emerald-600 uppercase hover:text-emerald-500 transition-colors flex items-center justify-center gap-1 active:scale-95"
+                                        className="w-full text-center pt-4 sm:pt-6 text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase hover:text-emerald-500 transition-colors flex items-center justify-center gap-1 active:scale-95"
                                     >
                                         {expandirSessoes ? "Ver menos" : `Ver todas (${aluno.sessoes.length})`}
                                     </button>
@@ -241,24 +241,24 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                         </div>
 
                         {/* Últimos Pagamentos */}
-                        <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                        <div className="bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-black/5">
+                            <h3 className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 sm:mb-8 flex items-center gap-2">
                                 <DollarSign size={16} className="text-emerald-500" /> Pagamentos
                             </h3>
-                            <div className="space-y-4">
+                            <div className="space-y-3 sm:space-y-4">
                                 {pagamentosExibidos?.map(pag => (
-                                    <div key={pag.id} className="flex items-center justify-between text-sm py-3 border-b border-slate-50 last:border-0">
+                                    <div key={pag.id} className="flex items-center justify-between text-xs sm:text-sm py-2.5 sm:py-3 border-b border-slate-50 last:border-0">
                                         <span className="text-slate-500 font-medium">Mês {pag.referencia_mes}</span>
                                         <span className="text-slate-900 font-bold">{new Intl.NumberFormat('pt-BR', {style: 'currency', currency:'BRL'}).format(pag.valor)}</span>
                                     </div>
                                 )) || (
-                                    <p className="text-xs text-slate-400 italic">Sem registros.</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 italic">Sem registros.</p>
                                 )}
 
                                 {aluno.pagamentos?.length > 3 && (
                                     <button 
                                         onClick={() => setExpandirPagamentos(!expandirPagamentos)}
-                                        className="w-full text-center pt-6 text-[10px] font-black text-emerald-600 uppercase hover:text-emerald-500 transition-colors flex items-center justify-center gap-1 active:scale-95"
+                                        className="w-full text-center pt-4 sm:pt-6 text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase hover:text-emerald-500 transition-colors flex items-center justify-center gap-1 active:scale-95"
                                     >
                                         {expandirPagamentos ? "Ver menos" : `Ver todos (${aluno.pagamentos.length})`}
                                     </button>

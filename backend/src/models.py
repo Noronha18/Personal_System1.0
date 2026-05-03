@@ -23,7 +23,7 @@ class Aluno(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String)
-    cpf = Column(String, unique=True, index=True)
+    cpf = Column(String, unique=True, index=True, nullable=True)
     data_inicio = Column(Date, default=date.today)
     dia_vencimento = Column(Integer, default=5)
     tipo_pagamento = Column(String, default="mensal") # "mensal" ou "pacote"

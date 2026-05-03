@@ -115,7 +115,7 @@ class FrequenciaMensalPublic(BaseModel):
 # --- SCHEMAS DE ALUNO ---
 class AlunoBase(BaseModel):
     nome: str
-    cpf: str
+    cpf: Optional[str] = None
     dia_vencimento: int = 5
     tipo_pagamento: str = "mensal"
     saldo_aulas: int = 0
@@ -131,12 +131,16 @@ class AlunoCreate(AlunoBase):
 class AlunoPublic(BaseModel):
     id: int
     nome: str
-    cpf: str
+    cpf: Optional[str] = None
+    data_inicio: date
     dia_vencimento: int
     tipo_pagamento: str
     saldo_aulas: int
     frequencia_semanal_plano: int
     valor_mensalidade: float
+    idade: int
+    objetivo: Optional[str] = None
+    restricoes: Optional[str] = None
     status_financeiro: str = "em_dia"
     aulas_feitas_mes: int = 0
     planos_treino: List[PlanoTreinoPublic] = []
