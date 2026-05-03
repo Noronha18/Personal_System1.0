@@ -138,6 +138,27 @@ async def atualizar_status_aluno(db: AsyncSession, aluno_id: int, novo_status: s
     await db.refresh(aluno)
     return aluno
 
+async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.AlunoUpdate):
+    aluno = await get_aluno(db, aluno_id)
+    
+    if aluno_up.cpf and aluno_up.cpf != aluno.cpf:
+        stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_up.cpf)
+        result = await db.execute(stmt)
+        if result.scalar_one_or_none():
+            raise exceptions.BusinessRuleError(f"CPF {aluno_up.cpf} já está cadastrado em outro aluno.")
+
+    for key, value in aluno_up.model_dump(exclude_unset=True).items():
+        setattr(aluno, key, value)
+    
+    try:
+        await db.commit()
+        await db.refresh(aluno)
+        await _preencher_status_aluno(db, aluno)
+        return aluno
+    except Exception as e:
+        await db.rollback()
+        raise e
+
 async def excluir_aluno(db: AsyncSession, aluno_id: int):
     aluno = await get_aluno(db, aluno_id) # Reutiliza a lógica de busca/erro
     await db.delete(aluno)

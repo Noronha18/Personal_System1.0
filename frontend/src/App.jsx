@@ -42,8 +42,8 @@ function App() {
         <header className="sticky top-4 z-40 flex flex-col lg:flex-row justify-between items-center mb-8 md:mb-12 gap-6 bg-white/70 p-4 md:p-5 rounded-[2rem] border border-white/20 backdrop-blur-2xl shadow-xl shadow-black/5">
           <div className="flex items-center justify-between w-full lg:w-auto px-2">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-500/20">P</div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">System<span className="text-emerald-500">1.0</span></h1>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-500/20 text-xs">PT</div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">PTRoster<span className="text-emerald-500">.</span></h1>
             </div>
             
             <button 
@@ -91,7 +91,7 @@ function App() {
 
         <footer className="mt-20 pt-8 border-t border-black/5 text-center">
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
-            © 2026 Personal System v1.0
+            © 2026 PTRoster v1.0
           </p>
         </footer>
       </div>

@@ -1,7 +1,7 @@
-# Personal_System 1.0 🚀
+# PTRoster 🚀
 > Sistema inteligente de gestão de treinos e performance financeira para Personal Trainers.
 
-O **Personal_System 1.0** é uma plataforma full-stack desenvolvida para modernizar a prescrição de treinos e a gestão de alunos. Utilizando uma arquitetura orientada ao domínio, o sistema separa a prescrição técnica da execução real, permitindo uma análise precisa da evolução de carga e do controle financeiro do atleta.
+O **PTRoster** é uma plataforma full-stack desenvolvida para modernizar a prescrição de treinos e a gestão de alunos. Utilizando uma arquitetura orientada ao domínio, o sistema separa a prescrição técnica da execução real, permitindo uma análise precisa da evolução de carga e do controle financeiro do atleta.
 
 ## 🛠️ Stack Tecnológica
 - **Backend**: FastAPI (Python 3.12+) + SQLAlchemy 2.x (Async) + Pydantic v2.

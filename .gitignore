@@ -38,6 +38,7 @@ __pycache__/
 *.db
 *.sqlite3
 *.log
+docker-compose.yml
 docker-compose.override.yml
 
 # === ARQUIVOS DE BUILD E EXECUTÁVEIS ===

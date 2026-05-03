@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DollarSign, CreditCard, Calendar, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
 
 export default function FormPagamento({ alunoId, onSuccess }) {
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState(0);
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   const [referenciaMes, setReferenciaMes] = useState(
     `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`
@@ -23,7 +23,7 @@ export default function FormPagamento({ alunoId, onSuccess }) {
     try {
       const payload = {
         aluno_id: parseInt(alunoId),
-        valor: parseFloat(valor),
+        valor: valor,
         forma_pagamento: formaPagamento,
         referencia_mes: referenciaMes,
         observacao: observacao || null,
@@ -40,7 +40,7 @@ export default function FormPagamento({ alunoId, onSuccess }) {
 
       if (!res.ok) throw new Error('Erro ao registrar pagamento');
 
-      setValor('');
+      setValor(0);
       setQtdAulas('');
       setObservacao('');
       onSuccess(); // Atualiza a lista pai
@@ -72,12 +72,15 @@ export default function FormPagamento({ alunoId, onSuccess }) {
           <div className="relative">
             <DollarSign className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
             <input
-              type="number"
-              step="0.01"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
+              type="text"
+              value={new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(valor)}
+              onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  const floatValue = parseFloat(val) / 100;
+                  setValor(floatValue || 0);
+              }}
               className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
-              placeholder="0.00"
+              placeholder="0,00"
               required
             />
           </div>

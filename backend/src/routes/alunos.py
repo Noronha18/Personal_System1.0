@@ -33,6 +33,14 @@ async def obter_aluno(aluno_id: int, db: AsyncSession = Depends(database.get_db)
     # Mas em um sistema real, esta também seria protegida.
     return await controllers.get_aluno(db=db, aluno_id=aluno_id)
 
+@router.patch("/{aluno_id}", response_model=schemas.AlunoPublic, dependencies=[Depends(get_current_user)])
+async def atualizar_aluno(
+    aluno_id: int,
+    aluno: schemas.AlunoUpdate,
+    db: AsyncSession = Depends(database.get_db)
+):
+    return await controllers.atualizar_aluno(db=db, aluno_id=aluno_id, aluno_up=aluno)
+
 @router.patch("/{aluno_id}/status", response_model=schemas.AlunoPublic, dependencies=[Depends(get_current_user)])
 async def atualizar_status_aluno(
     aluno_id: int, 

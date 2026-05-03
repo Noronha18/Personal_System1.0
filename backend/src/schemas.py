@@ -81,7 +81,7 @@ class PlanoTreinoPublic(BaseModel):
     titulo: str
     aluno_id: Optional[int] = None
     objetivo_estrategico: Optional[str] = None
-    duracao_semanas: int
+    duracao_semanas: Optional[int] = 4
     data_inicio: date
     esta_ativo: bool
     treinos: List[TreinoPublic]
@@ -155,6 +155,19 @@ class AlunoBase(BaseModel):
 
 class AlunoCreate(AlunoBase):
     pass
+
+class AlunoUpdate(BaseModel):
+    nome: Optional[str] = None
+    cpf: Optional[str] = None
+    dia_vencimento: Optional[int] = None
+    tipo_pagamento: Optional[str] = None
+    saldo_aulas: Optional[int] = None
+    frequencia_semanal_plano: Optional[int] = None
+    valor_mensalidade: Optional[float] = None
+    idade: Optional[int] = None
+    objetivo: Optional[str] = None
+    restricoes: Optional[str] = None
+    status: Optional[str] = None
 
 class AlunoPublic(BaseModel):
     id: int

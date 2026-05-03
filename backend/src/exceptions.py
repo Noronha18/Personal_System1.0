@@ -1,15 +1,16 @@
-class PersonalSystemError(Exception):
+class PTRosterError(Exception):
     def __init__(self, message: str = "Ocorreu um erro interno no sistema."):
         self.message = message
         super().__init__(self.message)
     pass
 
 
-class ResourceNotFoundError(PersonalSystemError):
+class ResourceNotFoundError(PTRosterError):
     """Exceção levantada quando um recurso não é encontrado."""
     pass
 
-class BusinessRuleError(PersonalSystemError):
+
+class BusinessRuleError(PTRosterError):
     """Exceção levantada quando uma regra de negócio é violada(e.g., Treino sem descanso)."""
     pass
 

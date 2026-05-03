@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DB_PORT: str
     DB_NAME: str
     
-    PROJECT_NAME: str = "Personal System"
+    PROJECT_NAME: str = "PTRoster"
     VERSION: str = "0.1.0"
     CORS_ORIGINS: list[str] = ["*"]
 

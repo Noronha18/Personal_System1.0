@@ -43,6 +43,10 @@ export const alunoService = {
         method: 'POST',
         body: JSON.stringify(dados),
     }),
+    atualizar: (id, dados) => apiFetch(`/alunos/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(dados),
+    }),
     atualizarStatus: (id, status) => apiFetch(`/alunos/${id}/status?status=${status}`, {
         method: 'PATCH',
     }),

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { alunoService } from '../../services/api';
 
-export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
+export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null }) => {
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState('');
@@ -16,6 +16,34 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
         objetivo: '',
         restricoes: ''
     });
+
+    useEffect(() => {
+        if (isOpen && alunoEdicao) {
+            setFormData({
+                nome: alunoEdicao.nome || '',
+                cpf: alunoEdicao.cpf || '',
+                dia_vencimento: alunoEdicao.dia_vencimento || 5,
+                tipo_pagamento: alunoEdicao.tipo_pagamento || 'mensal',
+                frequencia_semanal_plano: alunoEdicao.frequencia_semanal_plano || 3,
+                valor_mensalidade: alunoEdicao.valor_mensalidade || 0,
+                idade: alunoEdicao.idade || 0,
+                objetivo: alunoEdicao.objetivo || '',
+                restricoes: alunoEdicao.restricoes || ''
+            });
+        } else if (isOpen) {
+            setFormData({
+                nome: '',
+                cpf: '',
+                dia_vencimento: 5,
+                tipo_pagamento: 'mensal',
+                frequencia_semanal_plano: 3,
+                valor_mensalidade: 0,
+                idade: 0,
+                objetivo: '',
+                restricoes: ''
+            });
+        }
+    }, [isOpen, alunoEdicao]);
 
     if (!isOpen) return null;
 
@@ -33,7 +61,12 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
         };
 
         try {
-            await alunoService.criar(cleanData);
+            if (alunoEdicao) {
+                await alunoService.atualizar(alunoEdicao.id, cleanData);
+            } else {
+                await alunoService.criar(cleanData);
+            }
+            
             setIsSuccess(true);
             
             // Aguarda um pouco para mostrar a mensagem de sucesso antes de fechar
@@ -42,21 +75,10 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                 onClose();
                 // Reseta o estado para o próximo uso
                 setIsSuccess(false);
-                setFormData({
-                    nome: '',
-                    cpf: '',
-                    dia_vencimento: 5,
-                    tipo_pagamento: 'mensal',
-                    frequencia_semanal_plano: 3,
-                    valor_mensalidade: 0,
-                    idade: 0,
-                    objetivo: '',
-                    restricoes: ''
-                });
             }, 2000);
 
         } catch (err) {
-            setError(err.message || 'Erro ao cadastrar aluno');
+            setError(err.message || 'Erro ao processar solicitação');
         } finally {
             setLoading(false);
         }
@@ -68,10 +90,14 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                 <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-white">
                     <div>
                         <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-                            {isSuccess ? 'Sucesso!' : 'Novo Aluno'}
+                            {isSuccess ? 'Sucesso!' : alunoEdicao ? 'Editar Aluno' : 'Novo Aluno'}
                         </h2>
                         <p className="text-slate-500 text-sm font-medium">
-                            {isSuccess ? 'O aluno foi cadastrado com sucesso.' : 'Preencha os dados básicos para iniciar o acompanhamento.'}
+                            {isSuccess 
+                                ? `O aluno foi ${alunoEdicao ? 'atualizado' : 'cadastrado'} com sucesso.` 
+                                : alunoEdicao 
+                                    ? 'Atualize os dados cadastrais e financeiros do aluno.' 
+                                    : 'Preencha os dados básicos para iniciar o acompanhamento.'}
                         </p>
                     </div>
                     {!isSuccess && (
@@ -86,7 +112,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-500/20">
                             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
-                        <p className="text-slate-900 font-bold text-lg text-center">Cadastro finalizado!</p>
+                        <p className="text-slate-900 font-bold text-lg text-center">{alunoEdicao ? 'Atualização finalizada!' : 'Cadastro finalizado!'}</p>
                         <p className="text-slate-400 text-sm font-medium">Sincronizando com a base de dados...</p>
                     </div>
                 ) : (
@@ -170,10 +196,16 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                                     <span className="text-slate-400 font-bold text-sm">R$</span>
                                 </div>
                                 <input 
-                                    type="number"
+                                    type="text"
                                     className="w-full bg-slate-50 border border-black/5 rounded-2xl pl-12 pr-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                                    value={formData.valor_mensalidade}
-                                    onChange={(e) => setFormData({...formData, valor_mensalidade: parseFloat(e.target.value) || 0})}
+                                    value={new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(formData.valor_mensalidade || 0)}
+                                    onChange={(e) => {
+                                        // Remove tudo que não for dígito
+                                        const value = e.target.value.replace(/\D/g, "");
+                                        // Converte para float (ex: 1250 vira 12.50)
+                                        const floatValue = parseFloat(value) / 100;
+                                        setFormData({...formData, valor_mensalidade: floatValue || 0});
+                                    }}
                                 />
                             </div>
                         </div>
@@ -238,7 +270,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess }) => {
                         disabled={loading}
                         className="bg-emerald-500 hover:bg-emerald-400 text-white px-12 py-4 rounded-2xl font-black transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 active:scale-95 uppercase text-xs tracking-widest"
                     >
-                        {loading ? 'Sincronizando...' : 'Finalizar Cadastro'}
+                        {loading ? 'Sincronizando...' : alunoEdicao ? 'Salvar Alterações' : 'Finalizar Cadastro'}
                     </button>
                 </div>
                 </>

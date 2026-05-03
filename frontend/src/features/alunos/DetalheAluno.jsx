@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { 
     User, Target, AlertTriangle, Calendar, 
     Dumbbell, DollarSign, Clock, ArrowLeft,
-    CheckCircle2, Trash2, Plus, Eye, History, Receipt, ChevronDown, ChevronUp
+    CheckCircle2, Trash2, Plus, Eye, ChevronDown, ChevronUp, Copy, Edit
 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
+import { FormAlunoModal } from './FormAlunoModal';
 
 export const DetalheAluno = ({ alunoId, onBack }) => {
     const [aluno, setAluno] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isModalPlnoOpen, setIsModalPlanoOpen] = useState(false);
+    const [isModalPlanoOpen, setIsModalPlanoOpen] = useState(false);
+    const [isModalEditOpen, setIsModalEditOpen] = useState(false);
     const [planoSelecionado, setPlanoSelecionado] = useState(null);
     
     // Estados para expansão de listas
@@ -120,7 +122,6 @@ const handleEditPlano = (plano) => {
     setIsModalPlanoOpen(true);
 };
 
-if (loading) return (
 
     const handleDeletePlano = async (planoId) => {
         if (confirm("⚠️ Deseja excluir este plano de treino permanentemente?")) {
@@ -192,6 +193,15 @@ if (loading) return (
                             : 'bg-emerald-500/10 text-emerald-500'}`}>
                         {aluno.status_financeiro === 'atrasado' ? 'Pendente' : 'Regular'}
                     </span>
+                    
+                    <button 
+                        onClick={() => setIsModalEditOpen(true)}
+                        className="p-2 text-slate-300 hover:text-blue-500 transition-all active:scale-90"
+                        title="Editar Cadastro"
+                    >
+                        <Edit size={20} />
+                    </button>
+
                     <button 
                         onClick={handleDeleteAluno}
                         className="p-2 text-slate-300 hover:text-red-500 transition-all active:scale-90"
@@ -375,13 +385,20 @@ if (loading) return (
 
             {/* Modais */}
             <ModalPlanoTreino 
-                isOpen={isModalPlnoOpen} 
+                isOpen={isModalPlanoOpen} 
                 onClose={() => {
                     setIsModalPlanoOpen(false);
                     setPlanoEdicao(null);
                 }} 
                 onSave={handleSavePlano}
                 planoEdicao={planoEdicao}
+            />
+
+            <FormAlunoModal 
+                isOpen={isModalEditOpen}
+                onClose={() => setIsModalEditOpen(false)}
+                onSuccess={carregar}
+                alunoEdicao={aluno}
             />
 
             {/* Modal de Visualização de Plano */}
