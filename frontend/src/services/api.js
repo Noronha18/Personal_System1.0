@@ -58,6 +58,9 @@ export const treinoService = {
         method: 'POST',
         body: JSON.stringify(dados),
     }),
+    deletarPlano: (id) => apiFetch(`/planos/${id}`, {
+        method: 'DELETE',
+    }),
 };
 
 export const financeiroService = {

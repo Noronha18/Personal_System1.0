@@ -105,62 +105,6 @@ async def excluir_aluno(db: AsyncSession, aluno_id: int):
 
 # --- CONTROLLERS DE PLANO DE TREINO ---
 
-async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.PlanoTreinoCreate):
-    # Valida se o aluno existe. Se não existir, o get_aluno lança ResourceNotFoundError
-    await get_aluno(db, aluno_id)
-
-    # 1. Cria o Plano pai
-    novo_plano = models.PlanoTreino(
-        aluno_id=aluno_id,
-        titulo=plano_in.titulo,
-        objetivo_estrategico=plano_in.objetivo_estrategico,
-        detalhes=plano_in.detalhes,
-        esta_ativo=True
-    )
-    db.add(novo_plano)
-    await db.flush() 
-
-    # 2. Itera sobre os treinos
-    for treino_in in plano_in.treinos:
-        novo_treino = models.Treino(
-            plano_treino_id=novo_plano.id,
-            nome=treino_in.nome,
-            descricao=treino_in.descricao
-        )
-        db.add(novo_treino)
-        await db.flush() 
-
-        # 3. Itera sobre os exercícios
-        for presc_in in treino_in.prescricoes:
-            nova_prescricao = models.PrescricaoExercicio(
-                treino_id=novo_treino.id,
-                nome_exercicio=presc_in.nome_exercicio,
-                series=str(presc_in.series), # Garantindo string pro banco
-                repeticoes=str(presc_in.repeticoes), # Garantindo string pro banco
-                carga_kg=presc_in.carga_kg,
-                tempo_descanso_segundos=presc_in.tempo_descanso_segundos
-            )
-            db.add(nova_prescricao)
-
-    await db.commit()
-    
-    # ========================================================
-    # A SOLUÇÃO DO GREENLET ESTÁ AQUI: 
-    # Buscar o plano novamente, carregando Treinos e Exercícios
-    # ========================================================
-    query = (
-        select(models.PlanoTreino)
-        .where(models.PlanoTreino.id == novo_plano.id)
-        .options(
-            selectinload(models.PlanoTreino.treinos)
-            .selectinload(models.Treino.prescricoes)
-        )
-    )
-    resultado = await db.execute(query)
-    plano_carregado = resultado.scalar_one()
-
-    return plano_carregado
-
 async def listar_planos_detalhados_aluno(db: AsyncSession, aluno_id: int):
 
     query = (
@@ -582,6 +526,20 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int, plano_in: schemas.
     except Exception as e:
         await db.rollback()
         raise e
+
+async def deletar_plano_treino(db: AsyncSession, plano_id: int) -> None:
+    """
+    Deleta um plano de treino permanentemente.
+    """
+    stmt = select(models.PlanoTreino).where(models.PlanoTreino.id == plano_id)
+    result = await db.execute(stmt)
+    plano = result.scalar_one_or_none()
+    
+    if not plano:
+        raise exceptions.ResourceNotFoundError(f"Plano de treino {plano_id} não encontrado")
+    
+    await db.delete(plano)
+    await db.commit()
 
 async def listar_exercicios(db: AsyncSession):
     result = await db.execute(select(models.Exercicio).order_by(models.Exercicio.grupo_muscular))

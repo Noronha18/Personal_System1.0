@@ -25,3 +25,13 @@ async def criar_plano_para_aluno(
         aluno_id=aluno_id, 
         plano_in=plano_in
     )
+
+@router.delete("/planos/{plano_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deletar_plano(
+    plano_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Deleta um plano de treino permanentemente.
+    """
+    await controllers.deletar_plano_treino(db=db, plano_id=plano_id)

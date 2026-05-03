@@ -58,6 +58,19 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         }
     };
 
+    const handleDeletePlano = async (planoId) => {
+        if (confirm("⚠️ Deseja excluir este plano de treino permanentemente?")) {
+            try {
+                await treinoService.deletarPlano(planoId);
+                alert("Plano excluído com sucesso!");
+                setPlanoSelecionado(null);
+                carregar();
+            } catch (err) {
+                alert("Erro ao excluir plano: " + err.message);
+            }
+        }
+    };
+
     if (loading) return (
         <div className="flex flex-col items-center justify-center p-20 space-y-4 text-slate-500">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
@@ -312,7 +325,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                 Alterar Treino
                             </button>
                             <button 
-                                onClick={() => alert("A exclusão de planos requer endpoint DELETE no backend.")}
+                                onClick={() => handleDeletePlano(planoSelecionado.id)}
                                 className="px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                             >
                                 Apagar Plano
