@@ -1,7 +1,7 @@
+import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union, Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from src.config import settings
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -11,13 +11,22 @@ from src.database import get_db
 from src.models import Usuario
 from src.schemas import TokenData
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verifica se a senha em texto puro corresponde ao hash."""
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), 
+            hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Gera um hash bcrypt a partir de uma senha em texto puro."""
+    pwd_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode("utf-8")
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
     to_encode = data.copy()
