@@ -608,7 +608,7 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
 
 async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: schemas.PlanoTreinoCreate):
     # 1. Se for para um aluno específico, desativa os planos anteriores
-    if aluno_id:
+    if aluno_id is not None:
         stmt_desativa = (
             update(models.PlanoTreino)
             .where(models.PlanoTreino.aluno_id == aluno_id, models.PlanoTreino.esta_ativo == True)
@@ -621,7 +621,8 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
         aluno_id=aluno_id,
         titulo=plano_in.titulo,
         objetivo_estrategico=plano_in.objetivo_estrategico,
-        duracao_semanas=plano_in.duracao_semanas
+        duracao_semanas=plano_in.duracao_semanas,
+        esta_ativo=True if aluno_id is not None else False  # Templates não ficam ativos por padrão
     )
     db.add(novo_plano)
     await db.flush() # Garante que temos o ID do plano
@@ -656,8 +657,8 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
             )
             .where(models.PlanoTreino.id == novo_plano.id)
         )
-        result = await db.execute(stmt)
-        return result.scalar()
+        res = await db.execute(stmt)
+        return res.scalar()
     except Exception as e:
         await db.rollback()
         raise e
