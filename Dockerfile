@@ -25,8 +25,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copia arquivos de dependências do backend
 COPY backend/pyproject.toml backend/uv.lock ./
 
-# Instala as dependências diretamente no sistema do container (mais simples para Docker)
-RUN uv pip install --system -r pyproject.toml
+# Instala as dependências diretamente no sistema do container
+# Usamos '.' porque agora o pyproject.toml tem um build-system
+RUN uv pip install --system .
 
 # Copia o código do backend
 COPY backend/src ./src
