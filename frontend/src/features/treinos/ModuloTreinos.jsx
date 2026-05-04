@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dumbbell, Plus, Book, Search, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Dumbbell, Plus, Book, Search, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from '../alunos/ModalPlanoTreino';
 
