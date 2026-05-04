@@ -40,6 +40,5 @@ COPY --from=frontend-build /app/frontend/dist ./static
 ENV PORT=8080
 EXPOSE 8080
 
-# Comando para rodar as migrações e iniciar o servidor
-# Usamos uvicorn direto agora que instalamos no sistema
-CMD ["sh", "-c", "alembic upgrade head && uvicorn src.api:app --host 0.0.0.0 --port ${PORT}"]
+# Comando para rodar as migrações, criar o admin inicial e iniciar o servidor
+CMD ["sh", "-c", "alembic upgrade head && python -m src.create_admin && uvicorn src.api:app --host 0.0.0.0 --port ${PORT}"]
