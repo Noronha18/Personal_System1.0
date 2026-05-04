@@ -24,8 +24,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copia arquivos de dependências do backend
 COPY backend/pyproject.toml backend/uv.lock ./
-# Instala as dependências (sem criar venv dentro do container para facilitar o path)
-RUN uv sync --frozen --no-cache
+
+# Instala as dependências diretamente no sistema do container (mais simples para Docker)
+RUN uv pip install --system -r pyproject.toml
 
 # Copia o código do backend
 COPY backend/src ./src
@@ -35,11 +36,10 @@ COPY backend/alembic.ini ./
 # Copia o build do frontend para dentro do backend (pasta static)
 COPY --from=frontend-build /app/frontend/dist ./static
 
-# Define a porta padrão do Cloud Run
+# Define a porta padrão do Cloud Run / Render
 ENV PORT=8080
 EXPOSE 8080
 
 # Comando para rodar as migrações e iniciar o servidor
-# Nota: Em produção real, idealmente as migrações rodam num Job separado, 
-# mas para sistemas simples, rodar no início do container funciona.
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn src.api:app --host 0.0.0.0 --port ${PORT}"]
+# Usamos uvicorn direto agora que instalamos no sistema
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.api:app --host 0.0.0.0 --port ${PORT}"]
