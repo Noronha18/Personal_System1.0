@@ -1,5 +1,6 @@
 import asyncio
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import SessionLocal
 from src.models import Exercicio
 
@@ -94,6 +95,4 @@ async def _run_seed(db: AsyncSession):
     return count
 
 if __name__ == "__main__":
-    from src.database import SessionLocal
-    from sqlalchemy.ext.asyncio import AsyncSession
     asyncio.run(seed())
