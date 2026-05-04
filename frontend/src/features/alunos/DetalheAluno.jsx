@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { 
     User, Target, AlertTriangle, Calendar, 
     Dumbbell, DollarSign, Clock, ArrowLeft,
-    CheckCircle2, Trash2, Plus, Eye, ChevronDown, ChevronUp, Copy, Edit
+    CheckCircle2, Trash2, Plus, Eye, ChevronDown, ChevronUp, Copy, Edit,
+    ShieldCheck
 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
@@ -240,6 +241,18 @@ const handleEditPlano = (plano) => {
                                 </p>
                                 <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-semibold">{aluno.restricoes || "Nenhuma restrição"}</p>
                             </div>
+
+                            {aluno.usuario && (
+                                <div className="bg-emerald-500/5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-emerald-500/10 animate-in slide-in-from-top-2 duration-500">
+                                    <p className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                        <ShieldCheck size={14} /> Acesso do Aluno
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs sm:text-sm text-slate-900 font-bold font-mono">{aluno.usuario.username}</span>
+                                        <span className="bg-emerald-500 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-lg tracking-widest">Liberado</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="pt-6 sm:pt-8 border-t border-slate-100 grid grid-cols-2 gap-4 sm:gap-8 text-center">
                                 <div>

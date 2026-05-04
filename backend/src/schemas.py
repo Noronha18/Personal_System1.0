@@ -142,6 +142,7 @@ class FrequenciaMensalPublic(BaseModel):
 # --- SCHEMAS DE ALUNO ---
 class AlunoBase(BaseModel):
     nome: str
+    email: Optional[str] = None
     cpf: Optional[str] = None
     dia_vencimento: int = 5
     tipo_pagamento: str = "mensal"
@@ -154,7 +155,14 @@ class AlunoBase(BaseModel):
     status: str = "ativo"
 
 class AlunoCreate(AlunoBase):
-    pass
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+class UsuarioPublic(BaseModel):
+    id: int
+    username: str
+    role: str
+    model_config = ConfigDict(from_attributes=True)
 
 class AlunoUpdate(BaseModel):
     nome: Optional[str] = None
@@ -172,6 +180,7 @@ class AlunoUpdate(BaseModel):
 class AlunoPublic(BaseModel):
     id: int
     nome: str
+    email: Optional[str] = None
     cpf: Optional[str] = None
     data_inicio: date
     dia_vencimento: int
@@ -188,5 +197,6 @@ class AlunoPublic(BaseModel):
     planos_treino: List[PlanoTreinoPublic] = []
     pagamentos: List[PagamentoPublic] = []
     sessoes: List[SessaoTreinoPublic] = Field(default=[], validation_alias="sessoes_treino")
+    usuario: Optional[UsuarioPublic] = None
     
     model_config = ConfigDict(from_attributes=True)

@@ -114,6 +114,11 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-slate-900 font-bold text-base sm:text-lg leading-tight truncate">{aluno.nome}</h3>
+                                    {aluno.usuario && (
+                                        <div className="p-1 bg-emerald-50 text-emerald-600 rounded-md border border-emerald-100" title={`Acesso liberado: ${aluno.usuario.username}`}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </div>
+                                    )}
                                     {aluno.status !== 'ativo' && (
                                         <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-[8px] font-black uppercase rounded-md tracking-widest">
                                             {aluno.status}

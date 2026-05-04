@@ -18,11 +18,14 @@ class Usuario(Base):
     # Vínculo com o Aluno (opcional para trainers, obrigatório para alunos)
     aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='SET NULL'), nullable=True)
 
+    aluno = relationship("Aluno", back_populates="usuario")
+
 class Aluno(Base):
     __tablename__ = 'alunos'
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String)
+    email = Column(String, unique=True, index=True, nullable=True)
     cpf = Column(String, unique=True, index=True, nullable=True)
     data_inicio = Column(Date, default=date.today)
     dia_vencimento = Column(Integer, default=5)
@@ -40,6 +43,7 @@ class Aluno(Base):
     planos_treino = relationship("PlanoTreino", back_populates="aluno", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="aluno", cascade="all, delete-orphan")
     sessoes_treino = relationship("SessaoTreino", back_populates="aluno", cascade="all, delete-orphan")
+    usuario = relationship("Usuario", back_populates="aluno", uselist=False)
 
     # Propriedades auxiliares para a View
     aulas_feitas_mes = 0

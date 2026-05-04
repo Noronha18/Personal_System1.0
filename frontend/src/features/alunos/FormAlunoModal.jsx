@@ -7,6 +7,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         nome: '',
+        email: '',
         cpf: '',
         dia_vencimento: 5,
         tipo_pagamento: 'mensal', // 'mensal' ou 'pacote'
@@ -14,13 +15,16 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
         valor_mensalidade: 0,
         idade: 0,
         objetivo: '',
-        restricoes: ''
+        restricoes: '',
+        username: '',
+        password: ''
     });
 
     useEffect(() => {
         if (isOpen && alunoEdicao) {
             setFormData({
                 nome: alunoEdicao.nome || '',
+                email: alunoEdicao.email || '',
                 cpf: alunoEdicao.cpf || '',
                 dia_vencimento: alunoEdicao.dia_vencimento || 5,
                 tipo_pagamento: alunoEdicao.tipo_pagamento || 'mensal',
@@ -28,11 +32,14 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 valor_mensalidade: alunoEdicao.valor_mensalidade || 0,
                 idade: alunoEdicao.idade || 0,
                 objetivo: alunoEdicao.objetivo || '',
-                restricoes: alunoEdicao.restricoes || ''
+                restricoes: alunoEdicao.restricoes || '',
+                username: alunoEdicao.usuario?.username || '',
+                password: '' // Não editamos senha aqui por enquanto
             });
         } else if (isOpen) {
             setFormData({
                 nome: '',
+                email: '',
                 cpf: '',
                 dia_vencimento: 5,
                 tipo_pagamento: 'mensal',
@@ -40,7 +47,9 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 valor_mensalidade: 0,
                 idade: 0,
                 objetivo: '',
-                restricoes: ''
+                restricoes: '',
+                username: '',
+                password: ''
             });
         }
     }, [isOpen, alunoEdicao]);
@@ -56,8 +65,11 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
         const cleanData = {
             ...formData,
             cpf: formData.cpf?.trim() || null,
+            email: formData.email?.trim() || null,
             objetivo: formData.objetivo?.trim() || null,
-            restricoes: formData.restricoes?.trim() || null
+            restricoes: formData.restricoes?.trim() || null,
+            username: formData.username?.trim() || null,
+            password: formData.password?.trim() || null
         };
 
         try {
@@ -136,17 +148,65 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                         placeholder="Ex: João Silva"
                                     />
                                 </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CPF (Opcional)</label>
-                            <input 
-                                type="text"
-                                className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"
-                                value={formData.cpf}
-                                onChange={(e) => setFormData({...formData, cpf: e.target.value})}
-                                placeholder="000.000.000-00"
-                            />
-                        </div>
-                    </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail (Opcional)</label>
+                                    <input 
+                                        type="email"
+                                        className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        placeholder="joao@email.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CPF (Opcional)</label>
+                                    <input 
+                                        type="text"
+                                        className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"
+                                        value={formData.cpf}
+                                        onChange={(e) => setFormData({...formData, cpf: e.target.value})}
+                                        placeholder="000.000.000-00"
+                                    />
+                                </div>
+                                <div className="space-y-2"></div>
+                            </div>
+
+                            {!alunoEdicao && (
+                                <div className="p-8 bg-emerald-50/50 rounded-[2rem] border border-emerald-100 space-y-6 animate-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        </div>
+                                        <h3 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Credenciais de Acesso</h3>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest ml-1">Usuário (Login)</label>
+                                            <input 
+                                                type="text"
+                                                className="w-full bg-white border border-emerald-100 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                placeholder="Ex: joaosilva"
+                                                value={formData.username}
+                                                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest ml-1">Senha Temporária</label>
+                                            <input 
+                                                type="text"
+                                                className="w-full bg-white border border-emerald-100 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                placeholder="Ex: aluno123"
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                     <div className="space-y-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modalidade de Pagamento</label>

@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
 from src import models, schemas, exceptions
+from src.security import get_password_hash
 import logging
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,8 @@ async def listar_alunos_ativos(db: AsyncSession):
             .selectinload(models.Treino.prescricoes)
             .selectinload(models.Prescricao.exercicio),
             selectinload(models.Aluno.pagamentos),
-            selectinload(models.Aluno.sessoes_treino)
+            selectinload(models.Aluno.sessoes_treino),
+            selectinload(models.Aluno.usuario)
         )
         .order_by(models.Aluno.nome)
     )
@@ -76,7 +78,8 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
                 .selectinload(models.Treino.prescricoes)
                 .selectinload(models.Prescricao.exercicio),
             selectinload(models.Aluno.sessoes_treino),
-            selectinload(models.Aluno.pagamentos)
+            selectinload(models.Aluno.pagamentos),
+            selectinload(models.Aluno.usuario)
         )
     )
     
@@ -99,19 +102,56 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
         if result.scalar_one_or_none():
             raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
     
-    novo_aluno = models.Aluno(**aluno_in.model_dump())
+    # Extrai dados de autenticação e aluno separadamente
+    auth_data = aluno_in.model_dump(include={"username", "password"})
+    aluno_data = aluno_in.model_dump(exclude={"username", "password"})
+
+    novo_aluno = models.Aluno(**aluno_data)
     db.add(novo_aluno)
+    
     try:
+        await db.flush() # Garante o ID do aluno antes de criar o usuário
+        
+        # Criação de usuário (Geração automática se não fornecido)
+        username = auth_data.get("username")
+        senha = auth_data.get("password") or "123456"
+
+        if not username:
+            # Ex: joao.42 (primeiro nome + id do aluno)
+            primeiro_nome = aluno_data["nome"].split()[0].lower().replace(" ", "")
+            username = f"{primeiro_nome}.{novo_aluno.id}"
+
+        # Verifica se username já existe (mesmo se gerado)
+        stmt_user = select(models.Usuario).where(models.Usuario.username == username)
+        res_user = await db.execute(stmt_user)
+        if res_user.scalar_one_or_none():
+            # Se o gerado colidir (raro com ID), adicionamos um sufixo extra ou lançamos erro se for manual
+            if auth_data.get("username"):
+                raise exceptions.BusinessRuleError(f"Username {username} já está em uso.")
+            else:
+                username = f"{username}.{datetime.now().second}"
+
+        email_usuario = aluno_in.email or f"{username}@sistema.com"
+
+        novo_usuario = models.Usuario(
+            username=username,
+            hashed_password=get_password_hash(senha),
+            email=email_usuario,
+            role="aluno",
+            aluno_id=novo_aluno.id
+        )
+        db.add(novo_usuario)
+
         await db.commit()
         
-        # Re-buscamos o aluno com selectinload para garantir que o schema Pydantic
-        # possa acessar as propriedades (como planos_treino) sem disparar lazy loading async.
+        # Re-buscamos o aluno com selectinload
         stmt = (
             select(models.Aluno)
             .options(
                 selectinload(models.Aluno.planos_treino),
                 selectinload(models.Aluno.pagamentos),
-                selectinload(models.Aluno.sessoes_treino)
+                selectinload(models.Aluno.sessoes_treino),
+                selectinload(models.Aluno.usuario)
             )
             .where(models.Aluno.id == novo_aluno.id)
         )
