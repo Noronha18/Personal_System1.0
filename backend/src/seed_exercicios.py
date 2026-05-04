@@ -72,19 +72,28 @@ exercicios_base = [
     {"nome": "Kettlebell Swing", "grupo_muscular": "Funcional"},
 ]
 
-async def seed():
-    async with SessionLocal() as db:
-        print(f"🌱 Iniciando atualização da biblioteca com {len(exercicios_base)} exercícios...")
-        count = 0
-        for ex_data in exercicios_base:
-            stmt = select(Exercicio).where(Exercicio.nome == ex_data["nome"])
-            result = await db.execute(stmt)
-            if not result.scalar_one_or_none():
-                db.add(Exercicio(**ex_data))
-                count += 1
-        
-        await db.commit()
-        print(f"✅ Sucesso! {count} novos exercícios adicionados.")
+async def seed(db: AsyncSession = None):
+    if db is None:
+        async with SessionLocal() as session:
+            return await _run_seed(session)
+    else:
+        return await _run_seed(db)
+
+async def _run_seed(db: AsyncSession):
+    print(f"🌱 Iniciando atualização da biblioteca com {len(exercicios_base)} exercícios...")
+    count = 0
+    for ex_data in exercicios_base:
+        stmt = select(Exercicio).where(Exercicio.nome == ex_data["nome"])
+        result = await db.execute(stmt)
+        if not result.scalar_one_or_none():
+            db.add(Exercicio(**ex_data))
+            count += 1
+    
+    await db.commit()
+    print(f"✅ Sucesso! {count} novos exercícios adicionados.")
+    return count
 
 if __name__ == "__main__":
+    from src.database import SessionLocal
+    from sqlalchemy.ext.asyncio import AsyncSession
     asyncio.run(seed())

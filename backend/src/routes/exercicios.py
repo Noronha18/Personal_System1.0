@@ -1,11 +1,21 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src import controllers, schemas, database
+from src.seed_exercicios import seed
 
 router = APIRouter(
     prefix="/exercicios",
     tags=["Biblioteca de Exercícios"]
 )
+
+@router.post("/seed", status_code=status.HTTP_201_CREATED)
+async def seed_exercicios(db: AsyncSession = Depends(database.get_db)):
+    """
+    Popula a biblioteca de exercícios com a lista base.
+    Utilize este endpoint se não tiver acesso ao terminal do servidor.
+    """
+    count = await seed(db)
+    return {"message": f"Biblioteca populada com sucesso! {count} novos exercícios adicionados."}
 
 @router.get("/", response_model=list[schemas.ExercicioPublic])
 async def listar_exercicios(db: AsyncSession = Depends(database.get_db)):

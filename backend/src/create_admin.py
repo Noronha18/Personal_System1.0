@@ -13,7 +13,7 @@ async def create_initial_admin():
             return
 
         admin = Usuario(
-        username="admin",
+    username="admin",
             email="admin@personal.com",
             hashed_password=get_password_hash("admin123"),
             role="trainer",
