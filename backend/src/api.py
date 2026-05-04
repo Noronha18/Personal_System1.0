@@ -1,9 +1,11 @@
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src import exceptions
@@ -89,3 +91,9 @@ app.include_router(planos.router)
 app.include_router(exercicios.router)
 app.include_router(pagamentos.router)
 app.include_router(sessoes.router)
+
+# --- SERVIR FRONTEND (PRODUÇÃO) ---
+# Verifica se a pasta static existe (criada no Docker build)
+# O mount deve vir DEPOIS das rotas de API
+if os.path.exists("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")

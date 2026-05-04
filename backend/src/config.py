@@ -3,13 +3,17 @@ from pydantic import Field
 from typing import Optional
 
 class Settings(BaseSettings):
-    # Campos de Banco Obrigatórios para Postgres
-    DB_USER: str
-    DB_PASS: str
-    DB_HOST: str
-    DB_PORT: str
-    DB_NAME: str
+    # Campos individuais (opcionais se DATABASE_URL for fornecida)
+    DB_USER: Optional[str] = None
+    DB_PASS: Optional[str] = None
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[str] = "5432"
+    DB_NAME: Optional[str] = None
     
+    # URL Direta (Padrão Supabase/Neon)
+    # Ex: postgresql://user:pass@host:5432/dbname
+    DATABASE_URL_DIRECT: Optional[str] = None
+
     PROJECT_NAME: str = "PTRoster"
     VERSION: str = "0.1.0"
     CORS_ORIGINS: list[str] = ["*"]
@@ -21,12 +25,19 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        # URL assíncrona para o motor da API
+        # Se tiver uma URL direta, apenas injeta o driver asyncpg
+        if self.DATABASE_URL_DIRECT:
+            return self.DATABASE_URL_DIRECT.replace("postgresql://", "postgresql+asyncpg://")
+        
+        # Caso contrário, monta a partir dos campos individuais
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def ALEMBIC_DATABASE_URL(self) -> str:
-        # URL síncrona para o Alembic rodar as migrações
+        # Alembic precisa de uma URL síncrona (sem asyncpg)
+        if self.DATABASE_URL_DIRECT:
+            return self.DATABASE_URL_DIRECT
+        
         return f"postgresql://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # Configuração para ler do arquivo .env

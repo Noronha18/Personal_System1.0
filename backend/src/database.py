@@ -1,10 +1,14 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
-from src.config import settings  # Importa o novo orquestrador de config
+from src.config import settings
 
 
-# Agora não montamos mais a string na mão aqui, usamos o que vem do config
-engine = create_async_engine(settings.DATABASE_URL, echo=True)
+# Configuração do engine com suporte a SSL (necessário para bancos externos como Supabase/Neon)
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=True,
+    connect_args={"ssl": "prefer"}  # Tenta usar SSL se disponível (padrão em clouds)
+)
 
 SessionLocal = async_sessionmaker(
     bind=engine,
