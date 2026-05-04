@@ -25,18 +25,24 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        # Se tiver uma URL direta, apenas injeta o driver asyncpg
+        # Se tiver uma URL direta, garante que comece com postgresql:// e injeta o driver asyncpg
         if self.DATABASE_URL_DIRECT:
-            return self.DATABASE_URL_DIRECT.replace("postgresql://", "postgresql+asyncpg://")
+            url = self.DATABASE_URL_DIRECT
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
         
         # Caso contrário, monta a partir dos campos individuais
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def ALEMBIC_DATABASE_URL(self) -> str:
-        # Alembic precisa de uma URL síncrona (sem asyncpg)
+        # Alembic precisa de uma URL síncrona, mas também exige postgresql://
         if self.DATABASE_URL_DIRECT:
-            return self.DATABASE_URL_DIRECT
+            url = self.DATABASE_URL_DIRECT
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url
         
         return f"postgresql://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
