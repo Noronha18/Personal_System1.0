@@ -27,19 +27,24 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:
         # Se tiver uma URL direta, garante que comece com postgresql:// e injeta o driver asyncpg
         if self.DATABASE_URL_DIRECT:
-            url = self.DATABASE_URL_DIRECT
+            url = self.DATABASE_URL_DIRECT.strip()
+            # Corrigir prefixo postgres:// para postgresql://
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
-            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+            # Injetar o driver asyncpg se não estiver presente
+            if "postgresql+asyncpg://" not in url:
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         
         # Caso contrário, monta a partir dos campos individuais
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def ALEMBIC_DATABASE_URL(self) -> str:
-        # Alembic precisa de uma URL síncrona, mas também exige postgresql://
+        # Alembic precisa de uma URL síncrona
         if self.DATABASE_URL_DIRECT:
-            url = self.DATABASE_URL_DIRECT
+            url = self.DATABASE_URL_DIRECT.strip()
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
             return url
