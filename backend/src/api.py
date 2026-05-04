@@ -80,7 +80,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # --- ROTAS DE SAÚDE ---
-@app.get("/")
+@app.get("/health")
 def read_root():
     return{"status": "online", "version": settings.VERSION}
 
