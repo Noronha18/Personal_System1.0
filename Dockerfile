@@ -22,12 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Instala o 'uv' para gerenciamento ultra-rápido de dependências
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Copia arquivos de dependências do backend
-COPY backend/pyproject.toml backend/uv.lock ./
+# Copia arquivos de dependências do backend e o README (necessário para o pyproject.toml)
+COPY backend/pyproject.toml backend/uv.lock README.md ./
 
 # Instala as dependências diretamente no sistema do container
-# Usamos '.' porque agora o pyproject.toml tem um build-system
-RUN uv pip install --system .
+RUN uv pip install --system -r pyproject.toml
 
 # Copia o código do backend
 COPY backend/src ./src
