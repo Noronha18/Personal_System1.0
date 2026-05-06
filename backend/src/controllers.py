@@ -1,5 +1,6 @@
 from __future__ import annotations
 import calendar
+import secrets
 from datetime import datetime, date
 from sqlalchemy import select, func, or_, and_, update
 from sqlalchemy.orm import selectinload
@@ -114,7 +115,7 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
         
         # Criação de usuário (Geração automática se não fornecido)
         username = auth_data.get("username")
-        senha = auth_data.get("password") or "123456"
+        senha = auth_data.get("password") or secrets.token_urlsafe(12)
 
         if not username:
             # Ex: joao.42 (primeiro nome + id do aluno)
@@ -339,7 +340,6 @@ async def deletar_pagamento(db: AsyncSession, pagamento_id: int) -> dict:
 async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino:
     plano = await db.scalar(
         select(models.PlanoTreino)
-        .options(selectinload(models.PlanoTreino.prescricoes)) 
         .where(models.PlanoTreino.id == plano_id)
     )
     
@@ -353,7 +353,7 @@ async def desativar_plano(db: AsyncSession, plano_id: int) -> models.PlanoTreino
 
 async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
     prescricao = await db.scalar(
-        select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id)
+        select(models.Prescricao).where(models.Prescricao.id == prescricao_id)
     )
     if not prescricao:
         raise exceptions.ResourceNotFoundError(f"Prescrição {prescricao_id} não encontrada")
@@ -362,8 +362,8 @@ async def deletar_prescricao(db: AsyncSession, prescricao_id: int) -> None:
     await db.commit()
 
 
-async def atualizar_prescricao(db: AsyncSession, prescricao_id: int, payload: schemas.PrescricaoExercicioCreate) -> models.PrescricaoExercicio:
-    prescricao = await db.scalar(select(models.PrescricaoExercicio).where(models.PrescricaoExercicio.id == prescricao_id))
+async def atualizar_prescricao(db: AsyncSession, prescricao_id: int, payload: schemas.PrescricaoUpdate) -> models.Prescricao:
+    prescricao = await db.scalar(select(models.Prescricao).where(models.Prescricao.id == prescricao_id))
     if not prescricao:
         raise exceptions.ResourceNotFoundError(f"Prescrição {prescricao_id} não encontrada")
     

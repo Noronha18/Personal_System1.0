@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     CORS_ORIGINS: list[str] = ["*"]
 
-    # Segurança
-    SECRET_KEY: str = "mudar_para_uma_chave_muito_segura_em_producao"
+    # Segurança — SECRET_KEY é obrigatório via .env (sem valor padrão)
+    SECRET_KEY: str = Field(..., min_length=32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 dia
 
