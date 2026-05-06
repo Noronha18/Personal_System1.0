@@ -27,6 +27,8 @@ const METODOS_TREINO = [
   "21s"
 ];
 
+const METODOS_AGRUPADORES = ["Bi-set", "Tri-set", "Giant-set", "Super-set"];
+
 export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }) {
   const [step, setStep] = useState(1);
   const [activeTreinoIndex, setActiveTreinoIndex] = useState(0);
@@ -374,74 +376,105 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                     </p>
                                 </div>
                             ) : (
-                                novoPlano.treinos[activeTreinoIndex].prescricoes.map((presc, exIdx) => (
-                                    <div key={exIdx} className="bg-white border border-black/5 rounded-3xl p-6 flex flex-wrap md:flex-nowrap items-center gap-6 shadow-sm hover:shadow-md transition-all group animate-in slide-in-from-right-4 duration-300">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
-                                            {exIdx + 1}
-                                        </div>
-                                        
-                                        <div className="flex-1 min-w-[150px]">
-                                            <p className="text-lg font-black text-slate-900 leading-tight">{presc.nome_exercicio}</p>
-                                            <input 
-                                                type="text"
-                                                placeholder="Adicionar nota (ex: Até a falha)"
-                                                className="w-full bg-transparent text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 outline-none border-b border-transparent focus:border-emerald-500/20"
-                                                value={presc.observacoes || ''}
-                                                onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'observacoes', e.target.value)}
-                                            />
-                                        </div>
-                                        
-                                        <div className="flex gap-2">
-                                            <div className="space-y-1">
-                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Séries</label>
-                                                <input 
-                                                    type="number" value={presc.series}
-                                                    className="w-14 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
-                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'series', e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Reps</label>
-                                                <input 
-                                                    type="text" value={presc.repeticoes}
-                                                    className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
-                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'repeticoes', e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Carga</label>
-                                                <input 
-                                                    type="text" value={presc.carga}
-                                                    className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-emerald-600"
-                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'carga', e.target.value)}
-                                                    placeholder="0kg"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Desc.</label>
-                                                <input 
-                                                    type="number" value={presc.descanso}
-                                                    className="w-14 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-400"
-                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'descanso', e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Método</label>
-                                                <select 
-                                                    value={presc.metodo}
-                                                    className="w-24 bg-slate-50 border border-black/5 rounded-xl py-2 px-2 text-center text-[10px] font-black text-slate-900 outline-none appearance-none cursor-pointer"
-                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'metodo', e.target.value)}
-                                                >
-                                                    {METODOS_TREINO.map(m => <option key={m} value={m}>{m}</option>)}
-                                                </select>
-                                            </div>
-                                        </div>
+                                novoPlano.treinos[activeTreinoIndex].prescricoes.map((presc, exIdx) => {
+                                    const prescricoes = novoPlano.treinos[activeTreinoIndex].prescricoes;
+                                    const isGrouping = METODOS_AGRUPADORES.includes(presc.metodo);
+                                    const prevIsSame = exIdx > 0 && prescricoes[exIdx - 1].metodo === presc.metodo && isGrouping;
+                                    const nextIsSame = exIdx < prescricoes.length - 1 && prescricoes[exIdx + 1].metodo === presc.metodo && isGrouping;
+                                    
+                                    // Determina estilos de borda e margem baseados no agrupamento
+                                    const groupClasses = `
+                                        ${prevIsSame ? 'mt-0 border-t-0 rounded-t-none' : 'mt-4 rounded-t-3xl'} 
+                                        ${nextIsSame ? 'mb-0 rounded-b-none' : 'mb-4 rounded-b-3xl'}
+                                    `;
 
-                                        <button onClick={() => handleRemoveExercicio(activeTreinoIndex, exIdx)} className="p-2 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                ))
+                                    return (
+                                        <div 
+                                            key={exIdx} 
+                                            className={`relative bg-white border border-black/5 p-6 flex flex-wrap md:flex-nowrap items-center gap-6 shadow-sm hover:shadow-md transition-all group animate-in slide-in-from-right-4 duration-300 ${groupClasses}`}
+                                        >
+                                            {/* Indicador Visual de Grupo (Barra Lateral) */}
+                                            {isGrouping && (
+                                                <div className={`absolute left-0 top-0 bottom-0 w-1.5 z-10 ${
+                                                    presc.metodo === 'Bi-set' ? 'bg-blue-500' :
+                                                    presc.metodo === 'Tri-set' ? 'bg-purple-500' :
+                                                    presc.metodo === 'Giant-set' ? 'bg-orange-500' :
+                                                    'bg-emerald-500'
+                                                }`} title={presc.metodo} />
+                                            )}
+
+                                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
+                                                {exIdx + 1}
+                                            </div>
+                                            
+                                            <div className="flex-1 min-w-[150px]">
+                                                <p className="text-lg font-black text-slate-900 leading-tight">{presc.nome_exercicio}</p>
+                                                <input 
+                                                    type="text"
+                                                    placeholder="Adicionar nota (ex: Até a falha)"
+                                                    className="w-full bg-transparent text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 outline-none border-b border-transparent focus:border-emerald-500/20"
+                                                    value={presc.observacoes || ''}
+                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'observacoes', e.target.value)}
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex gap-2">
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Séries</label>
+                                                    <input 
+                                                        type="number" value={presc.series}
+                                                        className="w-14 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
+                                                        onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'series', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Reps</label>
+                                                    <input 
+                                                        type="text" value={presc.repeticoes}
+                                                        className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-900"
+                                                        onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'repeticoes', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Carga</label>
+                                                    <input 
+                                                        type="text" value={presc.carga}
+                                                        className="w-16 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-emerald-600"
+                                                        onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'carga', e.target.value)}
+                                                        placeholder="0kg"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Desc.</label>
+                                                    <input 
+                                                        type="number" 
+                                                        value={nextIsSame ? 0 : presc.descanso}
+                                                        disabled={nextIsSame}
+                                                        className={`w-14 border border-black/5 rounded-xl py-2 text-center text-sm font-black transition-all ${
+                                                            nextIsSame ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-50 text-slate-400'
+                                                        }`}
+                                                        onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'descanso', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Método</label>
+                                                    <select 
+                                                        value={presc.metodo}
+                                                        className="w-24 bg-slate-50 border border-black/5 rounded-xl py-2 px-2 text-center text-[10px] font-black text-slate-900 outline-none appearance-none cursor-pointer"
+                                                        onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'metodo', e.target.value)}
+                                                    >
+                                                        {METODOS_TREINO.map(m => <option key={m} value={m}>{m}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <button onClick={() => handleRemoveExercicio(activeTreinoIndex, exIdx)} className="p-2 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                            )}
                             )}
                         </div>
                     </div>

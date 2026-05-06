@@ -9,6 +9,8 @@ import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
 import { FormAlunoModal } from './FormAlunoModal';
 
+const METODOS_AGRUPADORES = ["Bi-set", "Tri-set", "Giant-set", "Super-set"];
+
 export const DetalheAluno = ({ alunoId, onBack }) => {
     const [aluno, setAluno] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -451,44 +453,75 @@ const handleEditPlano = (plano) => {
                                             <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{treino.prescricoes?.length || 0} Exercícios</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {treino.prescricoes?.map((presc, idx) => (
-                                            <div key={presc.id || idx} className="p-6 bg-white border border-black/5 rounded-3xl flex justify-between items-center hover:bg-slate-50 transition-all shadow-sm shadow-black/5">
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-slate-900 text-lg leading-tight">{presc.nome_exercicio}</p>
-                                                        {presc.exercicio?.video_url && (
-                                                            <a 
-                                                                href={presc.exercicio.video_url} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer"
-                                                                className="p-1.5 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
-                                                                title="Ver Vídeo"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <Eye size={14} />
-                                                            </a>
-                                                        )}
+                                    <div className="flex flex-col gap-2">
+                                        {treino.prescricoes?.map((presc, idx) => {
+                                            const prescricoes = treino.prescricoes;
+                                            const isGrouping = METODOS_AGRUPADORES.includes(presc.metodo);
+                                            const prevIsSame = idx > 0 && prescricoes[idx - 1].metodo === presc.metodo && isGrouping;
+                                            const nextIsSame = idx < prescricoes.length - 1 && prescricoes[idx + 1].metodo === presc.metodo && isGrouping;
+
+                                            const groupClasses = `
+                                                ${prevIsSame ? 'mt-0 border-t-0 rounded-t-none' : 'rounded-t-3xl mt-4'} 
+                                                ${nextIsSame ? 'mb-0 rounded-b-none' : 'rounded-b-3xl mb-4'}
+                                            `;
+
+                                            return (
+                                                <div 
+                                                    key={presc.id || idx} 
+                                                    className={`relative p-6 bg-white border border-black/5 flex justify-between items-center hover:bg-slate-50 transition-all shadow-sm ${groupClasses}`}
+                                                >
+                                                    {/* Indicador de Grupo */}
+                                                    {isGrouping && (
+                                                       <div className={`absolute left-0 top-0 bottom-0 w-1.5 z-10 ${
+                                                            presc.metodo === 'Bi-set' ? 'bg-blue-500' :
+                                                            presc.metodo === 'Tri-set' ? 'bg-purple-500' :
+                                                            presc.metodo === 'Giant-set' ? 'bg-orange-500' :
+                                                            'bg-emerald-500'
+                                                        }`} />
+                                                    )}
+
+                                                    <div className="space-y-2 pl-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-slate-900 text-lg leading-tight">{presc.nome_exercicio}</p>
+                                                            {presc.exercicio?.video_url && (
+                                                                <a 
+                                                                    href={presc.exercicio.video_url} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="p-1.5 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
+                                                                    title="Ver Vídeo"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <Eye size={14} />
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.series} Séries</span>
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.repeticoes} Reps</span>
+                                                            {presc.metodo && presc.metodo !== 'Convencional' && (
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
+                                                                    presc.metodo === 'Bi-set' ? 'bg-blue-50 text-blue-600' :
+                                                                    presc.metodo === 'Tri-set' ? 'bg-purple-50 text-purple-600' :
+                                                                    'bg-emerald-50 text-emerald-600'
+                                                                }`}>{presc.metodo}</span>
+                                                            )}
+                                                            {presc.observacoes && (
+                                                                <span className="w-full text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 block">
+                                                                    Nota: {presc.observacoes}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.series} Séries</span>
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.repeticoes} Reps</span>
-                                                        {presc.metodo && presc.metodo !== 'Convencional' && (
-                                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">{presc.metodo}</span>
-                                                        )}
-                                                        {presc.observacoes && (
-                                                            <span className="w-full text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 block">
-                                                                Nota: {presc.observacoes}
-                                                            </span>
+                                                    <div className="text-right">
+                                                        <p className="text-xl font-black text-emerald-600">{presc.carga_kg}kg</p>
+                                                        {(!nextIsSame || !isGrouping) && (
+                                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{presc.tempo_descanso_segundos}s off</p>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-xl font-black text-emerald-600">{presc.carga_kg}kg</p>
-                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{presc.tempo_descanso_segundos}s off</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
