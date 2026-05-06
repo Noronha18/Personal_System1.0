@@ -50,3 +50,6 @@ docker-compose.override.yml
 
 # === DOCUMENTAÇÃO INTERNA ===
 MENTOR_PROMPT.md
+.idea/
+GEMINI.md
+CLAUDE.md

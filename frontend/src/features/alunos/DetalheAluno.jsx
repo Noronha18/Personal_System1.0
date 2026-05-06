@@ -102,8 +102,10 @@ const handleEditPlano = (plano) => {
     // Converte o plano do formato Public (com nomes e carga_kg) 
     // para o formato Update (com ids e carga)
     const formatadoParaEdicao = {
+        id: plano.id,
         titulo: plano.titulo,
         objetivo_estrategico: plano.objetivo_estrategico,
+        detalhes: plano.detalhes,
         duracao_semanas: plano.duracao_semanas,
         treinos: plano.treinos.map(t => ({
             id: t.id,
@@ -114,7 +116,9 @@ const handleEditPlano = (plano) => {
                 series: p.series,
                 repeticoes: p.repeticoes,
                 carga: p.carga_kg,
-                descanso: p.tempo_descanso_segundos
+                descanso: p.tempo_descanso_segundos,
+                metodo: p.metodo,
+                observacoes: p.observacoes
             }))
         }))
     };
@@ -421,7 +425,14 @@ const handleEditPlano = (plano) => {
                         <div className="p-8 border-b border-black/5 flex justify-between items-center bg-white z-10">
                             <div>
                                 <h2 className="text-3xl font-black text-slate-900 tracking-tight">{planoSelecionado.titulo}</h2>
-                                <p className="text-slate-500 font-medium text-sm mt-1">Objetivo: {planoSelecionado.objetivo_estrategico || "Não definido"}</p>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <p className="text-slate-500 font-medium text-sm">Objetivo: {planoSelecionado.objetivo_estrategico || "Não definido"}</p>
+                                    {planoSelecionado.detalhes && (
+                                        <p className="text-slate-400 font-medium text-[11px] italic leading-relaxed max-w-2xl bg-slate-50 p-3 rounded-2xl border border-black/5 mt-1">
+                                            "{planoSelecionado.detalhes}"
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <button onClick={() => setPlanoSelecionado(null)} className="p-3 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90">
                                 <Plus size={24} className="rotate-45" />
@@ -444,10 +455,32 @@ const handleEditPlano = (plano) => {
                                         {treino.prescricoes?.map((presc, idx) => (
                                             <div key={presc.id || idx} className="p-6 bg-white border border-black/5 rounded-3xl flex justify-between items-center hover:bg-slate-50 transition-all shadow-sm shadow-black/5">
                                                 <div className="space-y-2">
-                                                    <p className="font-bold text-slate-900 text-lg leading-tight">{presc.nome_exercicio}</p>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-slate-900 text-lg leading-tight">{presc.nome_exercicio}</p>
+                                                        {presc.exercicio?.video_url && (
+                                                            <a 
+                                                                href={presc.exercicio.video_url} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="p-1.5 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
+                                                                title="Ver Vídeo"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <Eye size={14} />
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2">
                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.series} Séries</span>
                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{presc.repeticoes} Reps</span>
+                                                        {presc.metodo && presc.metodo !== 'Convencional' && (
+                                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">{presc.metodo}</span>
+                                                        )}
+                                                        {presc.observacoes && (
+                                                            <span className="w-full text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 block">
+                                                                Nota: {presc.observacoes}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="text-right">

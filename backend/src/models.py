@@ -132,6 +132,7 @@ class Prescricao(Base):
     repeticoes = Column(String) 
     descanso = Column(Integer) # Em segundos
     carga = Column(String, nullable=True)
+    metodo = Column(String, default="Convencional")
     observacoes = Column(Text, nullable=True)
 
     treino = relationship("Treino", back_populates="prescricoes")

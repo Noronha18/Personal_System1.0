@@ -3,6 +3,30 @@ import { X, Dumbbell, Trash2, Plus, Save, Book, ChevronRight, ChevronLeft, Check
 import { treinoService } from '../../services/api';
 import { BibliotecaExercicios } from '../treinos/BibliotecaExercicios';
 
+const METODOS_TREINO = [
+  "Convencional",
+  "Drop-set",
+  "Rest-pause",
+  "Bi-set",
+  "Tri-set",
+  "Giant-set",
+  "Super-set",
+  "Piramidal Crescente",
+  "Piramidal Decrescente",
+  "Cluster-set",
+  "GVT",
+  "FST-7",
+  "SST",
+  "MTUT",
+  "Isometria",
+  "Excêntrico",
+  "Pré-Exaustão",
+  "Pós-Exaustão",
+  "AMRAP",
+  "Myo-reps",
+  "21s"
+];
+
 export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }) {
   const [step, setStep] = useState(1);
   const [activeTreinoIndex, setActiveTreinoIndex] = useState(0);
@@ -10,6 +34,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
   const [novoPlano, setNovoPlano] = useState({
     titulo: '',
     objetivo_estrategico: '',
+    detalhes: '',
     duracao_semanas: 4,
     treinos: [
       {
@@ -26,12 +51,16 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
     if (isOpen) {
       carregarTemplates();
       if (planoEdicao) {
-        setNovoPlano(planoEdicao);
+        setNovoPlano({
+            ...planoEdicao,
+            detalhes: planoEdicao.detalhes || ''
+        });
         setStep(2); // Se estiver editando, vai direto para a montagem
       } else {
         setNovoPlano({
           titulo: '',
           objetivo_estrategico: '',
+          detalhes: '',
           duracao_semanas: 4,
           treinos: [{ nome: 'Treino A', prescricoes: [] }]
         });
@@ -83,7 +112,9 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
       series: 3, 
       repeticoes: '12', 
       carga: '', 
-      descanso: 60 
+      descanso: 60,
+      metodo: 'Convencional',
+      observacoes: ''
     });
     setNovoPlano({ ...novoPlano, treinos: treinosAtualizados });
   };
@@ -111,6 +142,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
       ...novoPlano,
       titulo: template.titulo,
       objetivo_estrategico: template.objetivo_estrategico,
+      detalhes: template.detalhes || '',
       duracao_semanas: template.duracao_semanas,
       treinos: template.treinos.map(t => ({
         nome: t.nome,
@@ -120,7 +152,9 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
           series: p.series,
           repeticoes: p.repeticoes,
           carga: p.carga_kg,
-          descanso: p.tempo_descanso_segundos
+          descanso: p.tempo_descanso_segundos,
+          metodo: p.metodo || 'Convencional',
+          observacoes: p.observacoes || ''
         }))
       }))
     });
@@ -139,7 +173,9 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
           series: parseInt(p.series),
           repeticoes: p.repeticoes,
           carga: p.carga,
-          descanso: parseInt(p.descanso)
+          descanso: parseInt(p.descanso),
+          metodo: p.metodo,
+          observacoes: p.observacoes
         }))
       }))
     };
@@ -246,6 +282,16 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                 />
                             </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observações Gerais (Opcional)</label>
+                            <textarea 
+                                placeholder="Descreva detalhes importantes sobre o plano, restrições ou dicas de execução geral."
+                                className="w-full bg-slate-50 border border-black/5 rounded-3xl px-6 py-5 text-slate-900 font-medium focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all min-h-[120px] resize-none"
+                                value={novoPlano.detalhes}
+                                onChange={e => setNovoPlano({...novoPlano, detalhes: e.target.value})}
+                            />
+                        </div>
                     </div>
 
                     <div className="pt-8">
@@ -336,7 +382,13 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                         
                                         <div className="flex-1 min-w-[150px]">
                                             <p className="text-lg font-black text-slate-900 leading-tight">{presc.nome_exercicio}</p>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Prescrição Ativa</p>
+                                            <input 
+                                                type="text"
+                                                placeholder="Adicionar nota (ex: Até a falha)"
+                                                className="w-full bg-transparent text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 outline-none border-b border-transparent focus:border-emerald-500/20"
+                                                value={presc.observacoes || ''}
+                                                onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'observacoes', e.target.value)}
+                                            />
                                         </div>
                                         
                                         <div className="flex gap-2">
@@ -372,6 +424,16 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                                     className="w-14 bg-slate-50 border border-black/5 rounded-xl py-2 text-center text-sm font-black text-slate-400"
                                                     onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'descanso', e.target.value)}
                                                 />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[8px] font-black text-slate-300 uppercase tracking-widest text-center block">Método</label>
+                                                <select 
+                                                    value={presc.metodo}
+                                                    className="w-24 bg-slate-50 border border-black/5 rounded-xl py-2 px-2 text-center text-[10px] font-black text-slate-900 outline-none appearance-none cursor-pointer"
+                                                    onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'metodo', e.target.value)}
+                                                >
+                                                    {METODOS_TREINO.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </select>
                                             </div>
                                         </div>
 
@@ -414,7 +476,9 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                 ...p,
                                 exercicio_id: parseInt(p.exercicio_id),
                                 series: parseInt(p.series),
-                                descanso: parseInt(p.descanso)
+                                descanso: parseInt(p.descanso),
+                                metodo: p.metodo,
+                                observacoes: p.observacoes
                             }))
                             }))
                         };

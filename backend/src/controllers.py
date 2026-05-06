@@ -661,6 +661,7 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
         aluno_id=aluno_id,
         titulo=plano_in.titulo,
         objetivo_estrategico=plano_in.objetivo_estrategico,
+        detalhes=plano_in.detalhes,
         duracao_semanas=plano_in.duracao_semanas,
         esta_ativo=True if aluno_id is not None else False  # Templates não ficam ativos por padrão
     )
@@ -773,6 +774,7 @@ async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno
                 repeticoes=pres_origem.repeticoes,
                 descanso=pres_origem.descanso,
                 carga=pres_origem.carga,
+                metodo=pres_origem.metodo,
                 observacoes=pres_origem.observacoes
             )
             db.add(nova_pres)

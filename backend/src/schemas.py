@@ -30,6 +30,8 @@ class PrescricaoCreate(BaseModel):
     repeticoes: str
     carga: Optional[str] = None
     descanso: int = 60
+    metodo: Optional[str] = "Convencional"
+    observacoes: Optional[str] = None
 
 class PrescricaoUpdate(BaseModel):
     id: Optional[int] = None # ID opcional: se vier, atualiza. Se não, cria nova.
@@ -38,12 +40,17 @@ class PrescricaoUpdate(BaseModel):
     repeticoes: str
     carga: Optional[str] = None
     descanso: int = 60
+    metodo: Optional[str] = "Convencional"
+    observacoes: Optional[str] = None
 
 class PrescricaoPublic(PrescricaoCreate):
     id: int
     nome_exercicio: Optional[str] = None
     carga_kg: Optional[str] = Field(None, validation_alias="carga")
     tempo_descanso_segundos: int = Field(60, validation_alias="descanso")
+    metodo: str = "Convencional"
+    observacoes: Optional[str] = None
+    exercicio: Optional[ExercicioPublic] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -67,12 +74,14 @@ class TreinoPublic(BaseModel):
 class PlanoTreinoCreate(BaseModel):
     titulo: str
     objetivo_estrategico: Optional[str] = None
+    detalhes: Optional[str] = None
     duracao_semanas: int = 4
     treinos: List[TreinoCreate]
 
 class PlanoTreinoUpdate(BaseModel):
     titulo: Optional[str] = None
     objetivo_estrategico: Optional[str] = None
+    detalhes: Optional[str] = None
     duracao_semanas: Optional[int] = None
     treinos: Optional[List[TreinoUpdate]] = None
 
@@ -81,6 +90,7 @@ class PlanoTreinoPublic(BaseModel):
     titulo: str
     aluno_id: Optional[int] = None
     objetivo_estrategico: Optional[str] = None
+    detalhes: Optional[str] = None
     duracao_semanas: Optional[int] = 4
     data_inicio: date
     esta_ativo: bool
