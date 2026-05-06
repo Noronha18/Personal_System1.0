@@ -13,7 +13,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
         tipo_pagamento: 'mensal', // 'mensal' ou 'pacote'
         frequencia_semanal_plano: 3,
         valor_mensalidade: 0,
-        idade: 0,
+        idade: '',
         objetivo: '',
         restricoes: '',
         username: '',
@@ -30,7 +30,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 tipo_pagamento: alunoEdicao.tipo_pagamento || 'mensal',
                 frequencia_semanal_plano: alunoEdicao.frequencia_semanal_plano || 3,
                 valor_mensalidade: alunoEdicao.valor_mensalidade || 0,
-                idade: alunoEdicao.idade || 0,
+                idade: alunoEdicao.idade ?? '',
                 objetivo: alunoEdicao.objetivo || '',
                 restricoes: alunoEdicao.restricoes || '',
                 username: alunoEdicao.usuario?.username || '',
@@ -45,7 +45,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 tipo_pagamento: 'mensal',
                 frequencia_semanal_plano: 3,
                 valor_mensalidade: 0,
-                idade: 0,
+                idade: '',
                 objetivo: '',
                 restricoes: '',
                 username: '',
@@ -66,6 +66,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
             ...formData,
             cpf: formData.cpf?.trim() || null,
             email: formData.email?.trim() || null,
+            idade: formData.idade === '' ? 0 : parseInt(formData.idade),
             objetivo: formData.objetivo?.trim() || null,
             restricoes: formData.restricoes?.trim() || null,
             username: formData.username?.trim() || null,
@@ -275,7 +276,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                 type="number"
                                 className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold"
                                 value={formData.idade}
-                                onChange={(e) => setFormData({...formData, idade: parseInt(e.target.value) || 0})}
+                                onChange={(e) => setFormData({...formData, idade: e.target.value})}
                             />
                         </div>
                         {formData.tipo_pagamento === 'mensal' && (
