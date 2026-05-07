@@ -41,6 +41,7 @@ O sistema opera sob o modelo **Trainer-Centric**.
 | :--- | :--- | :--- |
 | **RBAC** | Migração de `get_current_user` para `get_current_trainer` em todos os routers administrativos. | Impedir que alunos autenticados escalem privilégios. |
 | **CORS** | Remoção do wildcard (`*`) e inclusão de origens específicas (Local + Render). | Prevenir ataques de Cross-Origin. |
+| **JWT** | Substituição de `python-jose` por `PyJWT`. | Eliminar vulnerabilidades conhecidas (Algorithm Confusion, DoS) em biblioteca abandonada. |
 | **Endpoints** | O endpoint `GET /alunos/{aluno_id}` foi protegido. | Estava exposto publicamente sem autenticação. |
 | **Build** | Correção do `pyproject.toml` e adição de `README.md`. | Garantir que ferramentas de análise (Ruff/Testes) funcionem corretamente. |
 
