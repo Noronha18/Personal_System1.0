@@ -230,7 +230,7 @@ async def listar_templates_globais(db: AsyncSession):
     """
     query = (
         select(models.PlanoTreino)
-        .where(models.PlanoTreino.aluno_id is None)
+        .where(models.PlanoTreino.aluno_id == None)
         .options(
             selectinload(models.PlanoTreino.treinos)
             .selectinload(models.Treino.prescricoes)
