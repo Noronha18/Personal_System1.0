@@ -55,7 +55,7 @@ const DashboardFinanceiro = () => {
         return (
             <div className="flex flex-col items-center justify-center py-40 space-y-4">
                 <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest animate-pulse">Sincronizando Fluxo de Caixa...</p>
+                <p className="text-slate-500 font-medium uppercase text-xs tracking-widest animate-pulse">Sincronizando Fluxo de Caixa...</p>
             </div>
         );
     }
@@ -69,7 +69,7 @@ const DashboardFinanceiro = () => {
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-white px-6 sm:px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 uppercase text-[10px] sm:text-xs tracking-widest"
+                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-8 py-4 rounded-2xl font-semibold transition-colors shadow-md shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 uppercase text-xs tracking-wide"
                 >
                     <Plus size={20} /> <span className="sm:inline">Registrar</span>
                 </button>
@@ -88,15 +88,15 @@ const DashboardFinanceiro = () => {
                 <GraficoInadimplencia dados={financeiroData} />
             </div>
 
-            <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 mx-2">
-                <div className="flex items-center justify-between mb-10">
+            <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md mx-2">
+                <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-50 text-emerald-500 rounded-xl flex items-center justify-center">
-                            <DollarSign size={20} />
+                        <div className="w-9 h-9 bg-slate-50 text-emerald-500 rounded-xl flex items-center justify-center border border-slate-100">
+                            <DollarSign size={18} />
                         </div>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Lançamentos Recentes</h3>
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Lançamentos Recentes</h3>
                     </div>
-                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest bg-slate-50 px-4 py-1.5 rounded-full">Histórico</span>
+                    <span className="text-slate-500 text-xs font-medium bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">Histórico</span>
                 </div>
                 <TabelaPagamentos pagamentos={ultimosPagamentos} onDelete={carregarDados} />
             </div>

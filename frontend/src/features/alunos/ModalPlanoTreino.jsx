@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Dumbbell, Trash2, Plus, Save, Book, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { treinoService } from '../../services/api';
 import { BibliotecaExercicios } from '../treinos/BibliotecaExercicios';
+import { useToast } from '../../components/ToastProvider';
 
 const METODOS_TREINO = [
   "Convencional",
@@ -30,6 +31,7 @@ const METODOS_TREINO = [
 const METODOS_AGRUPADORES = ["Bi-set", "Tri-set", "Giant-set", "Super-set"];
 
 export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }) {
+  const toast = useToast();
   const [step, setStep] = useState(1);
   const [activeTreinoIndex, setActiveTreinoIndex] = useState(0);
 
@@ -255,7 +257,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
 
                     <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Título do Plano *</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Título do Plano *</label>
                             <input 
                                 type="text" placeholder="Ex: Protocolo de Verão - Cutting"
                                 className="w-full bg-slate-50 border border-black/5 rounded-3xl px-8 py-6 text-xl text-slate-900 font-black focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300"
@@ -266,7 +268,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Objetivo Estratégico</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Objetivo Estratégico</label>
                                 <input 
                                     type="text" placeholder="Ex: Perda de Gordura"
                                     className="w-full bg-slate-50 border border-black/5 rounded-3xl px-6 py-5 text-slate-900 font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all"
@@ -275,7 +277,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Duração (Semanas)</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Duração (Semanas)</label>
                                 <input 
                                     type="number"
                                     className="w-full bg-slate-50 border border-black/5 rounded-3xl px-6 py-5 text-slate-900 font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all"
@@ -286,7 +288,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observações Gerais (Opcional)</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Observações Gerais (Opcional)</label>
                             <textarea 
                                 placeholder="Descreva detalhes importantes sobre o plano, restrições ou dicas de execução geral."
                                 className="w-full bg-slate-50 border border-black/5 rounded-3xl px-6 py-5 text-slate-900 font-medium focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all min-h-[120px] resize-none"
@@ -516,7 +518,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                             }))
                         };
                         treinoService.criarTemplate(payload).then(() => {
-                            alert("Modelo global salvo com sucesso!");
+                            toast({ tipo: 'sucesso', texto: 'Modelo global salvo com sucesso!' });
                             carregarTemplates();
                         });
                         }}

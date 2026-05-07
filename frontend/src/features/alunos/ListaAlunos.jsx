@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { ChevronRight, Plus, UserCircle2, CheckCircle2 } from 'lucide-react';
 import { alunoService } from '../../services/api';
 import { FormAlunoModal } from './FormAlunoModal';
+import { useToast } from '../../components/ToastProvider';
 
 export const ListaAlunosFeature = ({ onSelectAluno }) => {
+    const toast = useToast();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [alunos, setAlunos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,11 +28,10 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
         e.stopPropagation(); // Evita abrir os detalhes do aluno
         try {
             await alunoService.registrarPresenca(alunoId);
-            // Atualiza a lista para mostrar a nova contagem de aulas/frequência
             carregarAlunos();
-            alert('Presença registrada com sucesso!');
+            toast({ tipo: 'sucesso', texto: 'Presença registrada com sucesso!' });
         } catch (err) {
-            alert('Erro ao registrar presença: ' + err.message);
+            toast({ tipo: 'erro', texto: 'Erro ao registrar presença: ' + err.message });
         }
     };
 

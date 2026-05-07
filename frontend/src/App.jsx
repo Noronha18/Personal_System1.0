@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LoginView } from './features/auth/LoginView';
 import { authService } from './services/api';
+import { ToastProvider } from './components/ToastProvider';
 
 // Imports de Features
 import { ListaAlunosFeature } from './features/alunos/ListaAlunos';
@@ -90,7 +91,7 @@ function App() {
         </main>
 
         <footer className="mt-20 pt-8 border-t border-black/5 text-center">
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-widest">
             © 2026 PTRoster v1.0
           </p>
         </footer>
@@ -111,4 +112,10 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWithToast() {
+  return (
+    <ToastProvider>
+      <App />
+    </ToastProvider>
+  );
+}

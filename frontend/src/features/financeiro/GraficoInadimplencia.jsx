@@ -46,7 +46,7 @@ export default function GraficoInadimplencia({ dados }) {
           <div key={`legend-${index}`} className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
                     {entry.value}
                 </span>
             </div>
@@ -60,13 +60,13 @@ export default function GraficoInadimplencia({ dados }) {
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 h-full flex flex-col animate-in fade-in duration-700">
+    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md h-full flex flex-col animate-in fade-in duration-700">
       <div className="flex items-center justify-between mb-10">
         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
           <AlertTriangle size={24} className="text-red-500" /> Saúde da Base
         </h3>
         <div className="px-4 py-1.5 bg-slate-50 border border-black/5 rounded-full shadow-inner">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total: {dados.total_alunos}</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Total: {dados.total_alunos}</span>
         </div>
       </div>
       

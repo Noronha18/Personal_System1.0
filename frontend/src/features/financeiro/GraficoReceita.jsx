@@ -11,13 +11,13 @@ export default function GraficoReceita({ dados }) {
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5 h-full flex flex-col animate-in fade-in duration-700">
-      <div className="flex items-center justify-between mb-10">
+    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md h-full flex flex-col animate-in fade-in duration-700">
+      <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
-          <TrendingUp size={24} className="text-emerald-500" /> Fluxo de Receita
+          <TrendingUp size={20} className="text-emerald-500" /> Fluxo de Receita
         </h3>
-        <div className="px-4 py-1.5 bg-slate-50 border border-black/5 rounded-full shadow-inner">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">12 Meses</span>
+        <div className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-full">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">12 Meses</span>
         </div>
       </div>
       

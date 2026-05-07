@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Trash2, UserCircle2 } from 'lucide-react';
 import { pagamentoService } from '../../services/api';
+import { useToast } from '../../components/ToastProvider';
 
 export default function TabelaPagamentos({ pagamentos, onDelete }) {
+    const toast = useToast();
     const [deletando, setDeletando] = useState(null);
 
     const handleDelete = async (pagamentoId) => {
@@ -18,7 +20,7 @@ export default function TabelaPagamentos({ pagamentos, onDelete }) {
                 onDelete(pagamentoId);
             }
         } catch (error) {
-            alert('Erro ao cancelar pagamento: ' + error.message);
+            toast({ tipo: 'erro', texto: 'Erro ao cancelar pagamento: ' + error.message });
         } finally {
             setDeletando(null);
         }
@@ -50,22 +52,22 @@ export default function TabelaPagamentos({ pagamentos, onDelete }) {
             <table className="w-full">
                 <thead>
                     <tr className="border-b border-slate-50">
-                        <th className="text-left py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-left py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Data
                         </th>
-                        <th className="text-left py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-left py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Aluno
                         </th>
-                        <th className="text-left py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-left py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Mês Ref.
                         </th>
-                        <th className="text-left py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-left py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Valor
                         </th>
-                        <th className="text-left py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-left py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Forma
                         </th>
-                        <th className="text-right py-6 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="text-right py-6 px-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                             Ação
                         </th>
                     </tr>

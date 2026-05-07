@@ -139,7 +139,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Nome Completo</label>
                                     <input 
                                         required
                                         type="text"
@@ -150,7 +150,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail (Opcional)</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">E-mail (Opcional)</label>
                                     <input 
                                         type="email"
                                         className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"
@@ -163,7 +163,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CPF (Opcional)</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">CPF (Opcional)</label>
                                     <input 
                                         type="text"
                                         className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"
@@ -186,7 +186,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest ml-1">Usuário (Login)</label>
+                                            <label className="text-xs font-bold text-emerald-700/80 uppercase tracking-wide ml-1">Usuário (Login)</label>
                                             <input 
                                                 type="text"
                                                 className="w-full bg-white border border-emerald-100 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
@@ -196,7 +196,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest ml-1">Senha Temporária</label>
+                                            <label className="text-xs font-bold text-emerald-700/80 uppercase tracking-wide ml-1">Senha Temporária</label>
                                             <input 
                                                 type="text"
                                                 className="w-full bg-white border border-emerald-100 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
@@ -210,7 +210,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                             )}
 
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modalidade de Pagamento</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Modalidade de Pagamento</label>
                         <div className="flex gap-4">
                             {[
                                 { id: 'mensal', label: 'Mensalidade' },
@@ -233,7 +233,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Frequência</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Frequência</label>
                             <select 
                                 className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none"
                                 value={formData.frequencia_semanal_plano}
@@ -249,7 +249,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">
                                 {formData.tipo_pagamento === 'mensal' ? 'Mensalidade' : 'Valor do Pacote'}
                             </label>
                             <div className="relative group">
@@ -271,7 +271,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Idade</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Idade</label>
                             <input 
                                 type="number"
                                 className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold"
@@ -281,7 +281,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                         </div>
                         {formData.tipo_pagamento === 'mensal' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-right-4 duration-500">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vencimento</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Vencimento</label>
                                 <input 
                                     type="number"
                                     min="1"
@@ -295,7 +295,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Objetivo Estratégico</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Objetivo Estratégico</label>
                         <textarea 
                             rows="2"
                             className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-300"
@@ -306,7 +306,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Restrições / Patologias</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Restrições / Patologias</label>
                         <textarea 
                             rows="2"
                             className="w-full bg-slate-50 border border-red-500/10 rounded-2xl px-5 py-4 text-slate-900 font-semibold outline-none focus:ring-2 focus:ring-red-500/10 transition-all placeholder:text-slate-300"

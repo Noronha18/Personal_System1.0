@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Book, Search, Plus, X, Save } from 'lucide-react';
 import { treinoService } from '../../services/api';
+import { useToast } from '../../components/ToastProvider';
 
 export const BibliotecaExercicios = ({ onSelectExercicio }) => {
+    const toast = useToast();
     const [exercicios, setExercicios] = useState([]);
     const [grupoAtivo, setGrupoAtivo] = useState('Todos');
     const [busca, setBusca] = useState('');
@@ -47,7 +49,7 @@ export const BibliotecaExercicios = ({ onSelectExercicio }) => {
             setShowModal(false);
             setNovoExercicio({ nome: '', grupo_muscular: '', video_url: '' });
         } catch (err) {
-            alert(err.message || "Erro ao salvar exercício");
+            toast({ tipo: 'erro', texto: err.message || "Erro ao salvar exercício" });
         } finally {
             setSalvando(false);
         }
@@ -149,7 +151,7 @@ export const BibliotecaExercicios = ({ onSelectExercicio }) => {
 
                         <form onSubmit={handleSalvar} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome do Exercício</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Nome do Exercício</label>
                                 <input 
                                     type="text"
                                     required
@@ -161,7 +163,7 @@ export const BibliotecaExercicios = ({ onSelectExercicio }) => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Grupo Muscular</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Grupo Muscular</label>
                                 <input 
                                     type="text"
                                     required
@@ -173,7 +175,7 @@ export const BibliotecaExercicios = ({ onSelectExercicio }) => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">URL do Vídeo (Opcional)</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">URL do Vídeo (Opcional)</label>
                                 <input 
                                     type="url"
                                     className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300"

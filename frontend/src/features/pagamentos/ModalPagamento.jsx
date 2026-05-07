@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, DollarSign, UserCircle2, Calendar, Hash } from 'lucide-react';
 import { alunoService, pagamentoService } from '../../services/api';
+import { useToast } from '../../components/ToastProvider';
 
 export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
+    const toast = useToast();
     const [alunos, setAlunos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [alunoSelecionado, setAlunoSelecionado] = useState(null);
@@ -50,7 +52,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
             onClose();
         } catch (err) {
             console.error(err);
-            alert(err.message || "Erro ao registrar pagamento");
+            toast({ tipo: 'erro', texto: err.message || "Erro ao registrar pagamento" });
         } finally {
             setLoading(false);
         }
@@ -76,7 +78,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
 
                 <form onSubmit={handleSubmit} className="p-10 space-y-8">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-2">
                             <UserCircle2 size={14} className="text-emerald-500" /> Aluno Pagador
                         </label>
                         <select 
@@ -94,7 +96,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
 
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Valor (R$)</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Valor (R$)</label>
                             <input 
                                 required
                                 type="number"
@@ -105,7 +107,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-2">
                                 <Calendar size={14} className="text-emerald-500" /> Mês de Ref.
                             </label>
                             <input 
@@ -120,7 +122,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1 flex items-center gap-2">
                             <Hash size={14} className="text-emerald-500" /> 
                             {alunoSelecionado?.tipo_pagamento === 'pacote' ? 'Qtd. de Aulas (Reseta Saldo)' : 'Aulas Extras (Opcional)'}
                         </label>
@@ -140,7 +142,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Forma de Pagamento</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Forma de Pagamento</label>
                         <div className="flex gap-3">
                             {['PIX', 'Dinheiro', 'Cartão'].map(forma => (
                                 <button
@@ -159,7 +161,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observação Interna</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Observação Interna</label>
                         <textarea 
                             className="w-full bg-slate-50 border border-black/5 rounded-2xl px-5 py-4 text-slate-900 font-medium outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all placeholder:text-slate-300"
                             rows="2"
