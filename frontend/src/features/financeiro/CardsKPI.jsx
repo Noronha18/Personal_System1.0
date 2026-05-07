@@ -2,22 +2,22 @@ import { DollarSign, TrendingUp, AlertTriangle, Users } from 'lucide-react';
 
 function CardKPI({ titulo, valor, subtitulo, icone: Icon, corIcone, corTexto, subtituloCor }) {
   return (
-    <div className="bg-white border border-black/5 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 shadow-xl shadow-black/5 transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between">
+    <div className="bg-white border border-slate-200/60 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 shadow-lg shadow-black/[0.04] transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/[0.07] flex flex-col justify-between">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 sm:mb-4">
+          <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 sm:mb-3">
             {titulo}
           </p>
           <p className={`text-2xl sm:text-4xl font-black tracking-tight truncate ${corTexto}`}>
             {valor}
           </p>
           {subtitulo && (
-            <p className={`text-[10px] sm:text-xs mt-1 sm:mt-2 font-semibold truncate ${subtituloCor || 'text-slate-400'}`}>
+            <p className={`text-xs sm:text-sm mt-1.5 sm:mt-2 font-medium truncate ${subtituloCor || 'text-slate-500'}`}>
               {subtitulo}
             </p>
           )}
         </div>
-        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${corIcone} shadow-inner ml-2 sm:ml-4`}>
+        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${corIcone} ml-2 sm:ml-4`}>
           <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function CardsKPI({ dados }) {
         subtitulo={`${dados.alunos_inadimplentes} pendências críticas`}
         icone={AlertTriangle}
         corTexto={dados.inadimplencia > 0.2 ? 'text-red-500' : 'text-amber-500'}
-        subtituloCor={dados.inadimplencia > 0.2 ? 'text-red-400' : 'text-amber-400'}
+        subtituloCor={dados.inadimplencia > 0.2 ? 'text-red-600' : 'text-amber-600'}
         corIcone={dados.inadimplencia > 0.2 ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'}
       />
       

@@ -87,7 +87,7 @@ export const ModuloTreinos = () => {
                         <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
                             <Book className="text-blue-500" size={20} /> Modelos Globais
                         </h3>
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase">{templates.length} salvos</span>
+                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{templates.length} salvos</span>
                     </div>
 
                     <div className="space-y-4">
@@ -96,20 +96,21 @@ export const ModuloTreinos = () => {
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <p className="font-black text-lg text-slate-900 group-hover:text-blue-600 transition-colors">{template.titulo}</p>
-                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">
-                                            {template.treinos?.length || 0} Divisões • {template.duracao_semanas} Semanas
+                                        <p className="text-xs text-slate-500 font-medium mt-1">
+                                            {template.treinos?.length || 0} divisões · {template.duracao_semanas} semanas
                                         </p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             if (confirm("Deseja apagar este modelo global?")) {
                                                 await treinoService.deletarPlano(template.id);
                                                 carregarDados();
                                             }
                                         }}
-                                        className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                                        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                        title="Apagar modelo"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -124,13 +125,13 @@ export const ModuloTreinos = () => {
                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden flex flex-col justify-center">
                     <div className="relative z-10 space-y-6">
                         <h3 className="text-2xl font-black tracking-tight leading-tight">Prescreva com<br/>eficiência.</h3>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">
+                        <p className="text-slate-300 text-sm font-medium leading-relaxed max-w-xs">
                             Crie modelos de treinos A/B/C e aplique-os instantaneamente a qualquer aluno do seu plantel.
                         </p>
                         <ul className="space-y-3">
                             {['Até 26 divisões (A-Z)', 'Biblioteca de 50+ exercícios', 'Clonagem inteligente'].map(item => (
-                                <li key={item} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                                    <CheckCircle2 size={14} /> {item}
+                                <li key={item} className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
+                                    <CheckCircle2 size={14} className="shrink-0" /> {item}
                                 </li>
                             ))}
                         </ul>

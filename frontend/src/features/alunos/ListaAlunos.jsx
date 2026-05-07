@@ -100,10 +100,10 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
             ) : (
                 <div className="space-y-1 mx-2 bg-white border border-black/5 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5">
                     {alunosFiltrados.map((aluno, idx) => (
-                        <div 
-                            key={aluno.id} 
+                        <div
+                            key={aluno.id}
                             onClick={() => onSelectAluno(aluno.id)}
-                            className={`group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 transition-all cursor-pointer active:bg-slate-50
+                            className={`group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 transition-colors duration-150 cursor-pointer hover:bg-slate-50/80 active:bg-slate-100
                                 ${idx !== alunosFiltrados.length - 1 ? 'border-b border-slate-100' : ''}
                                 ${aluno.status !== 'ativo' ? 'opacity-70' : ''}`}
                         >
@@ -120,17 +120,17 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                                         </div>
                                     )}
                                     {aluno.status !== 'ativo' && (
-                                        <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-[8px] font-black uppercase rounded-md tracking-widest">
+                                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold uppercase rounded-md tracking-wide border border-slate-200">
                                             {aluno.status}
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1">
-                                    <p className="text-slate-400 text-[10px] sm:text-xs font-mono tracking-tight">{aluno.cpf || "Sem CPF"}</p>
-                                    <span className="w-1 h-1 rounded-full bg-slate-200 hidden sm:inline" />
-                                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-black uppercase tracking-widest hidden sm:block">
-                                        {aluno.tipo_pagamento === 'pacote' 
-                                            ? `Pacote: ${aluno.saldo_aulas} aulas` 
+                                <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                                    <p className="text-slate-500 text-xs font-mono tracking-tight">{aluno.cpf || "Sem CPF"}</p>
+                                    <span className="w-1 h-1 rounded-full bg-slate-300 hidden sm:inline" />
+                                    <p className="text-xs text-slate-500 font-medium hidden sm:block">
+                                        {aluno.tipo_pagamento === 'pacote'
+                                            ? `Pacote · ${aluno.saldo_aulas} aulas`
                                             : 'Mensalidade'}
                                     </p>
                                 </div>
@@ -144,17 +144,17 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                                         title="Registrar Presença Hoje"
                                     >
                                         <CheckCircle2 size={18} />
-                                        <span className="hidden lg:inline text-[10px] font-black uppercase tracking-widest">Check-in</span>
+                                        <span className="hidden lg:inline text-xs font-bold uppercase tracking-wide">Check-in</span>
                                     </button>
                                 )}
-                                <span className={`px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider
+                                <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold border
                                     ${aluno.status_financeiro === 'atrasado'
-                                        ? 'bg-red-500/10 text-red-500'
-                                        : 'bg-emerald-500/10 text-emerald-500'
+                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     }`}>
-                                    {aluno.status_financeiro === 'atrasado' ? 'Pend' : 'OK'}
+                                    {aluno.status_financeiro === 'atrasado' ? 'Atrasado' : 'Em dia'}
                                 </span>
-                                <ChevronRight className="text-slate-300 group-hover:text-slate-500 transition-colors" size={16} sm:size={20} />
+                                <ChevronRight className="text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" size={18} />
                             </div>
                         </div>
                     ))}

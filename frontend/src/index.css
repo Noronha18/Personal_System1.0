@@ -1,24 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+
 @import "tailwindcss";
 
 @theme {
-  --color-ios-bg: #F2F2F7;
+  --font-sans:    'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', ui-sans-serif, sans-serif;
+
+  --color-ios-bg:          #F0F4F2;
+  --color-surface:         #ffffff;
+  --color-border:          #e2e8f0;
+
+  --color-brand:           #059669;
+  --color-brand-hover:     #047857;
+  --color-brand-subtle:    #d1fae5;
+  --color-brand-text:      #065f46;
+
+  --color-text-primary:    #0f172a;
+  --color-text-secondary:  #475569;
+  --color-text-muted:      #94a3b8;
+
+  --color-danger:          #dc2626;
+  --color-danger-subtle:   #fee2e2;
+  --color-warning:         #d97706;
+  --color-warning-subtle:  #fef3c7;
+  --color-data:            #2563eb;
+  --color-data-subtle:     #dbeafe;
 }
 
 @layer base {
-  :root {
-    color-scheme: light !important;
-  }
+  :root { color-scheme: light !important; }
 
   html, body, #root {
-    background-color: #F2F2F7 !important;
+    background-color: #F0F4F2 !important;
     color: #0f172a !important;
+    font-family: var(--font-sans);
     margin: 0;
     padding: 0;
     min-height: 100vh;
   }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
 }
 
-/* Fallback global for the main container if Tailwind fails */
 .min-h-screen {
-  background-color: #F2F2F7 !important;
+  background-color: #F0F4F2 !important;
 }
