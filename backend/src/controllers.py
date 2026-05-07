@@ -38,7 +38,7 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
     stmt_sessao = select(func.count(models.SessaoTreino.id)).where(
         models.SessaoTreino.aluno_id == aluno.id,
         models.SessaoTreino.data_hora >= inicio_mes,
-        models.SessaoTreino.realizada == True
+        models.SessaoTreino.realizada
     )
     result_sessao = await db.execute(stmt_sessao)
     aluno.aulas_feitas_mes = result_sessao.scalar() or 0
@@ -230,7 +230,7 @@ async def listar_templates_globais(db: AsyncSession):
     """
     query = (
         select(models.PlanoTreino)
-        .where(models.PlanoTreino.aluno_id == None)
+        .where(models.PlanoTreino.aluno_id is None)
         .options(
             selectinload(models.PlanoTreino.treinos)
             .selectinload(models.Treino.prescricoes)
@@ -651,7 +651,7 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
     if aluno_id is not None:
         stmt_desativa = (
             update(models.PlanoTreino)
-            .where(models.PlanoTreino.aluno_id == aluno_id, models.PlanoTreino.esta_ativo == True)
+            .where(models.PlanoTreino.aluno_id == aluno_id, models.PlanoTreino.esta_ativo)
             .values(esta_ativo=False)
         )
         await db.execute(stmt_desativa)
@@ -741,7 +741,7 @@ async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno
     if novo_aluno_id:
         await db.execute(
             update(models.PlanoTreino)
-            .where(models.PlanoTreino.aluno_id == novo_aluno_id, models.PlanoTreino.esta_ativo == True)
+            .where(models.PlanoTreino.aluno_id == novo_aluno_id, models.PlanoTreino.esta_ativo)
             .values(esta_ativo=False)
         )
 

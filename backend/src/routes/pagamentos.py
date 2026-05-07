@@ -3,8 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src import controllers
 from src.schemas import PagamentoCreate, PagamentoPublic, EstatisticasFinanceirasPublic 
+from src.security import get_current_trainer
 
-router = APIRouter(prefix="/pagamentos", tags=["Pagamentos"])
+router = APIRouter(
+    prefix="/pagamentos", 
+    tags=["Pagamentos"],
+    dependencies=[Depends(get_current_trainer)]
+)
 
 
 @router.get(

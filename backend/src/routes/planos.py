@@ -4,10 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # Ajuste os imports dependendo de onde fica sua pasta 'src'
 from src import schemas, controllers
 from src.database import get_db
+from src.security import get_current_trainer
 
 # Cria o roteador para Planos
 router = APIRouter(
-    tags=["Planos de Treino"]
+    tags=["Planos de Treino"],
+    dependencies=[Depends(get_current_trainer)]
 )
 
 @router.post("/alunos/{aluno_id}/planos", response_model=schemas.PlanoTreinoPublic, status_code=status.HTTP_201_CREATED)

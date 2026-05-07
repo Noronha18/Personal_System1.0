@@ -1,0 +1,13 @@
+rules:
+  - id: fastapi-sqlalchemy-sqli
+    languages: [python]
+    severity: ERROR
+    message: "Detectada possível SQL Injection no FastAPI/SQLAlchemy. Entrada de usuário enviada diretamente para query SQL via f-string ou concatenação."
+    patterns:
+      - pattern-either:
+          - pattern: text(f"...")
+          - pattern: text("..." + ...)
+          - pattern: $DB.execute(f"...")
+          - pattern: $DB.execute("..." + ...)
+      - pattern-not: text("...")
+      - pattern-not: $DB.execute("...")

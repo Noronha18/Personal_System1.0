@@ -1,7 +1,7 @@
 import asyncio
 from sqlalchemy import select
 from src.database import SessionLocal
-from src.models import SessaoTreino, Aluno
+from src.models import SessaoTreino
 from datetime import datetime
 
 async def investigar():
@@ -32,7 +32,7 @@ async def investigar():
             # Verifica se passa no filtro de data
             data_ok = aula.data_hora >= inicio_mes
             # Verifica se é presença
-            status_ok = aula.realizada == True
+            status_ok = aula.realizada
 
             conta = "✅ SIM" if (data_ok and status_ok) else "❌ NÃO"
 

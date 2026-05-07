@@ -1,6 +1,5 @@
 import asyncio
 from src.database import engine, Base
-from src.models import Aluno, SessaoTreino # Aula renomeada para SessaoTreino
 
 async def resetar_banco():
     async with engine.begin() as conn:

@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src import controllers, schemas, database
 from src.seed_exercicios import seed
+from src.security import get_current_trainer
 
 router = APIRouter(
     prefix="/exercicios",
-    tags=["Biblioteca de Exercícios"]
+    tags=["Biblioteca de Exercícios"],
+    dependencies=[Depends(get_current_trainer)]
 )
 
 @router.post("/seed", status_code=status.HTTP_201_CREATED)

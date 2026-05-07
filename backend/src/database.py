@@ -3,11 +3,12 @@ from sqlalchemy.orm import DeclarativeBase
 from src.config import settings
 
 
-# Configuração do engine com suporte a SSL (necessário para bancos externos como Supabase/Neon)
+# Configuração do engine
+# echo=False em produção para evitar vazar dados sensíveis (PII) nos logs do Render
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,
-    connect_args={"ssl": "prefer"}  # Tenta usar SSL se disponível (padrão em clouds)
+    echo=False,
+    connect_args={"ssl": "prefer"} 
 )
 
 SessionLocal = async_sessionmaker(

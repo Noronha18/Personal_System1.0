@@ -1,6 +1,6 @@
 import bcrypt
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union, Optional
+from typing import Union
 from jose import JWTError, jwt
 from src.config import settings
 from fastapi import Depends, HTTPException, status

@@ -28,13 +28,17 @@ COPY backend/pyproject.toml backend/uv.lock README.md ./
 # Instala as dependências diretamente no sistema do container
 RUN uv pip install --system -r pyproject.toml
 
-# Copia o código do backend
-COPY backend/src ./src
-COPY backend/alembic ./alembic
-COPY backend/alembic.ini ./
+# Cria um usuário não-privilegiado para rodar o app (Hardening)
+RUN useradd -m -u 1000 appuser
+USER appuser
+
+# Copia o código do backend com as permissões corretas
+COPY --chown=appuser:appuser backend/src ./src
+COPY --chown=appuser:appuser backend/alembic ./alembic
+COPY --chown=appuser:appuser backend/alembic.ini ./
 
 # Copia o build do frontend para dentro do backend (pasta static)
-COPY --from=frontend-build /app/frontend/dist ./static
+COPY --from=frontend-build --chown=appuser:appuser /app/frontend/dist ./static
 
 # Define a porta padrão do Cloud Run / Render
 ENV PORT=8080

@@ -7,8 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import controllers, schemas
 from src.database import get_db
+from src.security import get_current_trainer
 
-router = APIRouter(prefix="/sessoes", tags=["Sessoes"])
+router = APIRouter(
+    prefix="/sessoes", 
+    tags=["Sessoes"],
+    dependencies=[Depends(get_current_trainer)]
+)
 
 
 @router.post("/", response_model=schemas.SessaoTreinoPublic, status_code=201)
