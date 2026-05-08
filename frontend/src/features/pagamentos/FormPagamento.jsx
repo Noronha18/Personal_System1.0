@@ -55,8 +55,8 @@ export default function FormPagamento({ alunoId, onSuccess }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-300">
       <div className="flex items-center gap-2 mb-4">
-        <DollarSign className="w-6 h-6 text-emerald-500" />
-        <h3 className="text-lg font-bold text-slate-100">Registrar Pagamento</h3>
+        <DollarSign className="w-6 h-6 text-brand" />
+        <h3 className="text-lg font-bold text-text-primary">Registrar Pagamento</h3>
       </div>
 
       {erro && (
@@ -68,9 +68,9 @@ export default function FormPagamento({ alunoId, onSuccess }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Valor */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">Valor (R$)</label>
+          <label className="text-sm font-medium text-text-secondary">Valor (R$)</label>
           <div className="relative">
-            <DollarSign className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <DollarSign className="absolute left-3 top-3.5 w-4 h-4 text-text-muted" />
             <input
               type="text"
               value={new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(valor)}
@@ -79,7 +79,7 @@ export default function FormPagamento({ alunoId, onSuccess }) {
                   const floatValue = parseFloat(val) / 100;
                   setValor(floatValue || 0);
               }}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full bg-canvas border border-border rounded-lg pl-10 p-3 text-text-primary focus:ring-2 focus:ring-brand/20 outline-none"
               placeholder="0,00"
               required
             />
@@ -88,8 +88,8 @@ export default function FormPagamento({ alunoId, onSuccess }) {
 
         {/* Quantidade de Aulas (Novo) */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-emerald-500" />
+          <label className="text-sm font-medium text-text-secondary flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-brand" />
             Aulas no Pacote
           </label>
           <input
@@ -97,21 +97,21 @@ export default function FormPagamento({ alunoId, onSuccess }) {
             min="0"
             value={qtdAulas}
             onChange={(e) => setQtdAulas(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+            className="w-full bg-canvas border border-border rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-brand/20 outline-none"
             placeholder="Ex: 8, 12 (Soma na meta mensal)"
           />
         </div>
 
         {/* Mês Referência */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">Referência (MM/AAAA)</label>
+          <label className="text-sm font-medium text-text-secondary">Referência (MM/AAAA)</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-text-muted" />
             <input
               type="text"
               value={referenciaMes}
               onChange={(e) => setReferenciaMes(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full bg-canvas border border-border rounded-lg pl-10 p-3 text-text-primary focus:ring-2 focus:ring-brand/20 outline-none"
               placeholder="MM/AAAA"
               required
             />
@@ -120,13 +120,13 @@ export default function FormPagamento({ alunoId, onSuccess }) {
 
         {/* Forma de Pagamento */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">Forma de Pagamento</label>
+          <label className="text-sm font-medium text-text-secondary">Forma de Pagamento</label>
           <div className="relative">
-            <CreditCard className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+            <CreditCard className="absolute left-3 top-3.5 w-4 h-4 text-text-muted" />
             <select
               value={formaPagamento}
               onChange={(e) => setFormaPagamento(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+              className="w-full bg-canvas border border-border rounded-lg pl-10 p-3 text-text-primary focus:ring-2 focus:ring-brand/20 outline-none appearance-none"
             >
               <option value="PIX">PIX</option>
               <option value="Dinheiro">Dinheiro</option>
@@ -139,11 +139,11 @@ export default function FormPagamento({ alunoId, onSuccess }) {
 
       {/* Observação */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Observação (Opcional)</label>
+        <label className="text-sm font-medium text-text-secondary">Observação (Opcional)</label>
         <textarea
           value={observacao}
           onChange={(e) => setObservacao(e.target.value)}
-          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none min-h-[80px]"
+          className="w-full bg-canvas border border-border rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-brand/20 outline-none min-h-[80px]"
           placeholder="Detalhes adicionais..."
         />
       </div>
@@ -151,7 +151,7 @@ export default function FormPagamento({ alunoId, onSuccess }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 bg-brand hover:bg-brand-hover text-brand-fg rounded-lg font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <>

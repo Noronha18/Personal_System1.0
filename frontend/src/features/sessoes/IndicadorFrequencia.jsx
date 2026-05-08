@@ -66,8 +66,8 @@ export const IndicadorFrequencia = ({ alunoId }) => {
   }, [alunoId]);
 
   if (loading && !dados) return (
-    <div className="flex items-center justify-center p-6 bg-slate-800/50 rounded-xl border border-slate-700 h-full">
-      <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+    <div className="flex items-center justify-center p-6 bg-text-primary/50 rounded-xl border border-border-strong h-full">
+      <Loader2 className="w-6 h-6 animate-spin text-brand" />
     </div>
   );
 
@@ -78,35 +78,35 @@ export const IndicadorFrequencia = ({ alunoId }) => {
   const porcentagem = Math.round(dados.taxa_adesao * 100);
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-      
-      {/* 1. Cabeçalho (Resumo) */}
-      <div className="p-5 border-b border-slate-800 bg-slate-900/50 relative">
+    <div className="flex flex-col h-full bg-text-primary border border-border-strong rounded-xl overflow-hidden shadow-lg">
+
+      {/* Cabeçalho */}
+      <div className="p-5 border-b border-border-strong bg-text-primary/50 relative">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-500" />
+            <p className="text-sm font-medium text-text-muted flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-brand" />
               Frequência ({mesAtual})
             </p>
             <div className="flex items-baseline gap-2 mt-1">
-              <h3 className={`text-3xl font-bold ${isPositive ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <h3 className={`text-3xl font-bold ${isPositive ? 'text-success' : 'text-warning'}`}>
                 {porcentagem}%
               </h3>
-              <span className="text-sm text-slate-500 font-mono">
+              <span className="text-sm text-text-secondary font-mono">
                 ({dados.sessoes_realizadas}/{dados.sessoes_previstas})
               </span>
             </div>
           </div>
           
-          <div className={`p-2 rounded-lg ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+          <div className={`p-2 rounded-lg ${isPositive ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
             {isPositive ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
           </div>
         </div>
         
         {/* Barra de Progresso */}
-        <div className="w-full bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+        <div className="w-full bg-text-secondary/30 h-1.5 rounded-full mt-4 overflow-hidden">
           <div 
-            className={`h-full rounded-full transition-all duration-1000 ${isPositive ? 'bg-emerald-500' : 'bg-amber-500'}`}
+            className={`h-full rounded-full transition-all duration-1000 ${isPositive ? 'bg-success' : 'bg-warning'}`}
             style={{ width: `${Math.min(porcentagem, 100)}%` }}
           />
         </div>
@@ -119,8 +119,8 @@ export const IndicadorFrequencia = ({ alunoId }) => {
             // Lógica de Ícone e Cor baseada no status
             let statusConfig = {
               icon: CheckCircle2,
-              color: 'text-emerald-400',
-              bg: 'bg-emerald-500/10 border-emerald-500/20',
+              color: 'text-success',
+              bg: 'bg-success/10 border-success/20',
               label: 'Realizada'
             };
 
@@ -152,9 +152,9 @@ export const IndicadorFrequencia = ({ alunoId }) => {
                 <div className="flex items-center gap-3">
                   <Icon className={`w-5 h-5 ${statusConfig.color}`} />
                   <div>
-                    <p className="text-sm font-medium text-slate-200">
+                    <p className="text-sm font-medium text-brand-fg">
                       {new Date(sessao.data_hora).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                      <span className="ml-2 text-xs text-slate-500">
+                      <span className="ml-2 text-xs text-text-secondary">
                         {new Date(sessao.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </p>
@@ -167,7 +167,7 @@ export const IndicadorFrequencia = ({ alunoId }) => {
                 <button 
                   onClick={() => deletarSessao(sessao.id)}
                   disabled={deletando === sessao.id}
-                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  className="p-2 text-text-secondary hover:text-danger hover:bg-danger/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                   title="Apagar registro"
                 >
                   {deletando === sessao.id ? (
@@ -180,7 +180,7 @@ export const IndicadorFrequencia = ({ alunoId }) => {
             );
           })
         ) : (
-          <div className="text-center py-8 text-slate-500 text-sm">
+          <div className="text-center py-8 text-text-secondary text-sm">
             Nenhum registro este mês.
           </div>
         )}
