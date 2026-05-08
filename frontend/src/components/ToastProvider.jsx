@@ -23,18 +23,18 @@ export const ToastProvider = ({ children }) => {
     return (
         <ToastContext.Provider value={toast}>
             {children}
-            <div className="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none">
+            <div className="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none" role="status" aria-live="polite">
                 {toasts.map(t => (
                     <div
                         key={t.id}
-                        className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl pointer-events-auto animate-in slide-in-from-bottom-4 fade-in duration-300 max-w-sm w-full
+                        className={`flex items-center gap-3 px-5 py-4 rounded-lg shadow-2 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in duration-300 max-w-sm w-full
                             ${t.tipo === 'sucesso'
-                                ? 'bg-white border border-emerald-200 text-emerald-700'
-                                : 'bg-white border border-red-200 text-red-700'}`}
+                                ? 'bg-surface border border-success/20 text-success-text'
+                                : 'bg-surface border border-danger/20 text-danger-text'}`}
                     >
                         {t.tipo === 'sucesso'
-                            ? <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
-                            : <AlertCircle size={18} className="shrink-0 text-red-500" />}
+                            ? <CheckCircle2 size={18} className="shrink-0 text-success" aria-hidden="true" />
+                            : <AlertCircle size={18} className="shrink-0 text-danger" aria-hidden="true" />}
                         <span className="text-sm font-medium flex-1">{t.texto}</span>
                         <button
                             onClick={() => dismiss(t.id)}

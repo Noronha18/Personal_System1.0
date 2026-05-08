@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
-    User, Target, AlertTriangle, Calendar,
+    User, Target, AlertTriangle,
     Dumbbell, DollarSign, Clock, ArrowLeft,
     CheckCircle2, Trash2, Plus, Eye, ChevronDown, ChevronUp, Copy, Edit,
-    ShieldCheck
+    ShieldCheck, Zap
 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
@@ -11,6 +11,20 @@ import { FormAlunoModal } from './FormAlunoModal';
 import { useToast } from '../../components/ToastProvider';
 
 const METODOS_AGRUPADORES = ["Bi-set", "Tri-set", "Giant-set", "Super-set"];
+
+const METHOD_BG = {
+    'Bi-set':    'bg-method-bi/8',
+    'Tri-set':   'bg-method-tri/8',
+    'Giant-set': 'bg-method-giant/8',
+    'Super-set': 'bg-method-super/8',
+};
+
+const METHOD_BADGE = {
+    'Bi-set':    'bg-method-bi/10 text-method-bi border-method-bi/20',
+    'Tri-set':   'bg-method-tri/10 text-method-tri border-method-tri/20',
+    'Giant-set': 'bg-method-giant/10 text-method-giant border-method-giant/20',
+    'Super-set': 'bg-method-super/10 text-method-super border-method-super/20',
+};
 
 export const DetalheAluno = ({ alunoId, onBack }) => {
     const toast = useToast();
@@ -21,7 +35,6 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     const [isModalEditOpen, setIsModalEditOpen] = useState(false);
     const [planoSelecionado, setPlanoSelecionado] = useState(null);
     const [planoEdicao, setPlanoEdicao] = useState(null);
-
     const [expandirSessoes, setExpandirSessoes] = useState(false);
     const [expandirPagamentos, setExpandirPagamentos] = useState(false);
 
@@ -58,9 +71,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         }
     };
 
-    useEffect(() => {
-        carregar();
-    }, [alunoId]);
+    useEffect(() => { carregar(); }, [alunoId]);
 
     const handleDeleteAluno = async () => {
         if (confirm(`Tem certeza que deseja EXCLUIR permanentemente o cadastro de ${aluno.nome}? Todos os treinos e históricos serão perdidos.`)) {
@@ -102,7 +113,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     };
 
     const handleEditPlano = (plano) => {
-        const formatadoParaEdicao = {
+        setPlanoEdicao({
             id: plano.id,
             titulo: plano.titulo,
             objetivo_estrategico: plano.objetivo_estrategico,
@@ -122,8 +133,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                     observacoes: p.observacoes
                 }))
             }))
-        };
-        setPlanoEdicao(formatadoParaEdicao);
+        });
         setPlanoSelecionado(null);
         setIsModalPlanoOpen(true);
     };
@@ -142,16 +152,16 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center p-20 space-y-4 text-slate-500">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs font-medium uppercase tracking-widest animate-pulse">Acessando Prontuário...</p>
+        <div className="flex flex-col items-center justify-center p-20 space-y-4">
+            <div className="w-9 h-9 border-2 border-brand/20 border-t-brand rounded-full animate-spin"></div>
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest animate-pulse">Acessando Prontuário...</p>
         </div>
     );
 
     if (error || !aluno) return (
-        <div className="p-10 text-center text-red-600 bg-red-50 rounded-3xl border border-red-200">
-            {error || "Aluno não encontrado"}
-            <button onClick={onBack} className="block mx-auto mt-4 text-red-700 underline font-bold text-xs">Voltar para lista</button>
+        <div className="p-10 text-center text-danger bg-danger/5 rounded-xl border border-danger/20">
+            <p className="font-bold text-sm uppercase tracking-wide">{error || "Aluno não encontrado"}</p>
+            <button onClick={onBack} className="mt-4 text-xs font-bold text-text-secondary hover:text-text-primary underline uppercase tracking-widest">Voltar para lista</button>
         </div>
     );
 
@@ -159,61 +169,56 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
     const pagamentosExibidos = expandirPagamentos ? aluno.pagamentos : aluno.pagamentos?.slice(0, 3);
 
     return (
-        <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
             {/* Cabeçalho de Ação */}
-            <div className="flex items-center justify-between px-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
                 <button
                     onClick={onBack}
-                    className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-500 transition-colors font-semibold text-sm active:scale-95"
+                    className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary transition-colors font-bold text-xs uppercase tracking-widest active:scale-95"
                 >
-                    <ArrowLeft size={18} /> <span className="hidden sm:inline">Lista</span>
+                    <ArrowLeft size={14} /> Voltar para lista
                 </button>
-                <div className="flex items-center gap-3 sm:gap-4">
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     {aluno.status === 'ativo' && (
                         <button
                             onClick={handleCheckIn}
-                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl transition-colors active:scale-95 shadow-md shadow-emerald-500/20"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-brand hover:bg-brand-hover text-brand-fg px-4 py-2 rounded-lg transition-all active:scale-95 shadow-sm"
                         >
                             <CheckCircle2 size={16} />
-                            <span className="text-xs font-semibold hidden sm:inline">Check-in</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Check-in</span>
                         </button>
                     )}
 
                     <select
                         value={aluno.status}
                         onChange={(e) => handleStatusUpdate(e.target.value)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer
-                            ${aluno.status === 'ativo' ? 'bg-emerald-50 text-emerald-700' :
-                              aluno.status === 'suspenso' ? 'bg-amber-50 text-amber-700' :
-                              'bg-red-50 text-red-700'}`}
+                        className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest border border-border focus:ring-2 focus:ring-brand/10 cursor-pointer outline-none transition-all
+                            ${aluno.status === 'ativo' ? 'bg-brand/10 text-brand' :
+                              aluno.status === 'suspenso' ? 'bg-warning/10 text-warning' :
+                              'bg-danger/10 text-danger'}`}
                     >
-                        <option value="ativo">Ativo</option>
-                        <option value="suspenso">Suspenso</option>
-                        <option value="cancelado">Cancelado</option>
+                        <option value="ativo">Status: Ativo</option>
+                        <option value="suspenso">Status: Suspenso</option>
+                        <option value="cancelado">Status: Cancelado</option>
                     </select>
 
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border
-                        ${aluno.status_financeiro === 'atrasado'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                        {aluno.status_financeiro === 'atrasado' ? 'Pendente' : 'Regular'}
-                    </span>
-
-                    <button
-                        onClick={() => setIsModalEditOpen(true)}
-                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"
-                        title="Editar Cadastro"
-                    >
-                        <Edit size={18} />
-                    </button>
-
-                    <button
-                        onClick={handleDeleteAluno}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                        title="Excluir Aluno"
-                    >
-                        <Trash2 size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setIsModalEditOpen(true)}
+                            className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors border border-border"
+                            title="Editar Cadastro"
+                        >
+                            <Edit size={16} />
+                        </button>
+                        <button
+                            onClick={handleDeleteAluno}
+                            className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors border border-border"
+                            title="Excluir Aluno"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -222,59 +227,70 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
 
                 {/* Coluna 1: Perfil e Anamnese */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md">
-                        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
-                                <User size={36} className="text-slate-300" />
+                    <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="w-20 h-20 rounded-xl bg-surface-raised border border-border flex items-center justify-center mb-4">
+                                <User size={32} className="text-text-muted" />
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{aluno.nome}</h2>
-                            <p className="text-slate-500 text-xs sm:text-sm font-mono mt-1">{aluno.cpf || "CPF não informado"}</p>
+                            <h2 className="text-2xl font-bold text-text-primary tracking-tight">{aluno.nome}</h2>
+                            <p className="text-text-secondary text-xs font-mono font-bold uppercase tracking-widest mt-1">{aluno.cpf || "CPF não informado"}</p>
+
+                            <span className={`mt-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border
+                                ${aluno.status_financeiro === 'atrasado'
+                                    ? 'bg-danger/10 text-danger border-danger/20'
+                                    : 'bg-brand/10 text-brand border-brand/20'}`}>
+                                {aluno.status_financeiro === 'atrasado' ? 'Pendência Financeira' : 'Situação Regular'}
+                            </span>
                         </div>
 
-                        <div className="space-y-3 sm:space-y-4">
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-2">
-                                    <Target size={13} className="text-emerald-500" /> Objetivo
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <p className="text-xs font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                                    <Target size={12} className="text-brand" /> Objetivo Estratégico
                                 </p>
-                                <p className="text-sm text-slate-700 leading-relaxed">{aluno.objetivo || "Não informado"}</p>
+                                <div className="bg-overlay p-3 rounded-lg border border-border/60">
+                                    <p className="text-xs text-text-primary font-medium leading-relaxed">{aluno.objetivo || "Foco não definido"}</p>
+                                </div>
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-2">
-                                    <AlertTriangle size={13} className="text-amber-500" /> Restrições
+                            <div className="space-y-1.5">
+                                <p className="text-xs font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                                    <AlertTriangle size={12} className="text-warning" /> Observações Clínicas
                                 </p>
-                                <p className="text-sm text-slate-700 leading-relaxed">{aluno.restricoes || "Nenhuma restrição"}</p>
+                                <div className="bg-overlay p-3 rounded-lg border border-border/60">
+                                    <p className="text-xs text-text-primary font-medium leading-relaxed">{aluno.restricoes || "Nenhuma restrição registrada"}</p>
+                                </div>
                             </div>
 
                             {aluno.usuario && (
-                                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide mb-2 flex items-center gap-2">
-                                        <ShieldCheck size={13} /> Acesso do Aluno
+                                <div className="bg-brand/5 p-4 rounded-xl border border-brand/20">
+                                    <p className="text-2xs font-bold text-brand uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <ShieldCheck size={12} /> Acesso Digital
                                     </p>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-slate-900 font-semibold font-mono">{aluno.usuario.username}</span>
-                                        <span className="bg-emerald-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded-lg">Liberado</span>
+                                        <span className="text-xs text-text-primary font-bold font-mono">{aluno.usuario.username}</span>
+                                        <span className="bg-brand text-brand-fg text-2xs font-bold px-2 py-0.5 rounded uppercase tracking-widest">Ativo</span>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4 text-center">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Início</p>
-                                    <p className="text-sm text-slate-900 font-semibold">{new Date(aluno.data_inicio).toLocaleDateString('pt-BR')}</p>
+                            <div className="pt-4 border-t border-border grid grid-cols-2 gap-4">
+                                <div className="text-center">
+                                    <p className="text-2xs font-bold text-text-muted uppercase tracking-widest mb-1">Membro desde</p>
+                                    <p className="text-xs text-text-primary font-bold font-mono">{new Date(aluno.data_inicio).toLocaleDateString('pt-BR')}</p>
                                 </div>
-                                <div>
+                                <div className="text-center">
                                     {aluno.tipo_pagamento === 'pacote' ? (
                                         <>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Saldo</p>
-                                            <p className={`text-sm font-bold ${aluno.saldo_aulas > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                {aluno.saldo_aulas} {aluno.saldo_aulas === 1 ? 'Aula' : 'Aulas'}
+                                            <p className="text-2xs font-bold text-text-muted uppercase tracking-widest mb-1">Créditos</p>
+                                            <p className={`text-xs font-bold font-mono ${aluno.saldo_aulas > 0 ? 'text-brand' : 'text-danger'}`}>
+                                                {aluno.saldo_aulas} AULAS
                                             </p>
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Vencimento</p>
-                                            <p className="text-sm text-slate-900 font-semibold">Dia {aluno.dia_vencimento}</p>
+                                            <p className="text-2xs font-bold text-text-muted uppercase tracking-widest mb-1">Vencimento</p>
+                                            <p className="text-xs text-text-primary font-bold font-mono">DIA {aluno.dia_vencimento}</p>
                                         </>
                                     )}
                                 </div>
@@ -286,45 +302,45 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                 {/* Coluna 2 e 3: Treinos e Histórico */}
                 <div className="lg:col-span-8 space-y-6">
 
-                    {/* Seção de Planos de Treino */}
-                    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md">
+                    {/* Planos de Treino */}
+                    <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                                <Dumbbell className="text-emerald-500" size={20} /> Planos
+                            <h3 className="text-lg font-bold text-text-primary tracking-tight flex items-center gap-3">
+                                <Dumbbell className="text-brand" size={18} /> Planos de Treino
                             </h3>
                             <button
                                 onClick={() => setIsModalPlanoOpen(true)}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-xl transition-colors shadow-md shadow-emerald-500/20"
+                                className="bg-brand hover:bg-brand-hover text-brand-fg p-2 rounded-lg transition-all shadow-sm active:scale-95"
                             >
-                                <Plus size={18} />
+                                <Plus size={16} />
                             </button>
                         </div>
 
                         {aluno.planos_treino?.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {aluno.planos_treino.map(plano => (
-                                    <div key={plano.id} className={`p-5 border rounded-2xl flex flex-col justify-between transition-colors ${plano.esta_ativo ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-50 border-slate-200 opacity-80'}`}>
+                                    <div key={plano.id} className={`p-5 border rounded-xl flex flex-col justify-between transition-all ${plano.esta_ativo ? 'bg-brand/5 border-brand/20 ring-1 ring-brand/5' : 'bg-overlay border-border opacity-75'}`}>
                                         <div className="mb-4">
                                             <div className="flex justify-between items-start gap-2">
-                                                <p className="font-bold text-slate-900 text-base leading-tight">{plano.titulo}</p>
-                                                {plano.esta_ativo && <span className="bg-emerald-500 text-white text-xs font-semibold px-2 py-0.5 rounded-lg shrink-0">Ativo</span>}
+                                                <p className="font-bold text-text-primary text-base tracking-tight leading-tight">{plano.titulo}</p>
+                                                {plano.esta_ativo && <span className="bg-brand text-brand-fg text-2xs font-bold px-2 py-0.5 rounded uppercase tracking-widest">Ativo</span>}
                                             </div>
-                                            <p className="text-xs text-slate-500 font-medium mt-1">
-                                                {plano.duracao_semanas} semanas · {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}
+                                            <p className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-1.5 font-mono">
+                                                {plano.duracao_semanas} SEMANAS · {new Date(plano.data_inicio).toLocaleDateString('pt-BR')}
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setPlanoSelecionado(plano)}
-                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+                                                className="flex-1 flex items-center justify-center gap-2 py-2 bg-surface border border-border hover:bg-overlay text-text-primary rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-sm"
                                             >
-                                                <Eye size={14} /> Visualizar
+                                                <Eye size={14} /> Detalhes
                                             </button>
                                             {!plano.esta_ativo && (
                                                 <button
                                                     onClick={() => handleClonarPlano(plano.id)}
-                                                    className="p-2.5 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors"
-                                                    title="Reativar/Clonar"
+                                                    className="p-2 bg-surface border border-border hover:border-brand/40 hover:bg-brand/5 text-brand rounded-lg transition-all"
+                                                    title="Reativar Plano"
                                                 >
                                                     <Copy size={14} />
                                                 </button>
@@ -334,63 +350,59 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 italic text-sm font-medium">
-                                Nenhum plano de treino ativo.
+                            <div className="text-center py-10 border border-dashed border-border rounded-xl text-text-muted italic text-xs bg-overlay/50">
+                                Nenhum plano de treinamento registrado.
                             </div>
                         )}
                     </div>
 
-                    {/* Histórico de Atividades Recentes */}
+                    {/* Histórico */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                        {/* Últimas Sessões */}
-                        <div className="bg-white border border-slate-200/70 rounded-3xl p-6 shadow-md">
-                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5 flex items-center gap-2">
-                                <Clock size={14} className="text-emerald-500" /> Frequência
+                        <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+                            <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Clock size={14} className="text-brand" /> Registro de Frequência
                             </h3>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {sessoesExibidas?.map(sessao => (
-                                    <div key={sessao.id} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
-                                        <span className="text-sm text-slate-600 font-medium">{new Date(sessao.data_hora).toLocaleDateString('pt-BR')}</span>
-                                        <span className={`text-xs font-semibold ${sessao.realizada ? "text-emerald-600" : "text-red-500"}`}>
-                                            {sessao.realizada ? "Check-in" : "Falta"}
+                                    <div key={sessao.id} className="flex items-center justify-between py-2 border-b border-border-faint last:border-0">
+                                        <span className="text-xs text-text-secondary font-bold font-mono uppercase">{new Date(sessao.data_hora).toLocaleDateString('pt-BR')}</span>
+                                        <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded ${sessao.realizada ? "bg-brand/10 text-brand" : "bg-danger/10 text-danger"}`}>
+                                            {sessao.realizada ? "Presença" : "Falta"}
                                         </span>
                                     </div>
                                 )) || (
-                                    <p className="text-xs text-slate-400 italic">Sem registros.</p>
+                                    <p className="text-xs text-text-muted italic py-4">Sem histórico registrado.</p>
                                 )}
-
                                 {aluno.sessoes?.length > 3 && (
                                     <button
                                         onClick={() => setExpandirSessoes(!expandirSessoes)}
-                                        className="w-full text-center pt-4 text-xs font-semibold text-emerald-600 hover:text-emerald-500 transition-colors flex items-center justify-center gap-1"
+                                        className="w-full text-center pt-3 text-xs font-bold text-brand hover:text-brand-hover uppercase tracking-widest flex items-center justify-center gap-1 transition-colors"
                                     >
-                                        {expandirSessoes ? <><ChevronUp size={14} /> Ver menos</> : <><ChevronDown size={14} /> Ver todas ({aluno.sessoes.length})</>}
+                                        {expandirSessoes ? <><ChevronUp size={12} /> Recolher</> : <><ChevronDown size={12} /> Ver Histórico Completo ({aluno.sessoes.length})</>}
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Últimos Pagamentos */}
-                        <div className="bg-white border border-slate-200/70 rounded-3xl p-6 shadow-md">
-                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5 flex items-center gap-2">
-                                <DollarSign size={14} className="text-emerald-500" /> Pagamentos
+                        <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+                            <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <DollarSign size={14} className="text-brand" /> Histórico Financeiro
                             </h3>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {pagamentosExibidos?.map(pag => (
-                                    <div key={pag.id} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
-                                        <span className="text-sm text-slate-600 font-medium">Mês {pag.referencia_mes}</span>
-                                        <span className="text-sm text-slate-900 font-semibold tabular-nums">{new Intl.NumberFormat('pt-BR', {style: 'currency', currency:'BRL'}).format(pag.valor)}</span>
+                                    <div key={pag.id} className="flex items-center justify-between py-2 border-b border-border-faint last:border-0">
+                                        <span className="text-xs text-text-secondary font-bold uppercase tracking-widest">Ref: {pag.referencia_mes}</span>
+                                        <span className="text-xs text-text-primary font-bold font-mono tabular-nums">{new Intl.NumberFormat('pt-BR', {style: 'currency', currency:'BRL'}).format(pag.valor)}</span>
                                     </div>
                                 )) || (
-                                    <p className="text-xs text-slate-400 italic">Sem registros.</p>
+                                    <p className="text-xs text-text-muted italic py-4">Sem registros financeiros.</p>
                                 )}
-
                                 {aluno.pagamentos?.length > 3 && (
                                     <button
                                         onClick={() => setExpandirPagamentos(!expandirPagamentos)}
-                                        className="w-full text-center pt-4 text-xs font-semibold text-emerald-600 hover:text-emerald-500 transition-colors flex items-center justify-center gap-1"
+                                        className="w-full text-center pt-3 text-xs font-bold text-brand hover:text-brand-hover uppercase tracking-widest flex items-center justify-center gap-1 transition-colors"
                                     >
-                                        {expandirPagamentos ? <><ChevronUp size={14} /> Ver menos</> : <><ChevronDown size={14} /> Ver todos ({aluno.pagamentos.length})</>}
+                                        {expandirPagamentos ? <><ChevronUp size={12} /> Recolher</> : <><ChevronDown size={12} /> Ver Todos ({aluno.pagamentos.length})</>}
                                     </button>
                                 )}
                             </div>
@@ -403,10 +415,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             {/* Modais */}
             <ModalPlanoTreino
                 isOpen={isModalPlanoOpen}
-                onClose={() => {
-                    setIsModalPlanoOpen(false);
-                    setPlanoEdicao(null);
-                }}
+                onClose={() => { setIsModalPlanoOpen(false); setPlanoEdicao(null); }}
                 onSave={handleSavePlano}
                 planoEdicao={planoEdicao}
             />
@@ -420,35 +429,38 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
 
             {/* Modal de Visualização de Plano */}
             {planoSelecionado && (
-                <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-[#F0F4F2] w-full max-w-5xl h-[92vh] md:h-auto md:max-h-[85vh] overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 duration-500">
-                        <div className="p-6 sm:p-8 border-b border-slate-200/60 flex justify-between items-start bg-white">
+                <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4 bg-text-ink/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-canvas w-full max-w-5xl h-[92vh] md:h-[85vh] overflow-hidden rounded-t-xl md:rounded-xl shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 duration-500 border border-border">
+                        <div className="p-6 sm:p-8 border-b border-border flex justify-between items-start bg-surface">
                             <div>
-                                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{planoSelecionado.titulo}</h2>
-                                <div className="flex flex-col gap-1 mt-2">
-                                    <p className="text-slate-600 font-medium text-sm">Objetivo: {planoSelecionado.objetivo_estrategico || "Não definido"}</p>
+                                <h2 className="text-2xl font-bold text-text-primary tracking-tight">{planoSelecionado.titulo}</h2>
+                                <div className="flex flex-col gap-1.5 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Foco do Plano:</span>
+                                        <span className="text-xs text-text-primary font-semibold">{planoSelecionado.objetivo_estrategico || "Técnico"}</span>
+                                    </div>
                                     {planoSelecionado.detalhes && (
-                                        <p className="text-slate-500 text-xs leading-relaxed max-w-2xl bg-slate-50 p-3 rounded-xl border border-slate-100 mt-1">
+                                        <p className="text-xs text-text-secondary leading-relaxed max-w-2xl bg-overlay p-3 rounded-lg border border-border mt-1 italic">
                                             "{planoSelecionado.detalhes}"
                                         </p>
                                     )}
                                 </div>
                             </div>
-                            <button onClick={() => setPlanoSelecionado(null)} className="p-2.5 bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors shrink-0 ml-4">
+                            <button onClick={() => setPlanoSelecionado(null)} className="p-2 bg-overlay text-text-muted hover:text-text-primary hover:bg-border rounded-lg transition-all">
                                 <Plus size={20} className="rotate-45" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-12 bg-[#F0F4F2]">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-10 bg-canvas">
                             {planoSelecionado.treinos?.map(treino => (
                                 <div key={treino.id} className="space-y-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-emerald-500/20">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-brand text-brand-fg rounded-lg flex items-center justify-center font-bold text-lg shadow-sm">
                                             {treino.nome}
                                         </div>
                                         <div>
-                                            <h4 className="text-xl font-black text-slate-900 tracking-tight">{treino.descricao || "Prescrição"}</h4>
-                                            <p className="text-xs text-slate-500 font-medium mt-0.5">{treino.prescricoes?.length || 0} exercícios</p>
+                                            <h4 className="text-lg font-bold text-text-primary tracking-tight">{treino.descricao || `Divisão ${treino.nome}`}</h4>
+                                            <p className="text-xs text-text-muted font-bold uppercase tracking-widest mt-0.5">{treino.prescricoes?.length || 0} exercícios prescritos</p>
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
@@ -458,62 +470,53 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                             const prevIsSame = idx > 0 && prescricoes[idx - 1].metodo === presc.metodo && isGrouping;
                                             const nextIsSame = idx < prescricoes.length - 1 && prescricoes[idx + 1].metodo === presc.metodo && isGrouping;
 
-                                            const groupClasses = `
-                                                ${prevIsSame ? 'mt-0 border-t-0 rounded-t-none' : 'rounded-t-2xl mt-2'}
-                                                ${nextIsSame ? 'mb-0 rounded-b-none' : 'rounded-b-2xl mb-2'}
-                                            `;
+                                            const groupClasses = [
+                                                prevIsSame ? 'mt-0 border-t-0 rounded-t-none' : 'rounded-t-lg mt-1.5 shadow-sm',
+                                                nextIsSame ? 'mb-0 rounded-b-none' : 'rounded-b-lg mb-1.5 shadow-sm',
+                                            ].join(' ');
+
+                                            const methodBg = isGrouping ? (METHOD_BG[presc.metodo] ?? '') : '';
 
                                             return (
                                                 <div
                                                     key={presc.id || idx}
-                                                    className={`relative p-5 bg-white border border-slate-100 flex justify-between items-center transition-colors shadow-sm ${groupClasses}`}
+                                                    className={`p-4 bg-surface border border-border flex justify-between items-center transition-all ${groupClasses} ${methodBg}`}
                                                 >
-                                                    {isGrouping && (
-                                                       <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl z-10 ${
-                                                            presc.metodo === 'Bi-set' ? 'bg-blue-500' :
-                                                            presc.metodo === 'Tri-set' ? 'bg-purple-500' :
-                                                            presc.metodo === 'Giant-set' ? 'bg-orange-500' :
-                                                            'bg-emerald-500'
-                                                        }`} />
-                                                    )}
-
-                                                    <div className="space-y-2 pl-2 flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="font-semibold text-slate-900 text-base leading-tight">{presc.nome_exercicio}</p>
+                                                    <div className="space-y-2.5 flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <p className="font-bold text-text-primary text-sm leading-tight">{presc.nome_exercicio}</p>
+                                                            {presc.metodo && presc.metodo !== 'Convencional' && (
+                                                                <span className={`text-2xs font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest ${METHOD_BADGE[presc.metodo] ?? 'bg-overlay text-text-secondary border-border'}`}>
+                                                                    {presc.metodo}
+                                                                </span>
+                                                            )}
                                                             {presc.exercicio?.video_url && (
                                                                 <a
                                                                     href={presc.exercicio.video_url}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="p-1.5 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors shrink-0"
-                                                                    title="Ver Vídeo"
+                                                                    className="p-1 text-accent hover:text-accent-hover transition-colors shrink-0"
+                                                                    title="Ver Demonstração"
                                                                     onClick={(e) => e.stopPropagation()}
                                                                 >
-                                                                    <Eye size={13} />
+                                                                    <Zap size={14} />
                                                                 </a>
                                                             )}
                                                         </div>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">{presc.series} séries</span>
-                                                            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">{presc.repeticoes} reps</span>
-                                                            {presc.metodo && presc.metodo !== 'Convencional' && (
-                                                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
-                                                                    presc.metodo === 'Bi-set' ? 'bg-blue-50 text-blue-700' :
-                                                                    presc.metodo === 'Tri-set' ? 'bg-purple-50 text-purple-700' :
-                                                                    'bg-emerald-50 text-emerald-700'
-                                                                }`}>{presc.metodo}</span>
-                                                            )}
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <span className="text-xs font-bold font-mono text-text-secondary bg-overlay px-2 py-0.5 rounded border border-border uppercase tracking-tight">{presc.series} séries</span>
+                                                            <span className="text-xs font-bold font-mono text-text-secondary bg-overlay px-2 py-0.5 rounded border border-border uppercase tracking-tight">{presc.repeticoes} reps</span>
                                                             {presc.observacoes && (
-                                                                <span className="w-full text-xs text-blue-600 font-medium mt-1 block">
+                                                                <span className="w-full text-xs text-accent-text font-bold uppercase tracking-widest mt-0.5 block leading-relaxed">
                                                                     Nota: {presc.observacoes}
                                                                 </span>
                                                             )}
                                                         </div>
                                                     </div>
                                                     <div className="text-right shrink-0 ml-4">
-                                                        <p className="text-lg font-black text-emerald-600 tabular-nums">{presc.carga_kg}kg</p>
+                                                        <p className="text-xl font-bold font-mono text-accent tabular-nums tracking-tighter">{presc.carga_kg}KG</p>
                                                         {(!nextIsSame || !isGrouping) && (
-                                                            <p className="text-xs text-slate-500 font-medium mt-0.5">{presc.tempo_descanso_segundos}s off</p>
+                                                            <p className="text-xs text-text-muted font-bold uppercase tracking-widest mt-0.5 font-mono">{presc.tempo_descanso_segundos}S OFF</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -524,18 +527,18 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                             ))}
                         </div>
 
-                        <div className="p-6 sm:p-8 bg-white flex flex-col md:flex-row justify-end gap-3 border-t border-slate-200/60">
+                        <div className="p-6 sm:p-8 bg-surface flex flex-col md:flex-row justify-end gap-3 border-t border-border">
                             <button
                                 onClick={() => handleEditPlano(planoSelecionado)}
-                                className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-semibold uppercase tracking-wide transition-colors"
+                                className="px-6 py-2.5 bg-overlay hover:bg-border text-text-primary rounded-lg text-xs font-bold uppercase tracking-widest transition-all border border-border"
                             >
                                 Editar Plano
                             </button>
                             <button
                                 onClick={() => handleDeletePlano(planoSelecionado.id)}
-                                className="px-8 py-3 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 hover:border-red-500 rounded-2xl text-xs font-semibold uppercase tracking-wide transition-all"
+                                className="px-6 py-2.5 bg-danger/5 text-danger hover:bg-danger hover:text-brand-fg border border-danger/20 rounded-lg text-xs font-bold uppercase tracking-widest transition-all"
                             >
-                                Apagar Plano
+                                Excluir Plano
                             </button>
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dumbbell, Plus, Book, Search, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Dumbbell, Plus, Book, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from '../alunos/ModalPlanoTreino';
 
@@ -48,55 +48,55 @@ export const ModuloTreinos = () => {
     };
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-700">
+        <div className="space-y-8 animate-in fade-in duration-700">
             {/* Header com Ações Principais */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/20">
-                        <Dumbbell size={28} />
+                    <div className="w-12 h-12 bg-brand text-brand-fg rounded-xl flex items-center justify-center shadow-sm">
+                        <Dumbbell size={24} />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Módulo de Treinos</h2>
-                        <p className="text-slate-500 font-medium">Gerencie modelos e prescrições inteligentes.</p>
+                        <h2 className="text-2xl font-bold text-text-primary tracking-tight">Módulo de Treinos</h2>
+                        <p className="text-text-secondary text-sm font-medium">Modelos e prescrições de alta performance.</p>
                     </div>
                 </div>
 
                 <div className="flex gap-3 w-full md:w-auto">
-                    <button 
+                    <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-brand-fg rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-hover transition-all shadow-sm active:scale-95"
                     >
-                        <Plus size={18} /> Novo Plano
+                        <Plus size={16} /> Novo Plano
                     </button>
                 </div>
             </div>
 
             {mensagem.texto && (
-                <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300
-                    ${mensagem.tipo === 'sucesso' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
-                    {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                    <span className="text-xs font-black uppercase tracking-widest">{mensagem.texto}</span>
+                <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 border
+                    ${mensagem.tipo === 'sucesso' ? 'bg-brand/10 text-brand border-brand/20' : 'bg-danger/10 text-danger border-danger/20'}`}>
+                    {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span className="text-xs font-bold uppercase tracking-widest">{mensagem.texto}</span>
                 </div>
             )}
 
             {/* Grid de Conteúdo */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Templates Globais */}
-                <div className="bg-white border border-black/5 rounded-[2.5rem] p-10 shadow-xl shadow-black/5">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                            <Book className="text-blue-500" size={20} /> Modelos Globais
+                <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                            <Book className="text-brand" size={18} /> Modelos Globais
                         </h3>
-                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">{templates.length} salvos</span>
+                        <span className="text-xs font-bold text-text-secondary bg-overlay px-2 py-1 rounded border border-border uppercase tracking-wide">{templates.length} salvos</span>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {templates.map(template => (
-                            <div key={template.id} className="p-6 bg-slate-50/50 border border-black/5 rounded-3xl hover:bg-white hover:shadow-lg transition-all group">
+                            <div key={template.id} className="p-4 bg-overlay border border-border/60 rounded-lg hover:border-accent/40 transition-all group">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="font-black text-lg text-slate-900 group-hover:text-blue-600 transition-colors">{template.titulo}</p>
-                                        <p className="text-xs text-slate-500 font-medium mt-1">
+                                        <p className="font-bold text-base text-text-primary group-hover:text-accent transition-colors">{template.titulo}</p>
+                                        <p className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-1">
                                             {template.treinos?.length || 0} divisões · {template.duracao_semanas} semanas
                                         </p>
                                     </div>
@@ -107,41 +107,41 @@ export const ModuloTreinos = () => {
                                                 carregarDados();
                                             }
                                         }}
-                                        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                        className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-md transition-colors"
                                         title="Apagar modelo"
                                     >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             </div>
                         ))}
                         {templates.length === 0 && (
-                            <div className="text-center py-10 text-slate-300 italic text-sm">Nenhum modelo global criado.</div>
+                            <div className="text-center py-8 text-text-muted italic text-xs border border-dashed border-border rounded-lg bg-overlay/50">Nenhum modelo global criado.</div>
                         )}
                     </div>
                 </div>
 
                 {/* Info Card */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden flex flex-col justify-center">
-                    <div className="relative z-10 space-y-6">
-                        <h3 className="text-2xl font-black tracking-tight leading-tight">Prescreva com<br/>eficiência.</h3>
-                        <p className="text-slate-300 text-sm font-medium leading-relaxed max-w-xs">
-                            Crie modelos de treinos A/B/C e aplique-os instantaneamente a qualquer aluno do seu plantel.
+                <div className="bg-text-primary rounded-xl p-8 text-brand-fg shadow-lg relative overflow-hidden flex flex-col justify-center border border-border-strong">
+                    <div className="relative z-10 space-y-5">
+                        <h3 className="text-xl font-bold tracking-tight leading-tight">Prescrição Inteligente</h3>
+                        <p className="text-text-secondary text-xs font-medium leading-relaxed max-w-xs">
+                            Maximize sua produtividade criando modelos de treino reutilizáveis e aplique-os com um clique.
                         </p>
-                        <ul className="space-y-3">
-                            {['Até 26 divisões (A-Z)', 'Biblioteca de 50+ exercícios', 'Clonagem inteligente'].map(item => (
-                                <li key={item} className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-                                    <CheckCircle2 size={14} className="shrink-0" /> {item}
+                        <ul className="space-y-2">
+                            {['Até 26 divisões (A-Z)', 'Base de dados customizável', 'Interface otimizada'].map(item => (
+                                <li key={item} className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-widest">
+                                    <CheckCircle2 size={12} className="shrink-0" /> {item}
                                 </li>
                             ))}
                         </ul>
                     </div>
-                    <Dumbbell className="absolute -right-10 -bottom-10 text-white/5 w-60 h-60 -rotate-12" />
+                    <Dumbbell className="absolute -right-6 -bottom-6 text-brand-fg/5 w-40 h-40 -rotate-12" />
                 </div>
             </div>
 
             {/* Modal Unificado */}
-            <ModalPlanoTreino 
+            <ModalPlanoTreino
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSavePlano}

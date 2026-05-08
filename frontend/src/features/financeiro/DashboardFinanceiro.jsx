@@ -54,49 +54,49 @@ const DashboardFinanceiro = () => {
     if (loading && !financeiroData.receita_total) {
         return (
             <div className="flex flex-col items-center justify-center py-40 space-y-4">
-                <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-500 font-medium uppercase text-xs tracking-widest animate-pulse">Sincronizando Fluxo de Caixa...</p>
+                <div className="w-10 h-10 border-2 border-brand/20 border-t-brand rounded-full animate-spin"></div>
+                <p className="text-text-secondary font-bold uppercase text-xs tracking-widest animate-pulse">Sincronizando Fluxo de Caixa...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-2">
                 <div>
-                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Financeiro</h2>
-                    <p className="text-slate-500 text-xs sm:text-sm font-medium">Saúde financeira e previsibilidade do negócio.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">Financeiro</h2>
+                    <p className="text-text-secondary text-xs sm:text-sm font-medium">Saúde financeira e previsibilidade operacional.</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-8 py-4 rounded-2xl font-semibold transition-colors shadow-md shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 uppercase text-xs tracking-wide"
+                    className="w-full sm:w-auto bg-brand hover:bg-brand-hover text-brand-fg px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 uppercase text-xs tracking-widest"
                 >
-                    <Plus size={20} /> <span className="sm:inline">Registrar</span>
+                    <Plus size={16} /> Registrar Lançamento
                 </button>
             </div>
 
             {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-5 rounded-[2rem] text-sm font-bold flex items-center gap-3 mx-2">
-                    <AlertCircle size={20} /> {error}
+                <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-3 mx-2">
+                    <AlertCircle size={16} /> {error}
                 </div>
             )}
 
             <CardsKPI dados={financeiroData} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch mx-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mx-2">
                 <GraficoReceita dados={financeiroData.receita_mensal_12m} />
                 <GraficoInadimplencia dados={financeiroData} />
             </div>
 
-            <div className="bg-white border border-slate-200/70 rounded-3xl p-6 sm:p-8 shadow-md mx-2">
-                <div className="flex items-center justify-between mb-6">
+            <div className="bg-surface border border-border rounded-xl p-6 sm:p-8 shadow-sm mx-2">
+                <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-slate-50 text-emerald-500 rounded-xl flex items-center justify-center border border-slate-100">
+                        <div className="w-10 h-10 bg-overlay text-brand rounded-lg flex items-center justify-center border border-border">
                             <DollarSign size={18} />
                         </div>
-                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Lançamentos Recentes</h3>
+                        <h3 className="text-lg font-bold text-text-primary tracking-tight">Lançamentos Recentes</h3>
                     </div>
-                    <span className="text-slate-500 text-xs font-medium bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">Histórico</span>
+                    <span className="text-text-secondary text-xs font-bold uppercase tracking-widest bg-overlay px-3 py-1 rounded border border-border">Auditoria</span>
                 </div>
                 <TabelaPagamentos pagamentos={ultimosPagamentos} onDelete={carregarDados} />
             </div>
