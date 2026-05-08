@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dumbbell, Plus, Book, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Dumbbell, Plus, Book, CheckCircle2, AlertCircle, Trash2, Pencil } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from '../alunos/ModalPlanoTreino';
 
@@ -8,6 +8,7 @@ export const ModuloTreinos = () => {
     const [loading, setLoading] = useState(false);
     const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [templateEdicao, setTemplateEdicao] = useState(null);
     const [templates, setTemplates] = useState([]);
 
     const carregarDados = async () => {
@@ -30,7 +31,10 @@ export const ModuloTreinos = () => {
     const handleSavePlano = async (payload) => {
         setLoading(true);
         try {
-            if (payload.aluno_id) {
+            if (templateEdicao) {
+                await treinoService.atualizarPlano(templateEdicao.id, payload);
+                setMensagem({ tipo: 'sucesso', texto: 'Modelo atualizado com sucesso!' });
+            } else if (payload.aluno_id) {
                 await treinoService.criarPlano(payload.aluno_id, payload);
                 setMensagem({ tipo: 'sucesso', texto: 'Plano vinculado ao aluno com sucesso!' });
             } else {
@@ -38,6 +42,7 @@ export const ModuloTreinos = () => {
                 setMensagem({ tipo: 'sucesso', texto: 'Modelo global salvo com sucesso!' });
             }
             setIsModalOpen(false);
+            setTemplateEdicao(null);
             carregarDados();
             setTimeout(() => setMensagem({ tipo: '', texto: '' }), 3000);
         } catch (err) {
@@ -100,18 +105,27 @@ export const ModuloTreinos = () => {
                                             {template.treinos?.length || 0} divisões · {template.duracao_semanas} semanas
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm("Deseja apagar este modelo global?")) {
-                                                await treinoService.deletarPlano(template.id);
-                                                carregarDados();
-                                            }
-                                        }}
-                                        className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-md transition-colors"
-                                        title="Apagar modelo"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => { setTemplateEdicao(template); setIsModalOpen(true); }}
+                                            className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-md transition-colors"
+                                            title="Editar modelo"
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm("Deseja apagar este modelo global?")) {
+                                                    await treinoService.deletarPlano(template.id);
+                                                    carregarDados();
+                                                }
+                                            }}
+                                            className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-md transition-colors"
+                                            title="Apagar modelo"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -143,8 +157,9 @@ export const ModuloTreinos = () => {
             {/* Modal Unificado */}
             <ModalPlanoTreino
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => { setIsModalOpen(false); setTemplateEdicao(null); }}
                 onSave={handleSavePlano}
+                planoEdicao={templateEdicao}
             />
         </div>
     );
