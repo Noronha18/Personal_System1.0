@@ -25,5 +25,9 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.username})
+    token_data = {"sub": user.username, "role": user.role}
+    if user.aluno_id:
+        token_data["aluno_id"] = user.aluno_id
+
+    access_token = create_access_token(data=token_data)
     return {"access_token": access_token, "token_type": "bearer"}
