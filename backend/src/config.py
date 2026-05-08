@@ -19,10 +19,11 @@ class Settings(BaseSettings):
     # No Render, frontend e backend rodam no mesmo domínio. 
     # Deixamos as URLs locais para desenvolvimento e o Render cuidará do tráfego no mesmo domínio.
     CORS_ORIGINS: list[str] = [
-        "http://localhost:5173", 
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://personal-system1-0.onrender.com" # Exemplo de URL do Render (ajustar se necessário)
-    ] 
+        "https://ptroster-app.onrender.com",
+        "https://ptroster-alunos.onrender.com",
+    ]
 
     # Segurança — SECRET_KEY é obrigatório via .env (sem valor padrão)
     SECRET_KEY: str = Field(..., min_length=32)
