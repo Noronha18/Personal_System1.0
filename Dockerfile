@@ -40,9 +40,7 @@ COPY --chown=appuser:appuser backend/alembic.ini ./
 # Copia o build do frontend para dentro do backend (pasta static)
 COPY --from=frontend-build --chown=appuser:appuser /app/frontend/dist ./static
 
-# Define a porta padrão do Cloud Run / Render
-ENV PORT=8080
 EXPOSE 8080
 
 # Comando para rodar as migrações, criar o admin inicial e iniciar o servidor
-CMD ["sh", "-c", "alembic upgrade head && python -m src.create_admin && uvicorn src.api:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "alembic upgrade head && python -m src.create_admin && uvicorn src.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
