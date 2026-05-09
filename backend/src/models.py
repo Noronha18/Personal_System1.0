@@ -18,7 +18,7 @@ class Usuario(Base):
     # Vínculo com o Aluno (opcional para trainers, obrigatório para alunos)
     aluno_id = Column(Integer, ForeignKey('alunos.id', ondelete='SET NULL'), nullable=True)
 
-    aluno = relationship("Aluno", back_populates="usuario")
+    aluno = relationship("Aluno", back_populates="usuario", foreign_keys=[aluno_id])
 
 class Aluno(Base):
     __tablename__ = 'alunos'
