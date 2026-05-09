@@ -43,9 +43,8 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             setLoading(true);
             const data = await alunoService.obterPorId(alunoId);
             setAluno(data);
-        } catch (err) {
+        } catch {
             setError("Falha ao carregar prontuário");
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -193,6 +192,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                     <select
                         value={aluno.status}
                         onChange={(e) => handleStatusUpdate(e.target.value)}
+                        aria-label="Status do aluno"
                         className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest border border-border focus:ring-2 focus:ring-brand/10 cursor-pointer outline-none transition-all
                             ${aluno.status === 'ativo' ? 'bg-brand/10 text-brand' :
                               aluno.status === 'suspenso' ? 'bg-warning/10 text-warning' :
@@ -206,15 +206,17 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setIsModalEditOpen(true)}
-                            className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors border border-border"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors border border-border"
                             title="Editar Cadastro"
+                            aria-label="Editar cadastro do aluno"
                         >
                             <Edit size={16} />
                         </button>
                         <button
                             onClick={handleDeleteAluno}
-                            className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors border border-border"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors border border-border"
                             title="Excluir Aluno"
+                            aria-label="Excluir aluno permanentemente"
                         >
                             <Trash2 size={16} />
                         </button>
@@ -430,10 +432,15 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
             {/* Modal de Visualização de Plano */}
             {planoSelecionado && (
                 <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4 bg-text-ink/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-canvas w-full max-w-5xl h-[92vh] md:h-[85vh] overflow-hidden rounded-t-xl md:rounded-xl shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 duration-500 border border-border">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="plano-modal-titulo"
+                        className="bg-canvas w-full max-w-5xl h-[92vh] md:h-[85vh] overflow-hidden rounded-t-xl md:rounded-xl shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 duration-500 border border-border"
+                    >
                         <div className="p-6 sm:p-8 border-b border-border flex justify-between items-start bg-surface">
                             <div>
-                                <h2 className="text-2xl font-bold text-text-primary tracking-tight">{planoSelecionado.titulo}</h2>
+                                <h2 id="plano-modal-titulo" className="text-2xl font-bold text-text-primary tracking-tight">{planoSelecionado.titulo}</h2>
                                 <div className="flex flex-col gap-1.5 mt-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Foco do Plano:</span>
@@ -446,8 +453,12 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                     )}
                                 </div>
                             </div>
-                            <button onClick={() => setPlanoSelecionado(null)} className="p-2 bg-overlay text-text-muted hover:text-text-primary hover:bg-border rounded-lg transition-all">
-                                <Plus size={20} className="rotate-45" />
+                            <button
+                                onClick={() => setPlanoSelecionado(null)}
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-overlay text-text-muted hover:text-text-primary hover:bg-border rounded-lg transition-all"
+                                aria-label="Fechar plano"
+                            >
+                                <Plus size={20} className="rotate-45" aria-hidden="true" />
                             </button>
                         </div>
 

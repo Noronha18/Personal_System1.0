@@ -24,10 +24,10 @@ export const LoginView = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-ios-bg p-6 font-sans">
-            <div className="w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-1000">
+        <div className="min-h-screen flex items-center justify-center bg-canvas p-6 font-sans">
+            <div className="w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-12">
-                    <div className="w-20 h-20 bg-brand rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand/30 animate-bounce duration-[2000ms]">
+                    <div className="w-20 h-20 bg-brand rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-brand/30">
                         <ShieldCheck size={40} className="text-brand-fg" />
                     </div>
                     <h1 className="text-5xl font-black text-text-primary tracking-tighter">
@@ -36,21 +36,23 @@ export const LoginView = ({ onLoginSuccess }) => {
                     <p className="text-text-muted font-bold uppercase text-xs tracking-[0.3em] mt-3">Plataforma de Performance</p>
                 </div>
 
-                <div className="bg-surface border border-border p-12 rounded-[3rem] shadow-2xl shadow-text-ink/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
-                    
-                    <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+                <div className="bg-surface border border-border p-12 rounded-[3rem] shadow-2xl shadow-text-ink/5">
+                    <form onSubmit={handleSubmit} className="space-y-8">
                         {error && (
-                            <div className="p-4 bg-red-50 border border-red-100 text-red-500 text-xs font-black rounded-2xl text-center animate-in shake duration-500">
+                            <div className="p-4 bg-danger/10 border border-danger/20 text-danger text-xs font-black rounded-2xl text-center animate-in fade-in duration-300">
                                 {error}
                             </div>
                         )}
 
                         <div className="space-y-3">
-                            <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
-                                <User size={12} className="text-brand" /> Identificação
+                            <label
+                                htmlFor="login-username"
+                                className="text-xs font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2"
+                            >
+                                <User size={12} className="text-brand" aria-hidden="true" /> Identificação
                             </label>
                             <input
+                                id="login-username"
                                 type="text"
                                 required
                                 value={username}
@@ -61,10 +63,14 @@ export const LoginView = ({ onLoginSuccess }) => {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
-                                <Lock size={12} className="text-brand" /> Segurança
+                            <label
+                                htmlFor="login-password"
+                                className="text-xs font-black uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2"
+                            >
+                                <Lock size={12} className="text-brand" aria-hidden="true" /> Segurança
                             </label>
                             <input
+                                id="login-password"
                                 type="password"
                                 required
                                 value={password}
@@ -87,7 +93,7 @@ export const LoginView = ({ onLoginSuccess }) => {
                         </button>
                     </form>
                 </div>
-                
+
                 <p className="text-center mt-12 text-text-muted text-xs font-black uppercase tracking-widest">
                     Acesso restrito a <span className="text-brand">treinadores autorizados</span>
                 </p>

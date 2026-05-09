@@ -69,13 +69,19 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                 </button>
             </div>
 
-            <div className="flex p-1 bg-overlay rounded-xl border border-border mx-2 w-fit">
+            <div
+                role="tablist"
+                aria-label="Filtrar alunos por status"
+                className="flex p-1 bg-overlay rounded-xl border border-border mx-2 w-fit"
+            >
                 {[
                     { id: 'ativos', label: 'Ativos' },
                     { id: 'inativos', label: 'Inativos' }
                 ].map((aba) => (
                     <button
                         key={aba.id}
+                        role="tab"
+                        aria-selected={abaStatus === aba.id}
                         onClick={() => setAbaStatus(aba.id)}
                         className={`px-5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
                             abaStatus === aba.id
@@ -103,8 +109,17 @@ export const ListaAlunosFeature = ({ onSelectAluno }) => {
                     {alunosFiltrados.map((aluno, idx) => (
                         <div
                             key={aluno.id}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => onSelectAluno(aluno.id)}
-                            className={`group flex items-center gap-3 sm:gap-4 p-4 transition-colors duration-150 cursor-pointer hover:bg-overlay active:bg-overlay
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    onSelectAluno(aluno.id);
+                                }
+                            }}
+                            aria-label={`Ver prontuário de ${aluno.nome}`}
+                            className={`group flex items-center gap-3 sm:gap-4 p-4 transition-colors duration-150 cursor-pointer hover:bg-overlay active:bg-overlay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30
                                 ${idx !== alunosFiltrados.length - 1 ? 'border-b border-border/60' : ''}
                                 ${aluno.status !== 'ativo' ? 'opacity-75' : ''}`}
                         >

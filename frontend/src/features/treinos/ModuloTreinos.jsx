@@ -19,8 +19,8 @@ export const ModuloTreinos = () => {
             ]);
             setAlunos(listaAlunos);
             setTemplates(listaTemplates);
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // falha silenciosa — dados ficam em estado vazio
         }
     };
 
@@ -69,7 +69,7 @@ export const ModuloTreinos = () => {
                 <div className="flex gap-3 w-full md:w-auto">
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-brand-fg rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-hover transition-all shadow-sm active:scale-95"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-brand text-brand-fg rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-hover transition-all shadow-sm active:scale-95"
                     >
                         <Plus size={16} /> Novo Plano
                     </button>

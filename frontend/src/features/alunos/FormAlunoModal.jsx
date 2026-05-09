@@ -99,10 +99,15 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-surface border border-border w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="form-aluno-titulo"
+                className="bg-surface border border-border w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500"
+            >
                 <div className="p-10 border-b border-border flex justify-between items-center bg-surface">
                     <div>
-                        <h2 className="text-3xl font-black text-text-primary tracking-tight">
+                        <h2 id="form-aluno-titulo" className="text-3xl font-black text-text-primary tracking-tight">
                             {isSuccess ? 'Sucesso!' : alunoEdicao ? 'Editar Aluno' : 'Novo Aluno'}
                         </h2>
                         <p className="text-text-secondary text-sm font-medium">
@@ -114,7 +119,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                         </p>
                     </div>
                     {!isSuccess && (
-                        <button onClick={onClose} className="p-3 bg-overlay text-text-muted hover:text-text-secondary rounded-full transition-all active:scale-90">
+                        <button onClick={onClose} aria-label="Fechar formulário" className="p-3 bg-overlay text-text-muted hover:text-text-secondary rounded-full transition-all active:scale-90">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="rotate-45"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         </button>
                     )}
@@ -132,7 +137,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                     <>
                         <form id="form-aluno" onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             {error && (
-                                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 text-sm font-bold rounded-2xl text-center">
+                                <div className="p-4 bg-danger/10 border border-danger/20 text-danger text-sm font-bold rounded-2xl text-center">
                                     {error}
                                 </div>
                             )}
@@ -309,7 +314,7 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                         <label className="text-xs font-bold text-text-secondary uppercase tracking-wide ml-1">Restrições / Patologias</label>
                         <textarea 
                             rows="2"
-                            className="w-full bg-overlay border border-red-500/10 rounded-2xl px-5 py-4 text-text-primary font-semibold outline-none focus:ring-2 focus:ring-red-500/10 transition-all placeholder:text-text-muted"
+                            className="w-full bg-overlay border border-border rounded-2xl px-5 py-4 text-text-primary font-semibold outline-none focus:ring-2 focus:ring-brand/20 transition-all placeholder:text-text-muted"
                             placeholder="Ex: Condromalácia patelar grau 2..."
                             value={formData.restricoes}
                             onChange={(e) => setFormData({...formData, restricoes: e.target.value})}

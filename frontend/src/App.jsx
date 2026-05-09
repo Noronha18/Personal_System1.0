@@ -55,7 +55,11 @@ function App() {
             </button>
           </div>
 
-          <nav className="flex p-1 bg-overlay rounded-lg border border-border w-full lg:w-auto overflow-x-auto no-scrollbar">
+          <nav
+            role="tablist"
+            aria-label="Navegação principal"
+            className="flex p-1 bg-overlay rounded-lg border border-border w-full lg:w-auto overflow-x-auto no-scrollbar"
+          >
             {[
               { id: 'alunos', label: 'Alunos' },
               { id: 'treinos', label: 'Treinos' },
@@ -63,6 +67,9 @@ function App() {
             ].map((aba) => (
               <button
                 key={aba.id}
+                role="tab"
+                aria-selected={abaAtiva === aba.id}
+                aria-controls="main-tab-panel"
                 onClick={() => {
                   setAbaAtiva(aba.id);
                   setSelectedAlunoId(null);
@@ -86,8 +93,12 @@ function App() {
           </button>
         </header>
 
-        <main className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-2 duration-1000">
-           {renderConteudo()}
+        <main
+          id="main-tab-panel"
+          role="tabpanel"
+          className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-2 duration-300"
+        >
+          {renderConteudo()}
         </main>
 
         <footer className="mt-20 pt-8 border-t border-border text-center">
@@ -99,7 +110,7 @@ function App() {
 
       {/* Visão de Prontuário (Sobreposta) */}
       {selectedAlunoId && (
-        <div className="fixed inset-0 z-50 bg-canvas overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 bg-canvas overflow-y-auto custom-scrollbar pb-[env(safe-area-inset-bottom)]">
             <div className="max-w-7xl mx-auto w-full p-4 md:p-8 lg:p-12">
                 <DetalheAluno
                     alunoId={selectedAlunoId}
