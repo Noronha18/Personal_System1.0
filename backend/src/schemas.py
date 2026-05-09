@@ -167,6 +167,7 @@ class AlunoBase(BaseModel):
 class AlunoCreate(AlunoBase):
     username: Optional[str] = None
     password: Optional[str] = None
+    trainer_id: Optional[int] = None  # preenchido pelo admin; trainers usam o próprio id
 
 class UsuarioPublic(BaseModel):
     id: int
@@ -204,9 +205,10 @@ class AlunoPublic(BaseModel):
     status: str = "ativo"
     status_financeiro: str = "em_dia"
     aulas_feitas_mes: int = 0
+    trainer_id: Optional[int] = None
     planos_treino: List[PlanoTreinoPublic] = []
     pagamentos: List[PagamentoPublic] = []
     sessoes: List[SessaoTreinoPublic] = Field(default=[], validation_alias="sessoes_treino")
     usuario: Optional[UsuarioPublic] = None
-    
+
     model_config = ConfigDict(from_attributes=True)

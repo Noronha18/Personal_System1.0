@@ -39,11 +39,13 @@ class Aluno(Base):
     restricoes = Column(Text, nullable=True)
     status = Column(String, default="ativo") # "ativo", "suspenso", "cancelado"
 
+    trainer_id = Column(Integer, ForeignKey('usuarios.id', ondelete='RESTRICT'), nullable=True, index=True)
+
     # Relacionamentos
     planos_treino = relationship("PlanoTreino", back_populates="aluno", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="aluno", cascade="all, delete-orphan")
     sessoes_treino = relationship("SessaoTreino", back_populates="aluno", cascade="all, delete-orphan")
-    usuario = relationship("Usuario", back_populates="aluno", uselist=False)
+    usuario = relationship("Usuario", back_populates="aluno", uselist=False, foreign_keys="Usuario.aluno_id")
 
     # Propriedades auxiliares para a View
     aulas_feitas_mes = 0

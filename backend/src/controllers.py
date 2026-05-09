@@ -47,7 +47,7 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
 
 # --- CONTROLLERS DE ALUNO ---
 
-async def listar_alunos_ativos(db: AsyncSession):
+async def listar_alunos_ativos(db: AsyncSession, trainer_id: int | None = None):
     query = (
         select(models.Aluno)
         .options(
@@ -61,15 +61,17 @@ async def listar_alunos_ativos(db: AsyncSession):
         )
         .order_by(models.Aluno.nome)
     )
+    if trainer_id is not None:
+        query = query.where(models.Aluno.trainer_id == trainer_id)
     result = await db.execute(query)
     alunos = result.scalars().all()
-    
+
     for aluno in alunos:
         await _preencher_status_aluno(db, aluno)
-        
+
     return alunos
 
-async def get_aluno(db: AsyncSession, aluno_id: int):
+async def get_aluno(db: AsyncSession, aluno_id: int, trainer_id: int | None = None):
     query = (
         select(models.Aluno)
         .where(models.Aluno.id == aluno_id)
@@ -83,31 +85,32 @@ async def get_aluno(db: AsyncSession, aluno_id: int):
             selectinload(models.Aluno.usuario)
         )
     )
-    
+    if trainer_id is not None:
+        query = query.where(models.Aluno.trainer_id == trainer_id)
+
     result = await db.execute(query)
     aluno = result.scalars().first()
-    
+
     if not aluno:
         raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
-    
+
     await _preencher_status_aluno(db, aluno)
-        
+
     return aluno
 
 
 
-async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
+async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate, trainer_id: int):
     if aluno_in.cpf:
         stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_in.cpf)
         result = await db.execute(stmt)
         if result.scalar_one_or_none():
             raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
-    
-    # Extrai dados de autenticação e aluno separadamente
-    auth_data = aluno_in.model_dump(include={"username", "password"})
-    aluno_data = aluno_in.model_dump(exclude={"username", "password"})
 
-    novo_aluno = models.Aluno(**aluno_data)
+    auth_data = aluno_in.model_dump(include={"username", "password"})
+    aluno_data = aluno_in.model_dump(exclude={"username", "password", "trainer_id"})
+
+    novo_aluno = models.Aluno(**aluno_data, trainer_id=trainer_id)
     db.add(novo_aluno)
     
     try:
@@ -172,15 +175,15 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate):
         await db.rollback()
         raise e
 
-async def atualizar_status_aluno(db: AsyncSession, aluno_id: int, novo_status: str):
-    aluno = await get_aluno(db, aluno_id)
+async def atualizar_status_aluno(db: AsyncSession, aluno_id: int, novo_status: str, trainer_id: int | None = None):
+    aluno = await get_aluno(db, aluno_id, trainer_id)
     aluno.status = novo_status
     await db.commit()
     await db.refresh(aluno)
     return aluno
 
-async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.AlunoUpdate):
-    aluno = await get_aluno(db, aluno_id)
+async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.AlunoUpdate, trainer_id: int | None = None):
+    aluno = await get_aluno(db, aluno_id, trainer_id)
     
     if aluno_up.cpf and aluno_up.cpf != aluno.cpf:
         stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_up.cpf)
@@ -200,8 +203,8 @@ async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.Alu
         await db.rollback()
         raise e
 
-async def excluir_aluno(db: AsyncSession, aluno_id: int):
-    aluno = await get_aluno(db, aluno_id) # Reutiliza a lógica de busca/erro
+async def excluir_aluno(db: AsyncSession, aluno_id: int, trainer_id: int | None = None):
+    aluno = await get_aluno(db, aluno_id, trainer_id)
     await db.delete(aluno)
     await db.commit()
     return True
@@ -243,11 +246,11 @@ async def listar_templates_globais(db: AsyncSession):
 
 
 
-async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) -> models.Pagamento:
+async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate, trainer_id: int | None = None) -> models.Pagamento:
     """
     Registra a entrada financeira de um aluno.
     """
-    aluno = await get_aluno(db, dados.aluno_id)
+    aluno = await get_aluno(db, dados.aluno_id, trainer_id)
     
     hoje = date.today()
     ref = dados.referencia_mes or f"{hoje.month:02d}/{hoje.year}"
@@ -275,7 +278,7 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate) 
         await db.rollback()
         raise e
 
-async def listar_pagamentos(db: AsyncSession) -> list[dict[str, Any]]:
+async def listar_pagamentos(db: AsyncSession, trainer_id: int | None = None) -> list[dict[str, Any]]:
     stmt = (
         select(
             models.Pagamento,
@@ -284,6 +287,8 @@ async def listar_pagamentos(db: AsyncSession) -> list[dict[str, Any]]:
         .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
         .order_by(models.Pagamento.data_pagamento.desc())
     )
+    if trainer_id is not None:
+        stmt = stmt.where(models.Aluno.trainer_id == trainer_id)
     result = await db.execute(stmt)
     
     pagamentos = []
@@ -305,19 +310,25 @@ async def listar_pagamentos(db: AsyncSession) -> list[dict[str, Any]]:
     
     return pagamentos
 
-async def  get_pagamento(db: AsyncSession, pagamento_id: int) -> models.Pagamento:
-    stmt = select(models.Pagamento).where(models.Pagamento.id == pagamento_id)
+async def get_pagamento(db: AsyncSession, pagamento_id: int, trainer_id: int | None = None) -> models.Pagamento:
+    stmt = (
+        select(models.Pagamento)
+        .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
+        .where(models.Pagamento.id == pagamento_id)
+    )
+    if trainer_id is not None:
+        stmt = stmt.where(models.Aluno.trainer_id == trainer_id)
     result = await db.execute(stmt)
     pagamento = result.scalar_one_or_none()
-    
+
     if not pagamento:
         raise exceptions.ResourceNotFoundError(f"Pagamento {pagamento_id} não encontrado")
 
     return pagamento
 
-async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schemas.PagamentoCreate) -> models.Pagamento:
+async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schemas.PagamentoCreate, trainer_id: int | None = None) -> models.Pagamento:
 
-    pagamento = await get_pagamento(db, pagamento_id)
+    pagamento = await get_pagamento(db, pagamento_id, trainer_id)
 
     pagamento.valor = dados.valor
     pagamento.forma_pagamento = dados.forma_pagamento
@@ -331,8 +342,8 @@ async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schema
         await db.rollback()
         raise e
 
-async def deletar_pagamento(db: AsyncSession, pagamento_id: int) -> dict:
-    pagamento = await get_pagamento(db, pagamento_id)
+async def deletar_pagamento(db: AsyncSession, pagamento_id: int, trainer_id: int | None = None) -> dict:
+    pagamento = await get_pagamento(db, pagamento_id, trainer_id)
     await db.delete(pagamento)
     await db.commit()
     return {"message": f"Pagamento {pagamento_id} deletado com sucesso"}
@@ -395,8 +406,8 @@ def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
     return inicio, fim
 
 
-async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate) -> models.SessaoTreino:
-    aluno = await get_aluno(db, payload.aluno_id)
+async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate, trainer_id: int | None = None) -> models.SessaoTreino:
+    aluno = await get_aluno(db, payload.aluno_id, trainer_id)
     
     if payload.plano_treino_id is not None:
         plano = await db.scalar(
@@ -438,6 +449,7 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
 async def listar_sessoes(
     db: AsyncSession,
     aluno_id: int | None = None,
+    trainer_id: int | None = None,
     de: date | None = None,
     ate: date | None = None,
     realizada: bool | None = None,
@@ -445,6 +457,11 @@ async def listar_sessoes(
     offset: int = 0,
 ) -> list[models.SessaoTreino]:
     stmt = select(models.SessaoTreino)
+
+    if trainer_id is not None:
+        stmt = stmt.join(models.Aluno, models.SessaoTreino.aluno_id == models.Aluno.id).where(
+            models.Aluno.trainer_id == trainer_id
+        )
 
     if aluno_id is not None:
         stmt = stmt.where(models.SessaoTreino.aluno_id == aluno_id)
@@ -515,16 +532,19 @@ async def calcular_frequencia_mensal(
         taxa_adesao=round(taxa_adesao, 4),
     )
 
-async def get_sessao(db: AsyncSession, sessao_id: int) -> models.SessaoTreino:
-    sessao = await db.scalar(
-        select(models.SessaoTreino).where(models.SessaoTreino.id == sessao_id)
-    )
+async def get_sessao(db: AsyncSession, sessao_id: int, trainer_id: int | None = None) -> models.SessaoTreino:
+    stmt = select(models.SessaoTreino).where(models.SessaoTreino.id == sessao_id)
+    if trainer_id is not None:
+        stmt = stmt.join(models.Aluno, models.SessaoTreino.aluno_id == models.Aluno.id).where(
+            models.Aluno.trainer_id == trainer_id
+        )
+    sessao = await db.scalar(stmt)
     if not sessao:
         raise exceptions.ResourceNotFoundError(f"Sessão {sessao_id} não encontrada")
     return sessao
 
-async def deletar_sessao(db: AsyncSession, sessao_id: int) -> None:
-    sessao = await get_sessao(db, sessao_id)
+async def deletar_sessao(db: AsyncSession, sessao_id: int, trainer_id: int | None = None) -> None:
+    sessao = await get_sessao(db, sessao_id, trainer_id)
     await db.delete(sessao)
     await db.commit()
 
@@ -542,32 +562,34 @@ def _month_starts(ate_mes_atual: date, n: int = 12) -> list[date]:
     return out
 
 
-async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
+async def calcular_estatisticas_financeiras(db: AsyncSession, trainer_id: int | None = None) -> dict[str, Any]:
     hoje = date.today()
     ref_mes = f"{hoje.month:02d}/{hoje.year}"
     mes_atual_inicio = date(hoje.year, hoje.month, 1)
 
+    # Filtro de alunos do trainer (ou todos para admin)
+    aluno_trainer_filter = (models.Aluno.trainer_id == trainer_id) if trainer_id is not None else True
+
     # === QUERY 1: KPIs do mês atual ===
     receita_mes_sq = (
         select(func.coalesce(func.sum(models.Pagamento.valor), 0))
+        .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
         .where(models.Pagamento.referencia_mes == ref_mes)
+        .where(aluno_trainer_filter)
         .scalar_subquery()
     )
 
-    # Alunos em dia são aqueles que pagaram no mês atual (mensal) 
-    # OU alunos de pacote que possuem saldo positivo
     alunos_em_dia_sq = (
         select(func.count(models.Aluno.id))
+        .where(aluno_trainer_filter)
         .where(
             or_(
-                # Caso Mensal: tem pagamento na referência
                 and_(
                     models.Aluno.tipo_pagamento == "mensal",
                     models.Aluno.id.in_(
                         select(models.Pagamento.aluno_id).where(models.Pagamento.referencia_mes == ref_mes)
                     )
                 ),
-                # Caso Pacote: tem saldo de aulas
                 and_(
                     models.Aluno.tipo_pagamento == "pacote",
                     models.Aluno.saldo_aulas > 0
@@ -577,7 +599,11 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
         .scalar_subquery()
     )
 
-    total_alunos_sq = select(func.count(models.Aluno.id)).scalar_subquery()
+    total_alunos_sq = (
+        select(func.count(models.Aluno.id))
+        .where(aluno_trainer_filter)
+        .scalar_subquery()
+    )
 
     kpi_stmt = select(
         receita_mes_sq.label("receita_total_mes"),
@@ -592,16 +618,17 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
 
     alunos_inadimplentes = max(total_alunos - alunos_em_dia, 0)
     inadimplencia = (alunos_inadimplentes / total_alunos) if total_alunos > 0 else 0.0
-    
-    # Ticket médio baseado em quem pagou no mês (para evitar distorção com alunos de pacote que não pagaram ESTE mês)
-    alunos_que_pagaram_este_mes = await db.scalar(
+
+    alunos_que_pagaram_stmt = (
         select(func.count(func.distinct(models.Pagamento.aluno_id)))
+        .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
         .where(models.Pagamento.referencia_mes == ref_mes)
+        .where(aluno_trainer_filter)
     )
+    alunos_que_pagaram_este_mes = await db.scalar(alunos_que_pagaram_stmt)
     ticket_medio = (receita_total_mes / alunos_que_pagaram_este_mes) if alunos_que_pagaram_este_mes and alunos_que_pagaram_este_mes > 0 else 0.0
 
     # === QUERY 2: Série histórica 12 meses ===
-
     meses = _month_starts(mes_atual_inicio, n=12)
     inicio_janela = meses[0]
 
@@ -611,7 +638,9 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
             bucket_mes,
             func.coalesce(func.sum(models.Pagamento.valor), 0).label("receita"),
         )
+        .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
         .where(models.Pagamento.data_pagamento >= inicio_janela)
+        .where(aluno_trainer_filter)
         .group_by(bucket_mes)
         .order_by(bucket_mes)
     )
@@ -646,7 +675,24 @@ async def calcular_estatisticas_financeiras(db: AsyncSession) -> dict[str, Any]:
     
     return resultado
 
-async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: schemas.PlanoTreinoCreate):
+async def _assert_owns_plano(db: AsyncSession, plano_id: int, trainer_id: int | None) -> models.PlanoTreino:
+    """Busca plano e verifica ownership. Templates (aluno_id=None) são acessíveis a todos."""
+    plano = await db.scalar(select(models.PlanoTreino).where(models.PlanoTreino.id == plano_id))
+    if not plano:
+        raise exceptions.ResourceNotFoundError(f"Plano de treino {plano_id} não encontrado")
+    if trainer_id is not None and plano.aluno_id is not None:
+        aluno_trainer = await db.scalar(
+            select(models.Aluno.trainer_id).where(models.Aluno.id == plano.aluno_id)
+        )
+        if aluno_trainer != trainer_id:
+            raise exceptions.ResourceNotFoundError(f"Plano de treino {plano_id} não encontrado")
+    return plano
+
+
+async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: schemas.PlanoTreinoCreate, trainer_id: int | None = None):
+    if aluno_id is not None and trainer_id is not None:
+        await get_aluno(db, aluno_id, trainer_id)  # valida ownership
+
     # 1. Se for para um aluno específico, desativa os planos anteriores
     if aluno_id is not None:
         stmt_desativa = (
@@ -704,25 +750,17 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
         await db.rollback()
         raise e
 
-async def deletar_plano_treino(db: AsyncSession, plano_id: int) -> None:
-    """
-    Deleta um plano de treino permanentemente.
-    """
-    stmt = select(models.PlanoTreino).where(models.PlanoTreino.id == plano_id)
-    result = await db.execute(stmt)
-    plano = result.scalar_one_or_none()
-    
-    if not plano:
-        raise exceptions.ResourceNotFoundError(f"Plano de treino {plano_id} não encontrado")
-    
+async def deletar_plano_treino(db: AsyncSession, plano_id: int, trainer_id: int | None = None) -> None:
+    plano = await _assert_owns_plano(db, plano_id, trainer_id)
     await db.delete(plano)
     await db.commit()
 
-async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno_id: int | None) -> models.PlanoTreino:
+async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno_id: int | None, trainer_id: int | None = None) -> models.PlanoTreino:
     """
     Clona um plano existente para um novo aluno (ou como template se novo_aluno_id for None).
     """
-    # 1. Carrega o plano original com toda a hierarquia
+    # 1. Valida ownership e carrega o plano original
+    await _assert_owns_plano(db, plano_origem_id, trainer_id)
     stmt = (
         select(models.PlanoTreino)
         .options(
@@ -794,12 +832,13 @@ async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno
     res_final = await db.execute(stmt_final)
     return res_final.scalar()
 
-async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schemas.PlanoTreinoUpdate) -> models.PlanoTreino:
+async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schemas.PlanoTreinoUpdate, trainer_id: int | None = None) -> models.PlanoTreino:
     """
     Atualiza um plano de treino e toda sua hierarquia (treinos e prescrições).
     Implementa lógica de sincronização: o que não vier no payload é removido.
     """
-    # 1. Busca o plano existente com toda a hierarquia carregada
+    await _assert_owns_plano(db, plano_id, trainer_id)
+
     stmt = (
         select(models.PlanoTreino)
         .options(

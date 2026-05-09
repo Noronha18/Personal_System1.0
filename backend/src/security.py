@@ -74,9 +74,27 @@ async def get_current_user(
 async def get_current_trainer(
     current_user: Usuario = Depends(get_current_user)
 ) -> Usuario:
-    if current_user.role != "trainer":
+    if current_user.role not in ("trainer", "admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso restrito a Personal Trainers"
         )
     return current_user
+
+
+async def get_current_admin(
+    current_user: Usuario = Depends(get_current_user)
+) -> Usuario:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores"
+        )
+    return current_user
+
+
+def resolve_tenant_filter(current_user: Usuario) -> int | None:
+    """Retorna None para admin (sem filtro) ou o id do trainer para escopo isolado."""
+    if current_user.role == "admin":
+        return None
+    return current_user.id

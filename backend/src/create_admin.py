@@ -7,22 +7,22 @@ from src.security import get_password_hash
 async def create_initial_admin():
     async with SessionLocal() as db:
         # Verifica se já existe um admin
-        result = await db.execute(select(Usuario).where(Usuario.role == "trainer"))
+        result = await db.execute(select(Usuario).where(Usuario.role == "admin"))
         if result.scalar_one_or_none():
-            print("✅ Já existe um usuário Trainer cadastrado.")
+            print("✅ Já existe um usuário Admin cadastrado.")
             return
 
         admin = Usuario(
-    username="admin",
+            username="admin",
             email="admin@personal.com",
             hashed_password=get_password_hash("admin123"),
-            role="trainer",
+            role="admin",
             is_active=True
         )
-        
+
         db.add(admin)
         await db.commit()
-        print("🚀 Usuário Trainer criado com sucesso!")
+        print("🚀 Usuário Admin criado com sucesso!")
         print("👤 Login: admin")
         print("🔑 Senha: admin123")
         print("⚠️ Lembre-se de alterar essa senha no primeiro acesso.")
