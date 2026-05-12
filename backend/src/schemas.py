@@ -213,6 +213,7 @@ class AlunoUpdate(BaseModel):
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
     status: Optional[str] = None
+    trainer_id: Optional[int] = None
 
 class AlunoPublic(BaseModel):
     id: int

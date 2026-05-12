@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react';
-import { alunoService } from '../../services/api';
+import { alunoService, adminService, getUserRole } from '../../services/api';
 
 export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null }) => {
+    const isAdmin = getUserRole() === 'admin';
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [trainers, setTrainers] = useState([]);
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
         cpf: '',
         dia_vencimento: 5,
-        tipo_pagamento: 'mensal', // 'mensal' ou 'pacote'
+        tipo_pagamento: 'mensal',
         frequencia_semanal_plano: 3,
         valor_mensalidade: 0,
         idade: '',
         objetivo: '',
         restricoes: '',
         username: '',
-        password: ''
+        password: '',
+        trainer_id: null,
     });
+
+    useEffect(() => {
+        if (isOpen && isAdmin) {
+            adminService.listarTrainers().then(setTrainers).catch(() => {});
+        }
+    }, [isOpen, isAdmin]);
 
     useEffect(() => {
         if (isOpen && alunoEdicao) {
@@ -34,7 +43,8 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 objetivo: alunoEdicao.objetivo || '',
                 restricoes: alunoEdicao.restricoes || '',
                 username: alunoEdicao.usuario?.username || '',
-                password: '' // Não editamos senha aqui por enquanto
+                password: '',
+                trainer_id: alunoEdicao.trainer_id ?? null,
             });
         } else if (isOpen) {
             setFormData({
@@ -49,7 +59,8 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                 objetivo: '',
                 restricoes: '',
                 username: '',
-                password: ''
+                password: '',
+                trainer_id: null,
             });
         }
     }, [isOpen, alunoEdicao]);
@@ -70,7 +81,8 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
             objetivo: formData.objetivo?.trim() || null,
             restricoes: formData.restricoes?.trim() || null,
             username: formData.username?.trim() || null,
-            password: formData.password?.trim() || null
+            password: formData.password?.trim() || null,
+            trainer_id: formData.trainer_id ? parseInt(formData.trainer_id) : null,
         };
 
         try {
@@ -177,7 +189,21 @@ export const FormAlunoModal = ({ isOpen, onClose, onSuccess, alunoEdicao = null 
                                         placeholder="000.000.000-00"
                                     />
                                 </div>
-                                <div className="space-y-2"></div>
+                                    {isAdmin && (
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wide ml-1">Trainer Responsável</label>
+                                        <select
+                                            className="w-full bg-overlay border border-border rounded-2xl px-5 py-4 text-text-primary font-semibold outline-none focus:ring-2 focus:ring-brand/20"
+                                            value={formData.trainer_id ?? ''}
+                                            onChange={(e) => setFormData({ ...formData, trainer_id: e.target.value || null })}
+                                        >
+                                            <option value="">— Sem trainer —</option>
+                                            {trainers.map((t) => (
+                                                <option key={t.id} value={t.id}>{t.username}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
 
                             {!alunoEdicao && (

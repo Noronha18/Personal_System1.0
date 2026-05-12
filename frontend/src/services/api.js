@@ -158,6 +158,10 @@ export function getUserRole() {
 
 export const adminService = {
     listarUsuarios: () => apiFetch('/admin/usuarios'),
+    listarTrainers: async () => {
+        const usuarios = await apiFetch('/admin/usuarios');
+        return usuarios.filter((u) => u.role === 'trainer');
+    },
     criarTrainer: (dados) => apiFetch('/admin/trainers', {
         method: 'POST',
         body: JSON.stringify(dados),
