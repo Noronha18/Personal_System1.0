@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../../services/api';
-import { UserPlus, Users, Shield, Eye, EyeOff, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { UserPlus, Users, Shield, Eye, EyeOff, RefreshCw, CheckCircle, XCircle, KeyRound } from 'lucide-react';
 
 const ROLE_LABEL = { admin: 'Admin', trainer: 'Trainer', aluno: 'Aluno' };
 const ROLE_COLOR = {
@@ -120,6 +120,101 @@ function FormCadastrarTrainer({ onSuccess }) {
     );
 }
 
+function LinhaUsuario({ u }) {
+    const [aberto, setAberto] = useState(false);
+    const [novaSenha, setNovaSenha] = useState('');
+    const [mostrar, setMostrar] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [sucesso, setSucesso] = useState(false);
+    const [erro, setErro] = useState('');
+
+    const handleReset = async (e) => {
+        e.preventDefault();
+        setErro('');
+        setLoading(true);
+        try {
+            await adminService.resetarSenha(u.id, novaSenha);
+            setSucesso(true);
+            setNovaSenha('');
+            setAberto(false);
+            setTimeout(() => setSucesso(false), 3000);
+        } catch (err) {
+            setErro(err.message || 'Erro ao redefinir senha.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="divide-y divide-border/50">
+            <div className="flex items-center gap-4 px-6 py-4 hover:bg-overlay/50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-overlay flex items-center justify-center flex-shrink-0">
+                    <Shield size={15} className="text-text-muted" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-text-primary truncate">{u.username}</p>
+                    <p className="text-xs text-text-muted truncate">{u.email}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    {sucesso && <CheckCircle size={14} className="text-success" />}
+                    <BadgeRole role={u.role} />
+                    <span
+                        className={`w-2 h-2 rounded-full ${u.is_active ? 'bg-success' : 'bg-danger'}`}
+                        title={u.is_active ? 'Ativo' : 'Inativo'}
+                    />
+                    <button
+                        onClick={() => { setAberto((v) => !v); setErro(''); }}
+                        className={`p-1.5 rounded-lg transition-colors ${aberto ? 'bg-brand/10 text-brand' : 'text-text-muted hover:text-text-primary hover:bg-overlay'}`}
+                        aria-label={`Redefinir senha de ${u.username}`}
+                        title="Redefinir senha"
+                    >
+                        <KeyRound size={14} />
+                    </button>
+                </div>
+            </div>
+
+            {aberto && (
+                <form onSubmit={handleReset} className="flex items-center gap-2 px-6 py-3 bg-overlay/60 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {erro && <p className="text-danger text-[10px] font-bold mr-1">{erro}</p>}
+                    <div className="relative flex-1">
+                        <input
+                            type={mostrar ? 'text' : 'password'}
+                            value={novaSenha}
+                            onChange={(e) => setNovaSenha(e.target.value)}
+                            required
+                            minLength={6}
+                            placeholder="Nova senha (mín. 6 caracteres)"
+                            className="w-full bg-surface border border-border rounded-lg px-3 py-2 pr-9 text-xs text-text-primary font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 placeholder:text-text-muted"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setMostrar((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                            aria-label={mostrar ? 'Ocultar senha' : 'Mostrar senha'}
+                        >
+                            {mostrar ? <EyeOff size={13} /> : <Eye size={13} />}
+                        </button>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-3 py-2 bg-brand hover:bg-brand-hover text-brand-fg text-[10px] font-black uppercase tracking-widest rounded-lg transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                    >
+                        {loading ? '...' : 'Salvar'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setAberto(false)}
+                        className="px-3 py-2 bg-overlay hover:bg-border text-text-muted text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+                    >
+                        Cancelar
+                    </button>
+                </form>
+            )}
+        </div>
+    );
+}
+
 function TabelaUsuarios({ usuarios, onRefresh, loading }) {
     return (
         <div className="bg-surface border border-border rounded-2xl overflow-hidden">
@@ -149,24 +244,7 @@ function TabelaUsuarios({ usuarios, onRefresh, loading }) {
                 </div>
             ) : (
                 <div className="divide-y divide-border">
-                    {usuarios.map((u) => (
-                        <div key={u.id} className="flex items-center gap-4 px-6 py-4 hover:bg-overlay/50 transition-colors">
-                            <div className="w-9 h-9 rounded-xl bg-overlay flex items-center justify-center flex-shrink-0">
-                                <Shield size={15} className="text-text-muted" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-text-primary truncate">{u.username}</p>
-                                <p className="text-xs text-text-muted truncate">{u.email}</p>
-                            </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                                <BadgeRole role={u.role} />
-                                <span
-                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${u.is_active ? 'bg-success' : 'bg-danger'}`}
-                                    title={u.is_active ? 'Ativo' : 'Inativo'}
-                                />
-                            </div>
-                        </div>
-                    ))}
+                    {usuarios.map((u) => <LinhaUsuario key={u.id} u={u} />)}
                 </div>
             )}
         </div>
