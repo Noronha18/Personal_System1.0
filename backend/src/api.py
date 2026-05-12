@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src import exceptions
-from src.routes import alunos, planos, pagamentos, sessoes, auth, exercicios, meu_perfil
+from src.routes import alunos, planos, pagamentos, sessoes, auth, exercicios, meu_perfil, admin
 from src.config import settings # Importa as configurações
 
 # Configuração básica de logging
@@ -86,6 +86,7 @@ def read_root():
 
 # --- REGISTRO DE ROTAS ---
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(meu_perfil.router)  # antes do router de alunos (evita conflito com /{aluno_id})
 app.include_router(alunos.router) 
 app.include_router(planos.router)

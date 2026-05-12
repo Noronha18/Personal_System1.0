@@ -176,6 +176,31 @@ class UsuarioPublic(BaseModel):
     role: str
     model_config = ConfigDict(from_attributes=True)
 
+# --- SCHEMAS DE ADMIN ---
+class TrainerCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UsuarioAdminPublic(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    is_active: bool
+    data_criacao: datetime
+    aluno_id: Optional[int] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class VerificarSenhaRequest(BaseModel):
+    senha: str
+
+class VerificarSenhaResponse(BaseModel):
+    valida: bool
+
+class SenhaResetRequest(BaseModel):
+    nova_senha: str = Field(min_length=6)
+
 class AlunoUpdate(BaseModel):
     nome: Optional[str] = None
     cpf: Optional[str] = None

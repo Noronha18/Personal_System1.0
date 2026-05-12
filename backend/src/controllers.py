@@ -923,6 +923,63 @@ async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schem
     res_final = await db.execute(stmt_final)
     return res_final.scalar()
 
+# --- CONTROLLERS DE ADMIN ---
+
+async def criar_trainer(db: AsyncSession, trainer_in: schemas.TrainerCreate) -> models.Usuario:
+    stmt = select(models.Usuario).where(models.Usuario.username == trainer_in.username)
+    if await db.scalar(stmt):
+        raise exceptions.BusinessRuleError(f"Username '{trainer_in.username}' já está em uso.")
+
+    stmt_email = select(models.Usuario).where(models.Usuario.email == trainer_in.email)
+    if await db.scalar(stmt_email):
+        raise exceptions.BusinessRuleError(f"E-mail '{trainer_in.email}' já está em uso.")
+
+    novo_trainer = models.Usuario(
+        username=trainer_in.username,
+        email=trainer_in.email,
+        hashed_password=get_password_hash(trainer_in.password),
+        role="trainer",
+        is_active=True,
+    )
+    db.add(novo_trainer)
+    try:
+        await db.commit()
+        await db.refresh(novo_trainer)
+        return novo_trainer
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+
+async def listar_todos_usuarios(db: AsyncSession) -> list[models.Usuario]:
+    result = await db.execute(
+        select(models.Usuario).order_by(models.Usuario.role, models.Usuario.username)
+    )
+    return list(result.scalars().all())
+
+
+async def verificar_senha_usuario(db: AsyncSession, usuario_id: int, senha: str) -> bool:
+    usuario = await db.scalar(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    if not usuario:
+        raise exceptions.ResourceNotFoundError(f"Usuário {usuario_id} não encontrado")
+    from src.security import verify_password
+    return verify_password(senha, usuario.hashed_password)
+
+
+async def resetar_senha_usuario(db: AsyncSession, usuario_id: int, nova_senha: str) -> models.Usuario:
+    usuario = await db.scalar(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    if not usuario:
+        raise exceptions.ResourceNotFoundError(f"Usuário {usuario_id} não encontrado")
+    usuario.hashed_password = get_password_hash(nova_senha)
+    try:
+        await db.commit()
+        await db.refresh(usuario)
+        return usuario
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+
 async def listar_exercicios(db: AsyncSession):
     result = await db.execute(select(models.Exercicio).order_by(models.Exercicio.grupo_muscular))
     return result.scalars().all()
