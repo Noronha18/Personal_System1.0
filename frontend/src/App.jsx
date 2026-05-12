@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LoginView } from './features/auth/LoginView';
-import { authService } from './services/api';
+import { authService, getUserRole } from './services/api';
 import { ToastProvider } from './components/ToastProvider';
 
 // Imports de Features
@@ -8,11 +8,13 @@ import { ListaAlunosFeature } from './features/alunos/ListaAlunos';
 import { DetalheAluno } from './features/alunos/DetalheAluno';
 import { ModuloTreinos } from './features/treinos/ModuloTreinos';
 import DashboardFinanceiro from './features/financeiro/DashboardFinanceiro';
+import { PainelAdmin } from './features/admin/PainelAdmin';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [abaAtiva, setAbaAtiva] = useState('alunos');
   const [selectedAlunoId, setSelectedAlunoId] = useState(null);
+  const userRole = getUserRole();
 
   const handleLogout = () => {
     authService.logout();
@@ -31,6 +33,8 @@ function App() {
         return <ModuloTreinos />;
       case 'financeiro':
         return <DashboardFinanceiro />;
+      case 'admin':
+        return <PainelAdmin />;
       default:
         return <ListaAlunosFeature onSelectAluno={(id) => setSelectedAlunoId(id)} />;
     }
@@ -63,7 +67,8 @@ function App() {
             {[
               { id: 'alunos', label: 'Alunos' },
               { id: 'treinos', label: 'Treinos' },
-              { id: 'financeiro', label: 'Financeiro' }
+              { id: 'financeiro', label: 'Financeiro' },
+              ...(userRole === 'admin' ? [{ id: 'admin', label: 'Admin' }] : []),
             ].map((aba) => (
               <button
                 key={aba.id}

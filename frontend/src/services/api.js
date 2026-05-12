@@ -135,7 +135,7 @@ export const authService = {
         });
 
         if (!response.ok) throw new Error('Usuário ou senha inválidos');
-        
+
         const data = await response.json();
         localStorage.setItem('token', data.access_token);
         return data;
@@ -143,4 +143,31 @@ export const authService = {
     logout: () => {
         localStorage.removeItem('token');
     }
+};
+
+export function getUserRole() {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.role ?? null;
+    } catch {
+        return null;
+    }
+}
+
+export const adminService = {
+    listarUsuarios: () => apiFetch('/admin/usuarios'),
+    criarTrainer: (dados) => apiFetch('/admin/trainers', {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    }),
+    verificarSenha: (usuarioId, senha) => apiFetch(`/admin/usuarios/${usuarioId}/verificar-senha`, {
+        method: 'POST',
+        body: JSON.stringify({ senha }),
+    }),
+    resetarSenha: (usuarioId, novaSenha) => apiFetch(`/admin/usuarios/${usuarioId}/senha`, {
+        method: 'PATCH',
+        body: JSON.stringify({ nova_senha: novaSenha }),
+    }),
 };
