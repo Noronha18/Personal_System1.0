@@ -137,6 +137,7 @@ class SessaoTreinoCreate(BaseModel):
     precisa_reposicao: bool = False
     observacoes_performance: Optional[str] = None
     motivo_ausencia: Optional[str] = None
+    tipo_atividade: Optional[str] = None
 
 class SessaoTreinoPublic(SessaoTreinoCreate):
     id: int

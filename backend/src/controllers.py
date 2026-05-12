@@ -434,10 +434,11 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
         data_hora=data_final # ✅ Agora é naive (compatível com timestamp sem timezone)
     )
     
-    # Se a sessão conta como aula dada (realizada ou falta sem reposição) e o aluno é de pacote, debita 1 aula
+    # Só debita saldo quando o personal registrou a sessão (trainer_id preenchido)
+    # Sessões de treino independente registradas pelo próprio aluno não debitam
     aula_contabilizada = payload.realizada or (not payload.realizada and not payload.precisa_reposicao)
-    
-    if aula_contabilizada and aluno.tipo_pagamento == "pacote":
+
+    if trainer_id is not None and aula_contabilizada and aluno.tipo_pagamento == "pacote":
         if aluno.saldo_aulas > 0:
             aluno.saldo_aulas -= 1
 

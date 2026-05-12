@@ -80,6 +80,7 @@ class SessaoTreino(Base):
     precisa_reposicao = Column(Boolean, default=False)
     observacoes_performance = Column(Text, nullable=True)
     motivo_ausencia = Column(Text, nullable=True)
+    tipo_atividade = Column(String, nullable=True)
     
     # Relacionamentos
     aluno = relationship("Aluno", back_populates="sessoes_treino")
