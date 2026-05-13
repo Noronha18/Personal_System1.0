@@ -205,6 +205,8 @@ async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.Alu
 
 async def excluir_aluno(db: AsyncSession, aluno_id: int, trainer_id: int | None = None):
     aluno = await get_aluno(db, aluno_id, trainer_id)
+    if aluno.usuario:
+        await db.delete(aluno.usuario)
     await db.delete(aluno)
     await db.commit()
     return True
