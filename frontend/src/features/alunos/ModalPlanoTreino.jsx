@@ -146,13 +146,13 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
       treinos: novoPlano.treinos.map(t => ({
         ...t,
         prescricoes: t.prescricoes.map(p => ({
-          exercicio_id: p.exercicio_id,
-          series: parseInt(p.series),
+          exercicio_id: parseInt(p.exercicio_id),
+          series: parseInt(p.series) || 1,
           repeticoes: p.repeticoes,
-          carga: p.carga,
-          descanso: parseInt(p.descanso),
+          carga: p.carga || null,
+          descanso: parseInt(p.descanso) || 0,
           metodo: p.metodo,
-          observacoes: p.observacoes
+          observacoes: p.observacoes || null
         }))
       }))
     };
@@ -582,17 +582,24 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                       treinos: novoPlano.treinos.map(t => ({
                         ...t,
                         prescricoes: t.prescricoes.map(p => ({
-                          ...p,
                           exercicio_id: parseInt(p.exercicio_id),
-                          series: parseInt(p.series),
-                          descanso: parseInt(p.descanso),
+                          series: parseInt(p.series) || 1,
+                          repeticoes: p.repeticoes,
+                          carga: p.carga || null,
+                          descanso: parseInt(p.descanso) || 0,
+                          metodo: p.metodo,
+                          observacoes: p.observacoes || null,
                         }))
                       }))
                     };
-                    treinoService.criarTemplate(payload).then(() => {
-                      toast({ tipo: 'sucesso', texto: 'Modelo global salvo com sucesso!' });
-                      carregarTemplates();
-                    });
+                    treinoService.criarTemplate(payload)
+                      .then(() => {
+                        toast({ tipo: 'sucesso', texto: 'Modelo global salvo com sucesso!' });
+                        carregarTemplates();
+                      })
+                      .catch(err => {
+                        toast({ tipo: 'erro', texto: 'Erro ao salvar modelo: ' + err.message });
+                      });
                   }}
                   className="px-4 md:px-8 py-3 md:py-4 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
                 >
