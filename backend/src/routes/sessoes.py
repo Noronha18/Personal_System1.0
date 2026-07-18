@@ -29,8 +29,9 @@ async def criar_sessao(
     db: AsyncSession = Depends(get_db),
 ):
     _validar_acesso_aluno(current_user, payload.aluno_id)
-    trainer_id = resolve_tenant_filter(current_user) if current_user.role in ("trainer", "admin") else None
-    return await controllers.registrar_sessao(db, payload, trainer_id=trainer_id)
+    is_staff = current_user.role in ("trainer", "admin")
+    trainer_id = resolve_tenant_filter(current_user) if is_staff else None
+    return await controllers.registrar_sessao(db, payload, trainer_id=trainer_id, registrado_por_staff=is_staff)
 
 
 @router.get("/", response_model=list[schemas.SessaoTreinoPublic])
@@ -76,7 +77,10 @@ async def frequencia_mensal(
     if referencia_mes is None:
         agora = datetime.now()
         referencia_mes = f"{agora.month:02d}/{agora.year}"
-    return await controllers.calcular_frequencia_mensal(db, aluno_id=aluno_id, referencia_mes=referencia_mes)
+    trainer_id = resolve_tenant_filter(current_user) if current_user.role in ("trainer", "admin") else None
+    return await controllers.calcular_frequencia_mensal(
+        db, aluno_id=aluno_id, referencia_mes=referencia_mes, trainer_id=trainer_id
+    )
 
 
 @router.get("/{sessao_id}", response_model=schemas.SessaoTreinoPublic)

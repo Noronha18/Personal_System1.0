@@ -102,7 +102,10 @@ class PlanoTreino(Base):
 
     # Relacionamentos
     aluno = relationship("Aluno", back_populates="planos_treino")
-    treinos = relationship("Treino", back_populates="plano", cascade="all, delete-orphan")
+    treinos = relationship(
+        "Treino", back_populates="plano", cascade="all, delete-orphan",
+        order_by="Treino.ordem, Treino.id"
+    )
     sessoes_executadas = relationship("SessaoTreino", back_populates="plano_treino")
 
 class Treino(Base):
@@ -114,7 +117,10 @@ class Treino(Base):
     ordem = Column(Integer, default=0)
 
     plano = relationship("PlanoTreino", back_populates="treinos")
-    prescricoes = relationship("Prescricao", back_populates="treino", cascade="all, delete-orphan")
+    prescricoes = relationship(
+        "Prescricao", back_populates="treino", cascade="all, delete-orphan",
+        order_by="Prescricao.ordem, Prescricao.id"
+    )
 
 class Exercicio(Base):
     """A Biblioteca Global de Exercícios"""
@@ -131,8 +137,9 @@ class Prescricao(Base):
     treino_id = Column(Integer, ForeignKey('treinos.id', ondelete='CASCADE'))
     exercicio_id = Column(Integer, ForeignKey('exercicios.id'))
     
+    ordem = Column(Integer, default=0)
     series = Column(Integer, default=3)
-    repeticoes = Column(String) 
+    repeticoes = Column(String)
     descanso = Column(Integer) # Em segundos
     carga = Column(String, nullable=True)
     metodo = Column(String, default="Convencional")

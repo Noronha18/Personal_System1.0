@@ -3,7 +3,7 @@ import {
     User, Target, AlertTriangle,
     Dumbbell, DollarSign, Clock, ArrowLeft,
     CheckCircle2, Trash2, Plus, Eye, ChevronDown, ChevronUp, Copy, Edit,
-    ShieldCheck, Zap
+    ShieldCheck, Zap, BookMarked
 } from 'lucide-react';
 import { alunoService, treinoService } from '../../services/api';
 import { ModalPlanoTreino } from './ModalPlanoTreino';
@@ -111,6 +111,15 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
         }
     };
 
+    const handleSalvarComoTemplate = async (planoId) => {
+        try {
+            await treinoService.clonarPlano(planoId, null);
+            toast({ tipo: 'sucesso', texto: 'Plano salvo nos modelos globais!' });
+        } catch (err) {
+            toast({ tipo: 'erro', texto: 'Erro ao salvar modelo: ' + err.message });
+        }
+    };
+
     const handleEditPlano = (plano) => {
         setPlanoEdicao({
             id: plano.id,
@@ -124,6 +133,7 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                 prescricoes: t.prescricoes.map(p => ({
                     id: p.id,
                     exercicio_id: p.exercicio_id,
+                    nome_exercicio: p.nome_exercicio || p.exercicio?.nome || 'Exercício',
                     series: p.series,
                     repeticoes: p.repeticoes,
                     carga: p.carga_kg,
@@ -337,6 +347,13 @@ export const DetalheAluno = ({ alunoId, onBack }) => {
                                                 className="flex-1 flex items-center justify-center gap-2 py-2 bg-surface border border-border hover:bg-overlay text-text-primary rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-sm"
                                             >
                                                 <Eye size={14} /> Detalhes
+                                            </button>
+                                            <button
+                                                onClick={() => handleSalvarComoTemplate(plano.id)}
+                                                className="p-2 bg-surface border border-border hover:border-brand/40 hover:bg-brand/5 text-text-muted hover:text-brand rounded-lg transition-all"
+                                                title="Salvar como modelo global"
+                                            >
+                                                <BookMarked size={14} />
                                             </button>
                                             {!plano.esta_ativo && (
                                                 <button

@@ -136,6 +136,12 @@ async def criar_aluno(db: AsyncSession, aluno_in: schemas.AlunoCreate, trainer_i
         if result.scalar_one_or_none():
             raise exceptions.BusinessRuleError(f"CPF {aluno_in.cpf} já está cadastrado.")
 
+    if aluno_in.email:
+        if await db.scalar(select(models.Aluno).where(models.Aluno.email == aluno_in.email)):
+            raise exceptions.BusinessRuleError(f"E-mail {aluno_in.email} já está cadastrado em outro aluno.")
+        if await db.scalar(select(models.Usuario).where(models.Usuario.email == aluno_in.email)):
+            raise exceptions.BusinessRuleError(f"E-mail {aluno_in.email} já está em uso por outro usuário.")
+
     auth_data = aluno_in.model_dump(include={"username", "password"})
     aluno_data = aluno_in.model_dump(exclude={"username", "password", "trainer_id"})
 
@@ -286,9 +292,10 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate, 
     Registra a entrada financeira de um aluno.
     """
     aluno = await get_aluno(db, dados.aluno_id, trainer_id)
-    
+
     hoje = date.today()
     ref = dados.referencia_mes or f"{hoje.month:02d}/{hoje.year}"
+    _parse_referencia_mes(ref)
 
     novo_pagamento = models.Pagamento(
         aluno_id=dados.aluno_id,
@@ -296,7 +303,7 @@ async def registrar_pagamento(db: AsyncSession, dados: schemas.PagamentoCreate, 
         referencia_mes=ref,
         forma_pagamento=dados.forma_pagamento,
         observacao=dados.observacao,
-        data_pagamento=hoje,
+        data_pagamento=dados.data_pagamento or hoje,
         quantidade_aulas=dados.quantidade_aulas
     )
     
@@ -365,9 +372,22 @@ async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schema
 
     pagamento = await get_pagamento(db, pagamento_id, trainer_id)
 
+    _parse_referencia_mes(dados.referencia_mes)
+
+    # Ajusta o saldo de aulas do aluno pela diferença entre o valor antigo e o novo
+    delta_aulas = dados.quantidade_aulas - (pagamento.quantidade_aulas or 0)
+    if delta_aulas != 0:
+        aluno = await db.get(models.Aluno, pagamento.aluno_id)
+        if aluno:
+            aluno.saldo_aulas = max((aluno.saldo_aulas or 0) + delta_aulas, 0)
+
     pagamento.valor = dados.valor
     pagamento.forma_pagamento = dados.forma_pagamento
     pagamento.observacao = dados.observacao
+    pagamento.referencia_mes = dados.referencia_mes
+    pagamento.quantidade_aulas = dados.quantidade_aulas
+    if dados.data_pagamento:
+        pagamento.data_pagamento = dados.data_pagamento
 
     try:
         await db.commit()
@@ -379,6 +399,13 @@ async def atualizar_pagamento(db: AsyncSession, pagamento_id: int, dados: schema
 
 async def deletar_pagamento(db: AsyncSession, pagamento_id: int, trainer_id: int | None = None) -> dict:
     pagamento = await get_pagamento(db, pagamento_id, trainer_id)
+
+    # Estorna aulas creditadas por este pagamento (recarga de pacote)
+    if pagamento.quantidade_aulas and pagamento.quantidade_aulas > 0:
+        aluno = await db.get(models.Aluno, pagamento.aluno_id)
+        if aluno:
+            aluno.saldo_aulas = max((aluno.saldo_aulas or 0) - pagamento.quantidade_aulas, 0)
+
     await db.delete(pagamento)
     await db.commit()
     return {"message": f"Pagamento {pagamento_id} deletado com sucesso"}
@@ -463,7 +490,12 @@ def _inicio_fim_mes(ano: int, mes: int) -> tuple[datetime, datetime]:
     return inicio, fim
 
 
-async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate, trainer_id: int | None = None) -> models.SessaoTreino:
+async def registrar_sessao(
+    db: AsyncSession,
+    payload: schemas.SessaoTreinoCreate,
+    trainer_id: int | None = None,
+    registrado_por_staff: bool = False,
+) -> models.SessaoTreino:
     aluno = await get_aluno(db, payload.aluno_id, trainer_id)
     
     if payload.plano_treino_id is not None:
@@ -491,12 +523,12 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
         data_hora=data_final # ✅ Agora é naive (compatível com timestamp sem timezone)
     )
     
-    # Só debita saldo quando o personal registrou a sessão (trainer_id preenchido)
+    # Só debita saldo quando o personal/admin registrou a sessão.
     # Sessões de treino independente registradas pelo próprio aluno não debitam
     aula_contabilizada = payload.realizada or (not payload.realizada and not payload.precisa_reposicao)
 
     aviso = None
-    if trainer_id is not None and aula_contabilizada and aluno.tipo_pagamento == "pacote":
+    if registrado_por_staff and aula_contabilizada and aluno.tipo_pagamento == "pacote":
         # UPDATE condicional: atômico sob concorrência e nunca deixa o saldo negativo
         res_debito = await db.execute(
             update(models.Aluno)
@@ -548,12 +580,13 @@ async def calcular_frequencia_mensal(
     db: AsyncSession,
     aluno_id: int,
     referencia_mes: str,
+    trainer_id: int | None = None,
 ) -> schemas.FrequenciaMensalPublic:
     mes, ano = _parse_referencia_mes(referencia_mes)
     inicio, fim = _inicio_fim_mes(ano, mes)
 
     aluno = await db.scalar(select(models.Aluno).where(models.Aluno.id == aluno_id))
-    if not aluno:
+    if not aluno or (trainer_id is not None and aluno.trainer_id != trainer_id):
         raise exceptions.ResourceNotFoundError(f"Aluno {aluno_id} não encontrado")
 
     # Protótipo local: semanas ≈ ceil(dias/7)
@@ -648,6 +681,7 @@ async def calcular_estatisticas_financeiras(db: AsyncSession, trainer_id: int | 
     alunos_em_dia_sq = (
         select(func.count(models.Aluno.id))
         .where(aluno_trainer_filter)
+        .where(models.Aluno.status == "ativo")
         .where(
             or_(
                 and_(
@@ -665,9 +699,11 @@ async def calcular_estatisticas_financeiras(db: AsyncSession, trainer_id: int | 
         .scalar_subquery()
     )
 
+    # Apenas alunos ativos entram no cálculo de inadimplência
     total_alunos_sq = (
         select(func.count(models.Aluno.id))
         .where(aluno_trainer_filter)
+        .where(models.Aluno.status == "ativo")
         .scalar_subquery()
     )
 
@@ -698,26 +734,28 @@ async def calcular_estatisticas_financeiras(db: AsyncSession, trainer_id: int | 
     meses = _month_starts(mes_atual_inicio, n=12)
     inicio_janela = meses[0]
 
-    bucket_mes = func.date_trunc("month", models.Pagamento.data_pagamento).label("mes")
+    # extract() é portável (PostgreSQL e SQLite), ao contrário de date_trunc
+    ano_col = func.extract("year", models.Pagamento.data_pagamento).label("ano")
+    mes_col = func.extract("month", models.Pagamento.data_pagamento).label("mes")
     serie_stmt = (
         select(
-            bucket_mes,
+            ano_col,
+            mes_col,
             func.coalesce(func.sum(models.Pagamento.valor), 0).label("receita"),
         )
         .join(models.Aluno, models.Pagamento.aluno_id == models.Aluno.id)
         .where(models.Pagamento.data_pagamento >= inicio_janela)
         .where(aluno_trainer_filter)
-        .group_by(bucket_mes)
-        .order_by(bucket_mes)
+        .group_by(ano_col, mes_col)
+        .order_by(ano_col, mes_col)
     )
 
     serie_rows = (await db.execute(serie_stmt)).all()
 
     # Preenche meses sem receita com 0
     receita_por_mes: dict[date, float] = {}
-    for mes_dt, receita in serie_rows:
-        mes_date = mes_dt.date() if hasattr(mes_dt, "date") else mes_dt
-        receita_por_mes[mes_date] = float(receita or 0)
+    for ano, mes, receita in serie_rows:
+        receita_por_mes[date(int(ano), int(mes), 1)] = float(receita or 0)
 
     receita_mensal_12m = [
         {"referencia_mes": f"{m.month:02d}/{m.year}", "receita": receita_por_mes.get(m, 0.0)}
@@ -776,19 +814,21 @@ async def criar_plano_treino(db: AsyncSession, aluno_id: int | None, plano_in: s
     db.add(novo_plano)
     await db.flush() # Garante que temos o ID do plano
 
-    # 2. Cria os Treinos (A, B, C...)
-    for treino_data in plano_in.treinos:
+    # 2. Cria os Treinos (A, B, C...) preservando a ordem do payload
+    for t_idx, treino_data in enumerate(plano_in.treinos):
         novo_treino = models.Treino(
             plano_id=novo_plano.id,
-            nome=treino_data.nome
+            nome=treino_data.nome,
+            ordem=t_idx
         )
         db.add(novo_treino)
         await db.flush()
 
         # 3. Cria as Prescrições para cada treino
-        for pres_data in treino_data.prescricoes:
+        for p_idx, pres_data in enumerate(treino_data.prescricoes):
             nova_pres = models.Prescricao(
                 treino_id=novo_treino.id,
+                ordem=p_idx,
                 **pres_data.model_dump()
             )
             db.add(nova_pres)
@@ -846,9 +886,10 @@ async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno
         )
 
     # 3. Cria o novo plano (Cópia profunda)
+    # Templates mantêm o título original; cópias para aluno ganham sufixo
     novo_plano = models.PlanoTreino(
         aluno_id=novo_aluno_id,
-        titulo=f"{plano_origem.titulo} (Cópia)",
+        titulo=f"{plano_origem.titulo} (Cópia)" if novo_aluno_id else plano_origem.titulo,
         objetivo_estrategico=plano_origem.objetivo_estrategico,
         detalhes=plano_origem.detalhes,
         duracao_semanas=plano_origem.duracao_semanas,
@@ -869,6 +910,7 @@ async def clonar_plano_treino(db: AsyncSession, plano_origem_id: int, novo_aluno
         for pres_origem in treino_origem.prescricoes:
             nova_pres = models.Prescricao(
                 treino_id=novo_treino.id,
+                ordem=pres_origem.ordem,
                 exercicio_id=pres_origem.exercicio_id,
                 series=pres_origem.series,
                 repeticoes=pres_origem.repeticoes,
@@ -951,13 +993,14 @@ async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schem
                         treino.prescricoes.remove(p_obj)
                         await db.delete(p_obj)
 
-                for p_data in t_data.prescricoes:
+                for p_idx, p_data in enumerate(t_data.prescricoes):
                     if p_data.id and p_data.id in pres_atuais_map:
                         pres = pres_atuais_map[p_data.id]
                         for k, v in p_data.model_dump(exclude={"id"}).items():
                             setattr(pres, k, v)
+                        pres.ordem = p_idx
                     else:
-                        nova_p = models.Prescricao(treino_id=treino.id, **p_data.model_dump(exclude={"id"}))
+                        nova_p = models.Prescricao(treino_id=treino.id, ordem=p_idx, **p_data.model_dump(exclude={"id"}))
                         db.add(nova_p)
             else:
                 # Criar novo treino
@@ -965,8 +1008,8 @@ async def atualizar_plano_treino(db: AsyncSession, plano_id: int, payload: schem
                 plano.treinos.append(novo_treino)
                 db.add(novo_treino)
                 await db.flush() # Para ganhar o ID do novo treino
-                for p_data in t_data.prescricoes:
-                    nova_p = models.Prescricao(treino_id=novo_treino.id, **p_data.model_dump(exclude={"id"}))
+                for p_idx, p_data in enumerate(t_data.prescricoes):
+                    nova_p = models.Prescricao(treino_id=novo_treino.id, ordem=p_idx, **p_data.model_dump(exclude={"id"}))
                     db.add(nova_p)
 
     await db.commit()

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Dumbbell, Trash2, Plus, Save, Book, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { X, Dumbbell, Trash2, Plus, Save, Book, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { treinoService } from '../../services/api';
 import { BibliotecaExercicios } from '../treinos/BibliotecaExercicios';
 import { useToast } from '../../components/ToastProvider';
@@ -39,6 +39,15 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
   const [templates, setTemplates] = useState([]);
   const [showTemplates, setShowTemplates] = useState(false);
 
+  const carregarTemplates = async () => {
+    try {
+      const tmpls = await treinoService.listarTemplates();
+      setTemplates(tmpls);
+    } catch (err) {
+      console.error("Erro ao carregar templates:", err);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       carregarTemplates();
@@ -57,15 +66,6 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
       setMobileLibOpen(false);
     }
   }, [isOpen, planoEdicao]);
-
-  const carregarTemplates = async () => {
-    try {
-      const tmpls = await treinoService.listarTemplates();
-      setTemplates(tmpls);
-    } catch (err) {
-      console.error("Erro ao carregar templates:", err);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -118,6 +118,25 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
     setNovoPlano({ ...novoPlano, treinos: updated });
   };
 
+  const moveTreino = (idx, dir) => {
+    const alvo = idx + dir;
+    if (alvo < 0 || alvo >= novoPlano.treinos.length) return;
+    const updated = [...novoPlano.treinos];
+    [updated[idx], updated[alvo]] = [updated[alvo], updated[idx]];
+    setNovoPlano({ ...novoPlano, treinos: updated });
+    setActiveTreinoIndex(alvo);
+  };
+
+  const moveExercicio = (tIndex, exIndex, dir) => {
+    const alvo = exIndex + dir;
+    const updated = [...novoPlano.treinos];
+    const lista = [...updated[tIndex].prescricoes];
+    if (alvo < 0 || alvo >= lista.length) return;
+    [lista[exIndex], lista[alvo]] = [lista[alvo], lista[exIndex]];
+    updated[tIndex] = { ...updated[tIndex], prescricoes: lista };
+    setNovoPlano({ ...novoPlano, treinos: updated });
+  };
+
   const handleImportTemplate = (template) => {
     setNovoPlano({
       ...novoPlano,
@@ -146,6 +165,7 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
       treinos: novoPlano.treinos.map(t => ({
         ...t,
         prescricoes: t.prescricoes.map(p => ({
+          id: p.id || null,
           exercicio_id: parseInt(p.exercicio_id),
           series: parseInt(p.series) || 1,
           repeticoes: p.repeticoes,
@@ -308,8 +328,18 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                     >
                       <span>{treino.nome || `Treino ${idx + 1}`}</span>
                       {activeTreinoIndex === idx && novoPlano.treinos.length > 1 && (
-                        <X size={12} className="hover:text-danger transition-colors"
-                          onClick={(e) => { e.stopPropagation(); handleRemoveTreino(idx); }} />
+                        <span className="flex items-center gap-1.5">
+                          <ChevronLeft size={13}
+                            className={`transition-colors ${idx === 0 ? 'opacity-30 cursor-default' : 'hover:text-brand-fg/70 cursor-pointer'}`}
+                            title="Mover para a esquerda"
+                            onClick={(e) => { e.stopPropagation(); moveTreino(idx, -1); }} />
+                          <ChevronRight size={13}
+                            className={`transition-colors ${idx === novoPlano.treinos.length - 1 ? 'opacity-30 cursor-default' : 'hover:text-brand-fg/70 cursor-pointer'}`}
+                            title="Mover para a direita"
+                            onClick={(e) => { e.stopPropagation(); moveTreino(idx, 1); }} />
+                          <X size={12} className="hover:text-danger transition-colors"
+                            onClick={(e) => { e.stopPropagation(); handleRemoveTreino(idx); }} />
+                        </span>
                       )}
                     </button>
                   ))}
@@ -387,6 +417,24 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                   value={presc.observacoes || ''}
                                   onChange={e => handleExercicioChange(activeTreinoIndex, exIdx, 'observacoes', e.target.value)}
                                 />
+                              </div>
+                              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                                <button
+                                  onClick={() => moveExercicio(activeTreinoIndex, exIdx, -1)}
+                                  disabled={exIdx === 0}
+                                  className="p-1 text-text-muted active:text-brand disabled:opacity-30 transition-colors"
+                                  aria-label="Mover exercício para cima"
+                                >
+                                  <ChevronUp size={14} />
+                                </button>
+                                <button
+                                  onClick={() => moveExercicio(activeTreinoIndex, exIdx, 1)}
+                                  disabled={exIdx === prescricoes.length - 1}
+                                  className="p-1 text-text-muted active:text-brand disabled:opacity-30 transition-colors"
+                                  aria-label="Mover exercício para baixo"
+                                >
+                                  <ChevronDown size={14} />
+                                </button>
                               </div>
                               <button
                                 onClick={() => handleRemoveExercicio(activeTreinoIndex, exIdx)}
@@ -497,6 +545,26 @@ export function ModalPlanoTreino({ isOpen, onClose, onSave, planoEdicao = null }
                                     {METODOS_TREINO.map(m => <option key={m} value={m}>{m}</option>)}
                                   </select>
                                 </div>
+                              </div>
+                              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => moveExercicio(activeTreinoIndex, exIdx, -1)}
+                                  disabled={exIdx === 0}
+                                  className="p-0.5 text-text-muted hover:text-brand disabled:opacity-30 transition-colors"
+                                  aria-label="Mover exercício para cima"
+                                  title="Mover para cima"
+                                >
+                                  <ChevronUp size={16} />
+                                </button>
+                                <button
+                                  onClick={() => moveExercicio(activeTreinoIndex, exIdx, 1)}
+                                  disabled={exIdx === prescricoes.length - 1}
+                                  className="p-0.5 text-text-muted hover:text-brand disabled:opacity-30 transition-colors"
+                                  aria-label="Mover exercício para baixo"
+                                  title="Mover para baixo"
+                                >
+                                  <ChevronDown size={16} />
+                                </button>
                               </div>
                               <button
                                 onClick={() => handleRemoveExercicio(activeTreinoIndex, exIdx)}

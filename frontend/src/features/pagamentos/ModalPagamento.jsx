@@ -45,7 +45,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                 ...formData,
                 aluno_id: parseInt(formData.aluno_id),
                 valor: parseFloat(formData.valor),
-                quantidade_aulas: parseInt(formData.quantidade_aulas)
+                quantidade_aulas: parseInt(formData.quantidade_aulas) || 0
             });
             if (onSuccess) onSuccess();
             onClose();
@@ -123,7 +123,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-text-secondary uppercase tracking-wide ml-1 flex items-center gap-2">
                             <Hash size={14} className="text-brand" />
-                            {alunoSelecionado?.tipo_pagamento === 'pacote' ? 'Qtd. de Aulas (Reseta Saldo)' : 'Aulas Extras (Opcional)'}
+                            {alunoSelecionado?.tipo_pagamento === 'pacote' ? 'Qtd. de Aulas (Recarga)' : 'Aulas Extras (Opcional)'}
                         </label>
                         <input
                             type="number"
@@ -135,7 +135,7 @@ export const ModalPagamento = ({ isOpen, onClose, onSuccess }) => {
                         />
                         {alunoSelecionado?.tipo_pagamento === 'pacote' && (
                             <p className="text-2xs text-brand font-bold uppercase tracking-tight ml-1 animate-pulse">
-                                ⚠️ O saldo atual será substituído por este novo valor.
+                                As aulas serão somadas ao saldo atual do aluno.
                             </p>
                         )}
                     </div>
