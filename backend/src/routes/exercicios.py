@@ -17,7 +17,7 @@ async def seed_exercicios(db: AsyncSession = Depends(database.get_db)):
     Utilize este endpoint se não tiver acesso ao terminal do servidor.
     """
     count = await seed(db)
-    return {"message": f"Biblioteca populada com sucesso! {count} novos exercícios adicionados."}
+    return {"message": f"Biblioteca atualizada com sucesso! {count} exercícios adicionados ou com vídeo preenchido."}
 
 @router.get("/", response_model=list[schemas.ExercicioPublic])
 async def listar_exercicios(db: AsyncSession = Depends(database.get_db)):
