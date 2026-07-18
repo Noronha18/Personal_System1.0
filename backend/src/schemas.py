@@ -1,6 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional, List, Literal
+
+StatusAluno = Literal["ativo", "suspenso", "cancelado"]
+TipoPagamento = Literal["mensal", "pacote"]
 
 # --- SCHEMAS DE AUTENTICAÇÃO ---
 class Token(BaseModel):
@@ -144,14 +147,15 @@ class SessaoTreinoCreate(BaseModel):
 
 class SessaoTreinoPublic(SessaoTreinoCreate):
     id: int
+    aviso: Optional[str] = None  # ex: pacote sem saldo no check-in
     model_config = ConfigDict(from_attributes=True)
 
 class FrequenciaMensalPublic(BaseModel):
     aluno_id: int
     referencia_mes: str
-    total_sessoes: int
-    aulas_feitas: int
-    percentual_frequencia: float
+    sessoes_previstas: int
+    sessoes_realizadas: int
+    taxa_adesao: float
 
 # --- SCHEMAS DE ALUNO ---
 class AlunoBase(BaseModel):
@@ -159,14 +163,14 @@ class AlunoBase(BaseModel):
     email: Optional[str] = None
     cpf: Optional[str] = None
     dia_vencimento: int = 5
-    tipo_pagamento: str = "mensal"
+    tipo_pagamento: TipoPagamento = "mensal"
     saldo_aulas: int = 0
     frequencia_semanal_plano: int = 3
     valor_mensalidade: float = 0.0
     idade: int = 0
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
-    status: str = "ativo"
+    status: StatusAluno = "ativo"
 
 class AlunoCreate(AlunoBase):
     username: Optional[str] = None
@@ -208,15 +212,36 @@ class AlunoUpdate(BaseModel):
     nome: Optional[str] = None
     cpf: Optional[str] = None
     dia_vencimento: Optional[int] = None
-    tipo_pagamento: Optional[str] = None
+    tipo_pagamento: Optional[TipoPagamento] = None
     saldo_aulas: Optional[int] = None
     frequencia_semanal_plano: Optional[int] = None
     valor_mensalidade: Optional[float] = None
     idade: Optional[int] = None
     objetivo: Optional[str] = None
     restricoes: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[StatusAluno] = None
+    trainer_id: Optional[int] = None  # aplicado apenas quando o usuário é admin
+
+class AlunoResumo(BaseModel):
+    """Versão leve para listagens: sem planos, pagamentos e sessões."""
+    id: int
+    nome: str
+    email: Optional[str] = None
+    cpf: Optional[str] = None
+    data_inicio: date
+    dia_vencimento: int
+    tipo_pagamento: str
+    saldo_aulas: int
+    frequencia_semanal_plano: int
+    valor_mensalidade: float
+    idade: int
+    status: str = "ativo"
+    status_financeiro: str = "em_dia"
+    aulas_feitas_mes: int = 0
     trainer_id: Optional[int] = None
+    usuario: Optional[UsuarioPublic] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class AlunoPublic(BaseModel):
     id: int

@@ -30,14 +30,15 @@ O **PTRoster** é uma plataforma full-stack desenvolvida para modernizar a presc
 
 ### 2. Iniciando o Banco de Dados
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 3. Backend (FastAPI)
 ```bash
 cd backend
+cp .env.example .env # Ajuste SECRET_KEY e credenciais do banco
 uv sync # Instala as dependências
-alembic upgrade head # Aplica as migrações no banco
+uv run alembic upgrade head # Aplica as migrações no banco
 uv run uvicorn src.api:app --reload --port 8000
 ```
 

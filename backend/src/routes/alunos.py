@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from src import controllers, schemas, database
+from src.schemas import StatusAluno
 from src.models import Usuario
 from src.security import get_current_trainer, resolve_tenant_filter
 
@@ -22,7 +23,7 @@ async def criar_aluno(
     return await controllers.criar_aluno(db=db, aluno_in=aluno, trainer_id=trainer_id)
 
 
-@router.get("/", response_model=list[schemas.AlunoPublic])
+@router.get("/", response_model=list[schemas.AlunoResumo])
 async def listar_alunos(
     current_user: Usuario = Depends(get_current_trainer),
     db: AsyncSession = Depends(database.get_db)
@@ -48,14 +49,15 @@ async def atualizar_aluno(
 ):
     return await controllers.atualizar_aluno(
         db=db, aluno_id=aluno_id, aluno_up=aluno,
-        trainer_id=resolve_tenant_filter(current_user)
+        trainer_id=resolve_tenant_filter(current_user),
+        permitir_troca_trainer=(current_user.role == "admin")
     )
 
 
 @router.patch("/{aluno_id}/status", response_model=schemas.AlunoPublic)
 async def atualizar_status_aluno(
     aluno_id: int,
-    status: str,
+    status: StatusAluno,
     current_user: Usuario = Depends(get_current_trainer),
     db: AsyncSession = Depends(database.get_db)
 ):

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:15
+    container_name: ptroster-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ptroster
+      POSTGRES_PASSWORD: ptroster
+      POSTGRES_DB: ptroster
+    ports:
+      - "5432:5432"
+    volumes:
+      - ptroster_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ptroster -d ptroster"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ptroster_pgdata:

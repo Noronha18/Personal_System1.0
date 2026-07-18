@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Calendar, CheckCircle2, XCircle, AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { sessaoService } from '../../services/api';
 
 export const IndicadorFrequencia = ({ alunoId }) => {
   const [dados, setDados] = useState(null);
@@ -15,23 +16,16 @@ export const IndicadorFrequencia = ({ alunoId }) => {
       setLoading(true);
       
       // 1. Busca Frequência (Resumo)
-      const resFreq = await fetch(`http://localhost:8000/sessoes/frequencia/${alunoId}?referencia_mes=${mesAtual}`);
-      if (resFreq.ok) {
-        const jsonFreq = await resFreq.json();
-        setDados(jsonFreq);
-      }
+      const jsonFreq = await sessaoService.frequencia(alunoId, mesAtual);
+      setDados(jsonFreq);
 
       // 2. Busca Lista de Sessões do Mês
-      // Ajuste o endpoint conforme sua rota. Supondo GET /sessoes/?aluno_id=...
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
       const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
-      
-      const resList = await fetch(`http://localhost:8000/sessoes/?aluno_id=${alunoId}&de=${inicioMes}&ate=${fimMes}&limit=50`);
-      if (resList.ok) {
-        const jsonList = await resList.json();
-        // Ordena por data (mais recente primeiro)
-        setSessoes(jsonList.sort((a, b) => new Date(b.data_hora) - new Date(a.data_hora)));
-      }
+
+      const jsonList = await sessaoService.listar({ aluno_id: alunoId, de: inicioMes, ate: fimMes, limit: 50 });
+      // Ordena por data (mais recente primeiro)
+      setSessoes(jsonList.sort((a, b) => new Date(b.data_hora) - new Date(a.data_hora)));
 
     } catch (error) {
       console.error("Erro ao carregar frequência:", error);
@@ -45,15 +39,10 @@ export const IndicadorFrequencia = ({ alunoId }) => {
     
     setDeletando(sessaoId);
     try {
-      const res = await fetch(`http://localhost:8000/sessoes/${sessaoId}`, {
-        method: 'DELETE'
-      });
-      
-      if (res.ok) {
-        // Atualiza lista localmente e recarrega totais
-        setSessoes(prev => prev.filter(s => s.id !== sessaoId));
-        carregarDados(); // Recarrega para atualizar a porcentagem
-      }
+      await sessaoService.deletar(sessaoId);
+      // Atualiza lista localmente e recarrega totais
+      setSessoes(prev => prev.filter(s => s.id !== sessaoId));
+      carregarDados(); // Recarrega para atualizar a porcentagem
     } catch (error) {
       console.error("Erro ao deletar:", error);
     } finally {

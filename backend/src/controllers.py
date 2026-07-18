@@ -48,17 +48,14 @@ async def _preencher_status_aluno(db: AsyncSession, aluno: models.Aluno):
 # --- CONTROLLERS DE ALUNO ---
 
 async def listar_alunos_ativos(db: AsyncSession, trainer_id: int | None = None):
+    """Listagem leve: sem coleções pesadas e com status calculado em queries agregadas."""
+    hoje = date.today()
+    ref_mes = f"{hoje.month:02d}/{hoje.year}"
+    inicio_mes = datetime(hoje.year, hoje.month, 1)
+
     query = (
         select(models.Aluno)
-        .options(
-            selectinload(models.Aluno.planos_treino)
-            .selectinload(models.PlanoTreino.treinos)
-            .selectinload(models.Treino.prescricoes)
-            .selectinload(models.Prescricao.exercicio),
-            selectinload(models.Aluno.pagamentos),
-            selectinload(models.Aluno.sessoes_treino),
-            selectinload(models.Aluno.usuario)
-        )
+        .options(selectinload(models.Aluno.usuario))
         .order_by(models.Aluno.nome)
     )
     if trainer_id is not None:
@@ -66,8 +63,40 @@ async def listar_alunos_ativos(db: AsyncSession, trainer_id: int | None = None):
     result = await db.execute(query)
     alunos = result.scalars().all()
 
+    if not alunos:
+        return alunos
+
+    ids = [a.id for a in alunos]
+
+    # Alunos mensais com pagamento no mês de referência
+    pagos = await db.execute(
+        select(models.Pagamento.aluno_id)
+        .where(
+            models.Pagamento.aluno_id.in_(ids),
+            models.Pagamento.referencia_mes == ref_mes,
+        )
+        .distinct()
+    )
+    ids_pagos = {row[0] for row in pagos.all()}
+
+    # Contagem de sessões realizadas no mês, por aluno
+    sessoes = await db.execute(
+        select(models.SessaoTreino.aluno_id, func.count(models.SessaoTreino.id))
+        .where(
+            models.SessaoTreino.aluno_id.in_(ids),
+            models.SessaoTreino.data_hora >= inicio_mes,
+            models.SessaoTreino.realizada,
+        )
+        .group_by(models.SessaoTreino.aluno_id)
+    )
+    sessoes_por_aluno = dict(sessoes.all())
+
     for aluno in alunos:
-        await _preencher_status_aluno(db, aluno)
+        if aluno.tipo_pagamento == "pacote":
+            aluno.status_financeiro = "em_dia" if aluno.saldo_aulas > 0 else "atrasado"
+        else:
+            aluno.status_financeiro = "em_dia" if aluno.id in ids_pagos else "atrasado"
+        aluno.aulas_feitas_mes = sessoes_por_aluno.get(aluno.id, 0)
 
     return alunos
 
@@ -182,16 +211,20 @@ async def atualizar_status_aluno(db: AsyncSession, aluno_id: int, novo_status: s
     await db.refresh(aluno)
     return aluno
 
-async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.AlunoUpdate, trainer_id: int | None = None):
+async def atualizar_aluno(db: AsyncSession, aluno_id: int, aluno_up: schemas.AlunoUpdate, trainer_id: int | None = None, permitir_troca_trainer: bool = False):
     aluno = await get_aluno(db, aluno_id, trainer_id)
-    
+
     if aluno_up.cpf and aluno_up.cpf != aluno.cpf:
         stmt = select(models.Aluno).where(models.Aluno.cpf == aluno_up.cpf)
         result = await db.execute(stmt)
         if result.scalar_one_or_none():
             raise exceptions.BusinessRuleError(f"CPF {aluno_up.cpf} já está cadastrado em outro aluno.")
 
-    for key, value in aluno_up.model_dump(exclude_unset=True).items():
+    dados = aluno_up.model_dump(exclude_unset=True)
+    if not permitir_troca_trainer:
+        dados.pop("trainer_id", None)
+
+    for key, value in dados.items():
         setattr(aluno, key, value)
     
     try:
@@ -462,13 +495,21 @@ async def registrar_sessao(db: AsyncSession, payload: schemas.SessaoTreinoCreate
     # Sessões de treino independente registradas pelo próprio aluno não debitam
     aula_contabilizada = payload.realizada or (not payload.realizada and not payload.precisa_reposicao)
 
+    aviso = None
     if trainer_id is not None and aula_contabilizada and aluno.tipo_pagamento == "pacote":
-        if aluno.saldo_aulas > 0:
-            aluno.saldo_aulas -= 1
+        # UPDATE condicional: atômico sob concorrência e nunca deixa o saldo negativo
+        res_debito = await db.execute(
+            update(models.Aluno)
+            .where(models.Aluno.id == aluno.id, models.Aluno.saldo_aulas > 0)
+            .values(saldo_aulas=models.Aluno.saldo_aulas - 1)
+        )
+        if res_debito.rowcount == 0:
+            aviso = "Aluno de pacote sem saldo de aulas: sessão registrada sem débito."
 
     db.add(sessao)
     await db.commit()
     await db.refresh(sessao)
+    sessao.aviso = aviso
     return sessao
 
 async def listar_sessoes(
@@ -693,11 +734,7 @@ async def calcular_estatisticas_financeiras(db: AsyncSession, trainer_id: int | 
         "alunos_em_dia": alunos_em_dia,
         "alunos_inadimplentes": alunos_inadimplentes,
     }
-    
-    # 🐛 LOG TEMPORÁRIO - REMOVER DEPOIS
-    logger.info(f"📊 Resultado gerado: {resultado}")
-    logger.info(f"📏 Tamanho de receita_mensal_12m: {len(receita_mensal_12m)}")
-    
+
     return resultado
 
 async def _assert_owns_plano(db: AsyncSession, plano_id: int, trainer_id: int | None) -> models.PlanoTreino:

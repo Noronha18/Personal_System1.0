@@ -21,8 +21,9 @@ async function apiFetch(endpoint, options = {}) {
     });
 
     if (response.status === 401) {
-        // Apenas limpamos o token, o App.jsx vai reagir ao estado ou erro
         localStorage.removeItem('token');
+        // App.jsx ouve este evento e volta para a tela de login
+        window.dispatchEvent(new Event('auth:expired'));
         throw new Error('Sessão expirada. Por favor, faça login novamente.');
     }
 
@@ -104,6 +105,10 @@ export const pagamentoService = {
         method: 'POST',
         body: JSON.stringify(dados),
     }),
+    atualizar: (id, dados) => apiFetch(`/pagamentos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+    }),
     deletar: (id) => apiFetch(`/pagamentos/${id}`, {
         method: 'DELETE',
     }),
@@ -114,6 +119,8 @@ export const sessaoService = {
         const query = new URLSearchParams(params).toString();
         return apiFetch(`/sessoes/?${query}`);
     },
+    frequencia: (alunoId, referenciaMes) =>
+        apiFetch(`/sessoes/frequencia/${alunoId}?referencia_mes=${encodeURIComponent(referenciaMes)}`),
     registrar: (dados) => apiFetch('/sessoes/', {
         method: 'POST',
         body: JSON.stringify(dados),

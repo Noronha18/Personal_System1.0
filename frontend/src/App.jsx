@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginView } from './features/auth/LoginView';
 import { authService, getUserRole } from './services/api';
 import { ToastProvider } from './components/ToastProvider';
@@ -20,6 +20,13 @@ function App() {
     authService.logout();
     setIsAuthenticated(false);
   };
+
+  // Sessão expirada (401): api.js limpa o token e dispara este evento
+  useEffect(() => {
+    const onAuthExpired = () => setIsAuthenticated(false);
+    window.addEventListener('auth:expired', onAuthExpired);
+    return () => window.removeEventListener('auth:expired', onAuthExpired);
+  }, []);
 
   if (!isAuthenticated) {
     return <LoginView onLoginSuccess={() => setIsAuthenticated(true)} />;
